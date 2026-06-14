@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="moonglow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="moonGrad" cx="40%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#c8d8e8"/>
+      <stop offset="100%" stop-color="#8898a8"/>
+    </radialGradient>
+  </defs>
+  <!-- Background (deep space) -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Stars -->
+  <g fill="#ffffff">
+    <circle cx="28" cy="30" r="1.2" opacity="0.9"/>
+    <circle cx="55" cy="18" r="0.8" opacity="0.7"/>
+    <circle cx="82" cy="35" r="1" opacity="0.8"/>
+    <circle cx="145" cy="22" r="1.2" opacity="0.9"/>
+    <circle cx="190" cy="35" r="0.8" opacity="0.7"/>
+    <circle cx="215" cy="20" r="1" opacity="0.8"/>
+    <circle cx="35" cy="60" r="0.8" opacity="0.6"/>
+    <circle cx="200" cy="55" r="1" opacity="0.7"/>
+    <circle cx="170" cy="48" r="0.8" opacity="0.6"/>
+    <circle cx="18" cy="110" r="1" opacity="0.7"/>
+    <circle cx="222" cy="95" r="0.8" opacity="0.6"/>
+    <circle cx="228" cy="150" r="1" opacity="0.7"/>
+  </g>
+
+  <!-- Moon glow halo -->
+  <circle cx="120" cy="105" r="62" fill="#c0d8f0" opacity="0.04" filter="url(#moonglow)"/>
+
+  <!-- Moon -->
+  <circle cx="120" cy="105" r="58" fill="url(#moonGrad)" filter="url(#glow)"/>
+
+  <!-- Moon craters -->
+  <g fill="none" stroke="#8898a8" stroke-width="1" opacity="0.5">
+    <circle cx="98" cy="88" r="10"/>
+    <circle cx="142" cy="115" r="7"/>
+    <circle cx="108" cy="125" r="5"/>
+    <circle cx="130" cy="85" r="4"/>
+  </g>
+  <g fill="#b0c0d0" opacity="0.3">
+    <circle cx="98" cy="88" r="8"/>
+    <circle cx="142" cy="115" r="6"/>
+    <circle cx="108" cy="125" r="4"/>
+  </g>
+
+  <!-- Lunar module (LM) on surface -->
+  <g filter="url(#glow)" opacity="0.95">
+    <!-- LM descent stage (boxy bottom) -->
+    <rect x="105" y="145" width="30" height="18" rx="2" fill="#ddddcc" stroke="#aaaaaa" stroke-width="1"/>
+    <!-- LM ascent stage (rounded top) -->
+    <rect x="109" y="132" width="22" height="16" rx="3" fill="#eeeecc" stroke="#aaaaaa" stroke-width="1"/>
+    <!-- Window -->
+    <circle cx="120" cy="139" r="4" fill="#8ad0f0" opacity="0.9" stroke="#cccc88" stroke-width="1"/>
+    <!-- Landing legs -->
+    <line x1="105" y1="163" x2="92" y2="175" stroke="#ccccaa" stroke-width="2"/>
+    <line x1="135" y1="163" x2="148" y2="175" stroke="#ccccaa" stroke-width="2"/>
+    <!-- Footpads -->
+    <line x1="88" y1="175" x2="96" y2="175" stroke="#ccccaa" stroke-width="2.5"/>
+    <line x1="144" y1="175" x2="152" y2="175" stroke="#ccccaa" stroke-width="2.5"/>
+  </g>
+
+  <!-- Footprints on moon surface -->
+  <g fill="#a0b0c0" opacity="0.7">
+    <ellipse cx="160" cy="172" rx="5" ry="3" transform="rotate(-20 160 172)"/>
+    <ellipse cx="170" cy="168" rx="5" ry="3" transform="rotate(15 170 168)"/>
+    <ellipse cx="180" cy="165" rx="5" ry="3" transform="rotate(-10 180 165)"/>
+    <ellipse cx="78" cy="173" rx="5" ry="3" transform="rotate(20 78 173)"/>
+    <ellipse cx="68" cy="169" rx="5" ry="3" transform="rotate(-15 68 169)"/>
+  </g>
+
+  <!-- US Flag on pole -->
+  <g filter="url(#glow)" opacity="0.9">
+    <!-- Pole -->
+    <line x1="155" y1="128" x2="155" y2="175" stroke="#dddddd" stroke-width="2"/>
+    <!-- Horizontal bar -->
+    <line x1="155" y1="128" x2="175" y2="128" stroke="#dddddd" stroke-width="1.5"/>
+    <!-- Flag body -->
+    <rect x="155" y="128" width="20" height="13" fill="#b22234"/>
+    <!-- White stripes -->
+    <rect x="155" y="130" width="20" height="2" fill="#ffffff"/>
+    <rect x="155" y="134" width="20" height="2" fill="#ffffff"/>
+    <rect x="155" y="138" width="20" height="2" fill="#ffffff"/>
+    <!-- Blue canton -->
+    <rect x="155" y="128" width="9" height="7" fill="#3c3b6e"/>
+    <!-- Stars on canton (simplified dots) -->
+    <g fill="#ffffff" font-size="4">
+      <circle cx="157" cy="130" r="1"/>
+      <circle cx="161" cy="130" r="1"/>
+      <circle cx="159" cy="133" r="1"/>
+      <circle cx="163" cy="133" r="1"/>
+      <circle cx="157" cy="133" r="0.8"/>
+    </g>
+  </g>
+
+  <!-- Moon surface line -->
+  <line x1="55" y1="176" x2="185" y2="176" stroke="#c0d0e0" stroke-width="1" opacity="0.5"/>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" letter-spacing="2">APOLLO &#9733;</text>
+</svg>

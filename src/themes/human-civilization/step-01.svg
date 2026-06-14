@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Palm silhouette (hand) -->
+  <g filter="url(#glow)" fill="#9a8c7a" opacity="0.9">
+    <!-- Palm base -->
+    <ellipse cx="120" cy="145" rx="32" ry="28" fill="#9a8c7a"/>
+    <!-- Thumb -->
+    <ellipse cx="83" cy="130" rx="10" ry="22" rx="10" ry="22" transform="rotate(-30 83 130)" fill="#9a8c7a"/>
+    <!-- Index finger -->
+    <rect x="96" y="82" width="14" height="48" rx="7" fill="#9a8c7a"/>
+    <!-- Middle finger -->
+    <rect x="113" y="76" width="14" height="54" rx="7" fill="#9a8c7a"/>
+    <!-- Ring finger -->
+    <rect x="130" y="81" width="14" height="50" rx="7" fill="#9a8c7a"/>
+    <!-- Pinky -->
+    <rect x="147" y="90" width="12" height="42" rx="6" fill="#9a8c7a"/>
+  </g>
+
+  <!-- Cave painting dots -->
+  <g filter="url(#glow)" fill="#c4b49a" opacity="0.8">
+    <circle cx="72" cy="80" r="4"/>
+    <circle cx="86" cy="68" r="3.5"/>
+    <circle cx="100" cy="62" r="3"/>
+    <circle cx="160" cy="72" r="4"/>
+    <circle cx="172" cy="85" r="3.5"/>
+    <circle cx="165" cy="58" r="3"/>
+    <circle cx="78" cy="95" r="3"/>
+    <circle cx="175" cy="100" r="3"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#c4b49a" letter-spacing="2">STONE AGE</text>
+</svg>

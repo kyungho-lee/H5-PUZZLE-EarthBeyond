@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow01" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow01" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="moonGrad" cx="40%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#e0e0e8"/>
+      <stop offset="60%" stop-color="#c8c8d0"/>
+      <stop offset="100%" stop-color="#7a7a85"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="#050810"/>
+
+  <!-- Stars -->
+  <circle cx="18" cy="22" r="1" fill="white" opacity="0.6"/>
+  <circle cx="55" cy="12" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="92" cy="38" r="1" fill="white" opacity="0.7"/>
+  <circle cx="130" cy="8" r="1" fill="white" opacity="0.5"/>
+  <circle cx="170" cy="25" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="210" cy="15" r="1" fill="white" opacity="0.6"/>
+  <circle cx="225" cy="48" r="1" fill="white" opacity="0.4"/>
+  <circle cx="195" cy="70" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="12" cy="80" r="1" fill="white" opacity="0.3"/>
+  <circle cx="40" cy="110" r="1" fill="white" opacity="0.6"/>
+  <circle cx="220" cy="110" r="1" fill="white" opacity="0.4"/>
+  <circle cx="8" cy="150" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="232" cy="160" r="1" fill="white" opacity="0.3"/>
+  <circle cx="25" cy="185" r="1" fill="white" opacity="0.6"/>
+  <circle cx="210" cy="190" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="75" cy="205" r="1" fill="white" opacity="0.5"/>
+  <circle cx="165" cy="200" r="1" fill="white" opacity="0.3"/>
+  <circle cx="145" cy="220" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="48" cy="230" r="1" fill="white" opacity="0.4"/>
+  <circle cx="195" cy="228" r="1" fill="white" opacity="0.5"/>
+
+  <!-- Moon body -->
+  <circle cx="120" cy="112" r="72" fill="url(#moonGrad)" filter="url(#softglow01)"/>
+
+  <!-- Craters -->
+  <circle cx="95" cy="88" r="12" fill="#b0b0bc" opacity="0.6"/>
+  <circle cx="95" cy="88" r="10" fill="#a8a8b4" opacity="0.4"/>
+  <circle cx="148" cy="100" r="8" fill="#b0b0bc" opacity="0.5"/>
+  <circle cx="148" cy="100" r="6.5" fill="#a8a8b4" opacity="0.35"/>
+  <circle cx="108" cy="138" r="6" fill="#b0b0bc" opacity="0.45"/>
+  <circle cx="108" cy="138" r="4.5" fill="#a8a8b4" opacity="0.3"/>
+  <circle cx="140" cy="148" r="9" fill="#b0b0bc" opacity="0.5"/>
+  <circle cx="140" cy="148" r="7.5" fill="#a8a8b4" opacity="0.35"/>
+  <circle cx="80" cy="125" r="5" fill="#b0b0bc" opacity="0.4"/>
+  <circle cx="155" cy="128" r="4" fill="#b0b0bc" opacity="0.45"/>
+  <circle cx="125" cy="75" r="5" fill="#b0b0bc" opacity="0.4"/>
+
+  <!-- Label -->
+  <text x="120" y="206" font-family="monospace" font-size="13" fill="white" opacity="0.85" text-anchor="middle" letter-spacing="3">MOON</text>
+</svg>

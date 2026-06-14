@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow03" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow03" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="jupiterGrad" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#f0c878"/>
+      <stop offset="55%" stop-color="#d8a25a"/>
+      <stop offset="100%" stop-color="#7a5018"/>
+    </radialGradient>
+    <clipPath id="jupiterClip">
+      <circle cx="120" cy="112" r="82"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="#050810"/>
+
+  <!-- Stars -->
+  <circle cx="15" cy="20" r="1" fill="white" opacity="0.5"/>
+  <circle cx="50" cy="8" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="90" cy="30" r="1" fill="white" opacity="0.4"/>
+  <circle cx="128" cy="5" r="1" fill="white" opacity="0.7"/>
+  <circle cx="168" cy="18" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="208" cy="12" r="1" fill="white" opacity="0.5"/>
+  <circle cx="230" cy="45" r="1" fill="white" opacity="0.4"/>
+  <circle cx="6" cy="78" r="1" fill="white" opacity="0.6"/>
+  <circle cx="235" cy="100" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="4" cy="140" r="1" fill="white" opacity="0.5"/>
+  <circle cx="232" cy="155" r="1" fill="white" opacity="0.4"/>
+  <circle cx="18" cy="192" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="220" cy="198" r="1" fill="white" opacity="0.3"/>
+  <circle cx="70" cy="215" r="1" fill="white" opacity="0.5"/>
+  <circle cx="155" cy="218" r="1.5" fill="white" opacity="0.4"/>
+
+  <!-- Jupiter body -->
+  <circle cx="120" cy="112" r="82" fill="url(#jupiterGrad)" filter="url(#softglow03)"/>
+
+  <!-- Band stripes clipped to circle -->
+  <g clip-path="url(#jupiterClip)">
+    <rect x="38" y="68" width="164" height="12" fill="#c88840" opacity="0.55" rx="2"/>
+    <rect x="38" y="84" width="164" height="8" fill="#f0d898" opacity="0.4" rx="2"/>
+    <rect x="38" y="96" width="164" height="14" fill="#b87030" opacity="0.5" rx="2"/>
+    <rect x="38" y="114" width="164" height="10" fill="#e8c870" opacity="0.4" rx="2"/>
+    <rect x="38" y="128" width="164" height="12" fill="#c88840" opacity="0.5" rx="2"/>
+    <rect x="38" y="144" width="164" height="8" fill="#f0d898" opacity="0.35" rx="2"/>
+    <!-- Great Red Spot -->
+    <ellipse cx="148" cy="130" rx="20" ry="12" fill="#cc3300" opacity="0.75"/>
+    <ellipse cx="148" cy="130" rx="14" ry="8" fill="#ee4400" opacity="0.5"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="214" font-family="monospace" font-size="12" fill="white" opacity="0.85" text-anchor="middle" letter-spacing="2">JUPITER</text>
+</svg>

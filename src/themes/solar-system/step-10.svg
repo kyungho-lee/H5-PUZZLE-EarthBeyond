@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow10" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="streakGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="nebula" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="nebulaGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5010a0" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#300060" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#1a0033" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background: deep purple-black interstellar void -->
+  <rect width="240" height="240" fill="#080010"/>
+
+  <!-- Nebula cloud hints -->
+  <ellipse cx="100" cy="105" rx="80" ry="60" fill="#3008a0" opacity="0.12" filter="url(#nebula)"/>
+  <ellipse cx="148" cy="130" rx="60" ry="50" fill="#200855" opacity="0.15" filter="url(#nebula)"/>
+  <ellipse cx="80" cy="145" rx="50" ry="40" fill="#4010c0" opacity="0.08" filter="url(#nebula)"/>
+
+  <!-- Background stars (static) -->
+  <circle cx="20" cy="18" r="1" fill="white" opacity="0.5"/>
+  <circle cx="52" cy="6" r="1" fill="white" opacity="0.4"/>
+  <circle cx="88" cy="28" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="132" cy="10" r="1" fill="white" opacity="0.3"/>
+  <circle cx="170" cy="22" r="1" fill="white" opacity="0.5"/>
+  <circle cx="208" cy="14" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="228" cy="44" r="1" fill="white" opacity="0.6"/>
+  <circle cx="6" cy="78" r="1" fill="white" opacity="0.4"/>
+  <circle cx="234" cy="100" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="4" cy="148" r="1" fill="white" opacity="0.5"/>
+  <circle cx="236" cy="162" r="1" fill="white" opacity="0.4"/>
+  <circle cx="22" cy="195" r="1.5" fill="white" opacity="0.3"/>
+  <circle cx="218" cy="200" r="1" fill="white" opacity="0.5"/>
+  <circle cx="72" cy="220" r="1" fill="white" opacity="0.4"/>
+  <circle cx="160" cy="226" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="42" cy="210" r="1" fill="white" opacity="0.3"/>
+  <circle cx="195" cy="215" r="1" fill="white" opacity="0.4"/>
+
+  <!-- Purple/blue nebula tinted stars -->
+  <circle cx="65" cy="55" r="1.5" fill="#a080ff" opacity="0.6"/>
+  <circle cx="155" cy="45" r="1" fill="#8060e8" opacity="0.5"/>
+  <circle cx="188" cy="80" r="1.5" fill="#c090ff" opacity="0.4"/>
+  <circle cx="48" cy="130" r="1" fill="#a080ff" opacity="0.5"/>
+  <circle cx="192" cy="138" r="1.5" fill="#8060e8" opacity="0.6"/>
+  <circle cx="110" cy="178" r="1" fill="#c090ff" opacity="0.4"/>
+  <circle cx="78" cy="188" r="1.5" fill="#a080ff" opacity="0.5"/>
+
+  <!-- Star streaks (motion blur — spacecraft at speed) -->
+  <g filter="url(#streakGlow)">
+    <!-- Long horizontal streaks -->
+    <line x1="10" y1="58" x2="90" y2="56" stroke="white" stroke-width="1" opacity="0.7"/>
+    <line x1="150" y1="58" x2="235" y2="55" stroke="white" stroke-width="0.8" opacity="0.5"/>
+    <line x1="5" y1="88" x2="75" y2="86" stroke="white" stroke-width="1.2" opacity="0.65"/>
+    <line x1="168" y1="90" x2="238" y2="88" stroke="white" stroke-width="0.8" opacity="0.5"/>
+    <line x1="8" y1="120" x2="102" y2="118" stroke="white" stroke-width="1" opacity="0.6"/>
+    <line x1="142" y1="122" x2="236" y2="120" stroke="white" stroke-width="0.8" opacity="0.45"/>
+    <line x1="10" y1="150" x2="88" y2="148" stroke="white" stroke-width="1.2" opacity="0.55"/>
+    <line x1="158" y1="152" x2="235" y2="150" stroke="white" stroke-width="0.8" opacity="0.4"/>
+    <line x1="5" y1="178" x2="78" y2="176" stroke="white" stroke-width="1" opacity="0.5"/>
+    <line x1="165" y1="180" x2="238" y2="178" stroke="white" stroke-width="0.8" opacity="0.4"/>
+
+    <!-- Short accent streaks -->
+    <line x1="30" y1="40" x2="58" y2="39" stroke="#c0a0ff" stroke-width="0.8" opacity="0.5"/>
+    <line x1="180" y1="42" x2="210" y2="41" stroke="#c0a0ff" stroke-width="0.8" opacity="0.45"/>
+    <line x1="15" y1="165" x2="48" y2="164" stroke="#c0a0ff" stroke-width="0.8" opacity="0.4"/>
+    <line x1="195" y1="167" x2="230" y2="166" stroke="#c0a0ff" stroke-width="0.8" opacity="0.4"/>
+  </g>
+
+  <!-- Center void / tunnel effect -->
+  <circle cx="120" cy="112" r="35" fill="#1a0033" opacity="0.8"/>
+  <circle cx="120" cy="112" r="20" fill="#0d0022" opacity="0.9"/>
+  <circle cx="120" cy="112" r="8" fill="#050010" opacity="1"/>
+
+  <!-- Bright center point -->
+  <circle cx="120" cy="112" r="3" fill="white" opacity="0.5" filter="url(#streakGlow)"/>
+
+  <!-- Label -->
+  <text x="120" y="212" font-family="monospace" font-size="12" fill="#c0a0ff" opacity="0.85" text-anchor="middle" letter-spacing="2">INTERSTELLAR</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow02" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="coreglow02" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg02" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#161a2e"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <radialGradient id="coreGrad02" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe080"/>
+      <stop offset="50%" stop-color="#ff9040"/>
+      <stop offset="100%" stop-color="#ff6010" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="diskGrad02" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff9040" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#cc5010" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ff9040" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg02)"/>
+
+  <!-- Background stars -->
+  <g opacity="0.4">
+    <circle cx="30" cy="30" r="1" fill="#aaa8c8"/>
+    <circle cx="80" cy="18" r="0.8" fill="#c0bed8"/>
+    <circle cx="180" cy="22" r="1" fill="#aaa8c8"/>
+    <circle cx="210" cy="55" r="0.8" fill="#b8b6d8"/>
+    <circle cx="20" cy="180" r="1" fill="#aaa8c8"/>
+    <circle cx="210" cy="195" r="0.8" fill="#c0bed8"/>
+    <circle cx="55" cy="210" r="1" fill="#aaa8c8"/>
+    <circle cx="195" cy="160" r="0.8" fill="#b8b6d8"/>
+  </g>
+
+  <!-- Protoplanetary disk — outer ring (ellipse) -->
+  <ellipse cx="120" cy="118" rx="100" ry="22" fill="url(#diskGrad02)"
+           filter="url(#glow02)" opacity="0.7"/>
+
+  <!-- Disk mid layer -->
+  <ellipse cx="120" cy="118" rx="75" ry="14" fill="#ff9040"
+           filter="url(#glow02)" opacity="0.5"/>
+
+  <!-- Disk inner glow band -->
+  <ellipse cx="120" cy="118" rx="50" ry="8" fill="#ffb060"
+           filter="url(#glow02)" opacity="0.6"/>
+
+  <!-- Protostar core -->
+  <circle cx="120" cy="118" r="20" fill="url(#coreGrad02)" filter="url(#coreglow02)"/>
+  <circle cx="120" cy="118" r="10" fill="#fff8e0" opacity="0.95"/>
+
+  <!-- Dust particles in disk -->
+  <g filter="url(#glow02)" opacity="0.6">
+    <circle cx="50" cy="116" r="2" fill="#ff9040"/>
+    <circle cx="35" cy="121" r="1.5" fill="#ffb060"/>
+    <circle cx="68" cy="112" r="1.5" fill="#ff8030"/>
+    <circle cx="175" cy="116" r="2" fill="#ff9040"/>
+    <circle cx="192" cy="121" r="1.5" fill="#ffb060"/>
+    <circle cx="158" cy="112" r="1.5" fill="#ff8030"/>
+    <circle cx="90" cy="108" r="1.5" fill="#ffb060"/>
+    <circle cx="152" cy="108" r="1.5" fill="#ffb060"/>
+  </g>
+
+  <!-- Step number watermark -->
+  <text x="120" y="76" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#ff9040" text-anchor="middle" opacity="0.12" filter="url(#glow02)">02</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#ff9040"
+        text-anchor="middle" letter-spacing="2" opacity="0.85">PROTO DISK</text>
+</svg>

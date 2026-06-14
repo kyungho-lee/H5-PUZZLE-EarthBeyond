@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#003848"/>
+      <stop offset="100%" stop-color="#001828"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Moon -->
+  <circle cx="185" cy="55" r="18" fill="#c8e8ff" opacity="0.25" filter="url(#glow)"/>
+  <circle cx="190" cy="52" r="14" fill="#0a0e1a"/>
+
+  <!-- Stars -->
+  <g fill="#00f5c8" opacity="0.4">
+    <circle cx="40" cy="38" r="1.5"/>
+    <circle cx="68" cy="28" r="1"/>
+    <circle cx="95" cy="42" r="1.5"/>
+    <circle cx="140" cy="32" r="1"/>
+    <circle cx="165" cy="48" r="1.2"/>
+    <circle cx="30" cy="60" r="1"/>
+    <circle cx="55" cy="55" r="1.5"/>
+  </g>
+
+  <!-- Sea waves -->
+  <g opacity="0.4" fill="url(#seaGrad)">
+    <rect x="0" y="168" width="240" height="72" fill="#001828"/>
+  </g>
+  <g stroke="#00f5c8" stroke-width="1.5" fill="none" opacity="0.3">
+    <path d="M0,172 Q30,164 60,172 Q90,180 120,172 Q150,164 180,172 Q210,180 240,172"/>
+    <path d="M0,182 Q30,174 60,182 Q90,190 120,182 Q150,174 180,182 Q210,190 240,182"/>
+  </g>
+
+  <!-- Ship hull -->
+  <g filter="url(#glow)" fill="#00f5c8" opacity="0.9">
+    <!-- Hull body -->
+    <path d="M60,168 Q70,178 120,178 Q170,178 180,168 Z" fill="#00a88a"/>
+    <path d="M65,168 L175,168 L180,168 Q170,178 120,178 Q70,178 60,168 Z" fill="#00c8a8"/>
+
+    <!-- Mast -->
+    <rect x="118" y="80" width="4" height="92" rx="2" fill="#00f5c8"/>
+
+    <!-- Main sail -->
+    <path d="M122,88 L162,110 L122,155 Z" fill="#00f5c8" opacity="0.85"/>
+
+    <!-- Front sail (jib) -->
+    <path d="M118,95 L78,125 L118,145 Z" fill="#00d0aa" opacity="0.75"/>
+
+    <!-- Crow's nest -->
+    <rect x="112" y="78" width="16" height="8" rx="2" fill="#00f5c8"/>
+
+    <!-- Flag -->
+    <polygon points="122,80 138,86 122,92" fill="#ffe060" opacity="0.9"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#00f5c8" letter-spacing="2">AGE OF SAIL</text>
+</svg>

@@ -1,0 +1,38 @@
+{
+  "platforms": {
+    "game_distribution": { "gameId": "" },
+    "msn":               { "gameId": "" },
+    "y8":                {},
+    "lagged":            {}
+  },
+  "advertisement": {
+    "interstitial": {
+      "preloadOnStart": true,
+      "placements": [
+        { "id": "level_complete" }
+      ]
+    },
+    "rewarded": {
+      "preloadOnStart": true,
+      "placements": [
+        { "id": "daily_retry" },
+        { "id": "retry_reward" },
+        { "id": "collection_double_stars" },
+        { "id": "collection_theme_double" },
+        { "id": "collection_continue" }
+      ]
+    },
+    "banner": {
+      "placements": [
+        { "id": "idle_banner" }
+      ]
+    }
+  },
+  "payments": [],
+  "leaderboards": [
+    {
+      "id": "cmqd5z0xw0503lc0hz6onlzt1",
+      "isMain": true
+    }
+  ]
+}

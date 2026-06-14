@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow04" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shockglow04" x="-100%" y="-100%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg04" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1520"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <radialGradient id="shockwave04" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#ffe8a0" stop-opacity="0.6"/>
+      <stop offset="60%" stop-color="#ffaa40" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ff6010" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonGrad04" cx="35%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#e8e0d0"/>
+      <stop offset="100%" stop-color="#888070"/>
+    </radialGradient>
+    <radialGradient id="earthGrad04" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#7a3020"/>
+      <stop offset="100%" stop-color="#3a1010"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg04)"/>
+
+  <!-- Background stars -->
+  <g opacity="0.35">
+    <circle cx="20" cy="25" r="1" fill="#c8c6e0"/>
+    <circle cx="55" cy="15" r="0.8" fill="#aaa8c8"/>
+    <circle cx="195" cy="20" r="1" fill="#c8c6e0"/>
+    <circle cx="225" cy="45" r="0.8" fill="#aaa8c8"/>
+    <circle cx="15" cy="195" r="1" fill="#c8c6e0"/>
+    <circle cx="215" cy="200" r="0.8" fill="#aaa8c8"/>
+    <circle cx="40" cy="220" r="1" fill="#c8c6e0"/>
+  </g>
+
+  <!-- Shockwave rings -->
+  <circle cx="120" cy="115" r="85" fill="none" stroke="#ffffff" stroke-width="1.5"
+          opacity="0.15" filter="url(#shockglow04)"/>
+  <circle cx="120" cy="115" r="70" fill="none" stroke="#ffe8a0" stroke-width="2"
+          opacity="0.2" filter="url(#shockglow04)"/>
+  <circle cx="120" cy="115" r="55" fill="none" stroke="#ffffff" stroke-width="2.5"
+          opacity="0.3" filter="url(#shockglow04)"/>
+
+  <!-- Shockwave flash -->
+  <circle cx="120" cy="115" r="48" fill="url(#shockwave04)" filter="url(#shockglow04)"/>
+
+  <!-- Earth (behind, partially obscured) -->
+  <circle cx="105" cy="128" r="38" fill="url(#earthGrad04)" opacity="0.8"/>
+
+  <!-- Impactor (Theia / proto-moon) silhouette -->
+  <circle cx="148" cy="88" r="22" fill="url(#moonGrad04)" filter="url(#glow04)"/>
+  <!-- Moon craters -->
+  <circle cx="142" cy="83" r="4" fill="#6a6058" opacity="0.5"/>
+  <circle cx="155" cy="90" r="2.5" fill="#6a6058" opacity="0.4"/>
+  <circle cx="146" cy="98" r="3" fill="#6a6058" opacity="0.35"/>
+
+  <!-- Impact flash core -->
+  <circle cx="128" cy="108" r="12" fill="#ffffff" filter="url(#shockglow04)" opacity="0.9"/>
+
+  <!-- Debris trails -->
+  <g stroke="#ffcc60" stroke-width="1" fill="none" opacity="0.6" filter="url(#glow04)">
+    <line x1="128" y1="108" x2="60" y2="68"/>
+    <line x1="128" y1="108" x2="178" y2="55"/>
+    <line x1="128" y1="108" x2="175" y2="155"/>
+    <line x1="128" y1="108" x2="65" y2="158"/>
+    <line x1="128" y1="108" x2="40" y2="112"/>
+    <line x1="128" y1="108" x2="185" y2="108"/>
+  </g>
+
+  <!-- Step number watermark -->
+  <text x="120" y="80" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#ffffff" text-anchor="middle" opacity="0.10" filter="url(#glow04)">04</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#ffe8c0"
+        text-anchor="middle" letter-spacing="1" opacity="0.85">MOON IMPACT</text>
+</svg>

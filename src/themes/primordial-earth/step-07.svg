@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow07" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="deepglow07" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg07" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#081818"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <radialGradient id="bubbleGrad07" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#a0fff0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00f5c8" stop-opacity="0.1"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg07)"/>
+
+  <!-- Deep ocean background tint -->
+  <rect width="240" height="240" fill="#001a14" opacity="0.4"/>
+
+  <!-- Atmospheric glow at top — oxygen atmosphere forming -->
+  <rect x="0" y="0" width="240" height="50" fill="#00f5c8" opacity="0.06" filter="url(#deepglow07)"/>
+  <ellipse cx="120" cy="0" rx="100" ry="30" fill="#00f5c8" filter="url(#deepglow07)" opacity="0.12"/>
+
+  <!-- Large O2 bubbles rising -->
+  <!-- Big bubble 1 -->
+  <circle cx="68" cy="90" r="22" fill="url(#bubbleGrad07)" filter="url(#glow07)"/>
+  <circle cx="68" cy="90" r="22" fill="none" stroke="#00f5c8" stroke-width="1.5" opacity="0.6"/>
+  <ellipse cx="62" cy="82" rx="6" ry="4" fill="#a0fff0" opacity="0.25"/>
+
+  <!-- Big bubble 2 -->
+  <circle cx="155" cy="108" r="28" fill="url(#bubbleGrad07)" filter="url(#glow07)"/>
+  <circle cx="155" cy="108" r="28" fill="none" stroke="#00f5c8" stroke-width="1.5" opacity="0.6"/>
+  <ellipse cx="147" cy="98" rx="7" ry="5" fill="#a0fff0" opacity="0.25"/>
+
+  <!-- Medium bubbles -->
+  <circle cx="105" cy="148" r="16" fill="url(#bubbleGrad07)" filter="url(#glow07)"/>
+  <circle cx="105" cy="148" r="16" fill="none" stroke="#00f5c8" stroke-width="1.2" opacity="0.55"/>
+  <ellipse cx="100" cy="142" rx="4" ry="3" fill="#a0fff0" opacity="0.22"/>
+
+  <circle cx="190" cy="62" r="14" fill="url(#bubbleGrad07)" filter="url(#glow07)"/>
+  <circle cx="190" cy="62" r="14" fill="none" stroke="#00f5c8" stroke-width="1.2" opacity="0.5"/>
+
+  <circle cx="38" cy="155" r="12" fill="url(#bubbleGrad07)" filter="url(#glow07)"/>
+  <circle cx="38" cy="155" r="12" fill="none" stroke="#00f5c8" stroke-width="1" opacity="0.5"/>
+
+  <!-- Small bubbles -->
+  <g fill="none" stroke="#00f5c8" opacity="0.5" filter="url(#glow07)">
+    <circle cx="128" cy="55" r="7" stroke-width="1"/>
+    <circle cx="45" cy="60" r="5" stroke-width="1"/>
+    <circle cx="210" cy="130" r="9" stroke-width="1"/>
+    <circle cx="175" cy="168" r="6" stroke-width="1"/>
+    <circle cx="82" cy="180" r="8" stroke-width="1"/>
+    <circle cx="22" cy="108" r="6" stroke-width="1"/>
+    <circle cx="215" cy="170" r="5" stroke-width="1"/>
+  </g>
+
+  <!-- Tiny bubbles -->
+  <g fill="#00f5c8" opacity="0.4" filter="url(#glow07)">
+    <circle cx="88" cy="35" r="2.5"/>
+    <circle cx="145" cy="28" r="2"/>
+    <circle cx="165" cy="42" r="1.5"/>
+    <circle cx="60" cy="40" r="2"/>
+    <circle cx="200" cy="95" r="2.5"/>
+    <circle cx="20" cy="75" r="2"/>
+    <circle cx="225" cy="145" r="2"/>
+    <circle cx="140" cy="188" r="2.5"/>
+    <circle cx="50" cy="195" r="2"/>
+  </g>
+
+  <!-- O2 text symbol (subtle, as part of visual) -->
+  <text x="155" y="116" font-family="serif" font-size="20" font-weight="bold"
+        fill="#00f5c8" text-anchor="middle" opacity="0.5" filter="url(#glow07)">O₂</text>
+  <text x="68" y="97" font-family="serif" font-size="15" font-weight="bold"
+        fill="#00f5c8" text-anchor="middle" opacity="0.45" filter="url(#glow07)">O₂</text>
+
+  <!-- Step number watermark -->
+  <text x="120" y="78" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#00f5c8" text-anchor="middle" opacity="0.08" filter="url(#deepglow07)">07</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#00f5c8"
+        text-anchor="middle" letter-spacing="3" opacity="0.9">O&#x2082; RISE</text>
+</svg>
