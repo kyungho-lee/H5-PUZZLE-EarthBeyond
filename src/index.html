@@ -957,21 +957,20 @@ function markOnboarded() {
 }
 
 function showStart() {
-  // 첫 접속: Daily를 튜토리얼처럼 바로 시작
-  if (isFirstVisit()) {
-    markOnboarded();
-    const date = utcDateStr();
-    dailyState = SG.Daily.loadDaily(date, window.localStorage);
-    // Daily 게임오버 패널에 온보딩 CTA 표시 예약
-    _pendingOnboard = true;
-    startDailyRun();
-    return;
-  }
   document.getElementById('ol-start').classList.remove('hidden');
   gameRunning = false;
   updateWalletChip();
   updateGalleryDot();
   openModalNav('ol-start');
+}
+
+// 온보딩: boot 시 1회 호출. 첫 접속이면 Daily를 튜토리얼로 바로 시작.
+function _checkOnboarding() {
+  if (!isFirstVisit()) return;
+  markOnboarded();
+  dailyState = SG.Daily.loadDaily(utcDateStr(), window.localStorage);
+  _pendingOnboard = true;
+  startDailyRun();
 }
 
 let _pendingOnboard = false;   // Daily 게임오버 시 Chronicles CTA 표시 여부
@@ -2649,9 +2648,9 @@ function pgSyncStorage() {
   resizeCanvas();                 // re-fit now that renderer exists
   requestAnimationFrame(loop);
 
-  // START 화면 키보드 네비게이션 활성화 (SDK init 전에 즉시 — 가용성 보장)
-  openModalNav('ol-start');
-  refreshDailyMenu();
+  // 첫 접속이면 Daily 튜토리얼, 재접속이면 메뉴 표시
+  if (!isFirstVisit()) { openModalNav('ol-start'); refreshDailyMenu(); }
+  else { _checkOnboarding(); }
   setInterval(function () { if (!document.getElementById('ol-start').classList.contains('hidden')) refreshDailyMenu(); }, 1000);
 
   // 로딩 시작 알림
