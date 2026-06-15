@@ -1,10 +1,11 @@
-/* make-cover.mjs
+/* make-cover.mjs  [Earth & Beyond]
    Playgama submission cover images — 3 sizes.
    Output: scripts/_submit/
      cover-square.png    800×800   (1:1)
      cover-portrait.png  1080×1920 (9:16)
      cover-landscape.png 1920×1080 (16:9)
-   Run: node scripts/make-cover.mjs */
+   Run: node scripts/make-cover.mjs
+   (Requires local server: cd src && python -m http.server 8081) */
 
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
@@ -15,145 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(__dirname, '_submit');
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-// ── 커버 HTML 템플릿 ───────────────────────────────────────────────────
-// 게임 타이틀 + 네온 블록 그리드 + 슬로건을 순수 HTML/CSS로 렌더링
-function makeCoverHtml(w, h) {
-  const isLandscape = w > h;
-  const isSquare = w === h;
-
-  // 레이아웃 비율 계산
-  const titleSize  = Math.round(w * (isLandscape ? 0.062 : 0.085));
-  const subtitleSize = Math.round(titleSize * 0.38);
-  const sloganSize  = Math.round(titleSize * 0.28);
-  const gridCell   = Math.round(w * (isLandscape ? 0.072 : 0.10));
-  const gridGap    = Math.round(gridCell * 0.12);
-  const borderR    = Math.round(gridCell * 0.18);
-
-  // 블록 데이터: [색상hex, 숫자, 글로우색]
-  const blocks = [
-    ['#3a7bd5','2',  '#3a7bd5'],
-    ['#11998e','4',  '#11998e'],
-    ['#f7971e','8',  '#f7971e'],
-    ['#c0392b','16', '#c0392b'],
-    ['#8e44ad','32', '#8e44ad'],
-    ['#1a6b3c','64', '#1a6b3c'],
-    ['#3a7bd5','128','#3a7bd5'],
-    ['#11998e','256','#11998e'],
-    ['#f7971e','512','#f7971e'],
-    ['#c0392b','2',  '#c0392b'],
-    ['#8e44ad','4',  '#8e44ad'],
-    ['#1a6b3c','8',  '#1a6b3c'],
-  ];
-
-  // 그리드 레이아웃: landscape=4×3, square/portrait=3×4
-  const cols = isLandscape ? 4 : 3;
-  const rows = isLandscape ? 3 : 4;
-  const usedBlocks = blocks.slice(0, cols * rows);
-
-  const blockHtml = usedBlocks.map(([color, num, glow]) => `
-    <div style="
-      width:${gridCell}px; height:${gridCell}px;
-      background: rgba(6,8,16,0.85);
-      border: 1.5px solid ${color}44;
-      border-radius: ${borderR}px;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow: 0 0 ${Math.round(gridCell*0.18)}px ${color}66,
-                  inset 0 0 ${Math.round(gridCell*0.1)}px ${color}22;
-      position:relative; overflow:hidden;
-    ">
-      <div style="
-        position:absolute; inset:0;
-        background: radial-gradient(ellipse at 50% 30%, ${color}18 0%, transparent 70%);
-      "></div>
-      <span style="
-        font-family:'Rajdhani','Share Tech Mono',monospace;
-        font-size:${Math.round(gridCell * (num.length > 2 ? 0.34 : 0.42))}px;
-        font-weight:700; color:${color};
-        text-shadow: 0 0 ${Math.round(gridCell*0.12)}px ${glow},
-                     0 0 ${Math.round(gridCell*0.24)}px ${glow}88;
-        position:relative; z-index:1; letter-spacing:-1px;
-      ">${num}</span>
-    </div>`).join('');
-
-  // 텍스트 영역 배치: landscape=좌측, portrait/square=상하
-  const textBlock = `
-    <div style="
-      display:flex; flex-direction:column;
-      align-items:${isLandscape ? 'flex-start' : 'center'};
-      ${isLandscape ? 'margin-right:' + Math.round(w*0.06) + 'px;' : 'margin-bottom:' + Math.round(h*0.045) + 'px;'}
-    ">
-      <div style="
-        font-family:'Rajdhani','Share Tech Mono',monospace;
-        font-size:${titleSize}px; font-weight:900; letter-spacing:${Math.round(titleSize*0.08)}px;
-        color:#3a7bd5;
-        text-shadow: 0 0 ${Math.round(titleSize*0.3)}px #3a7bd5,
-                     0 0 ${Math.round(titleSize*0.6)}px #3a7bd588;
-        line-height:1; white-space:nowrap;
-      ">EARTH &amp; BEYOND</div>
-      <div style="
-        font-family:'Share Tech Mono',monospace;
-        font-size:${subtitleSize}px; letter-spacing:${Math.round(subtitleSize*0.25)}px;
-        color:#11998e; margin-top:${Math.round(titleSize*0.18)}px;
-        text-shadow: 0 0 ${Math.round(subtitleSize*0.4)}px #11998e;
-        white-space:nowrap;
-      ">MERGE · EVOLVE · EXPLORE</div>
-      <div style="
-        font-family:'Share Tech Mono',monospace;
-        font-size:${sloganSize}px; letter-spacing:${Math.round(sloganSize*0.2)}px;
-        color:#ffffff55; margin-top:${Math.round(titleSize*0.22)}px;
-        white-space:nowrap;
-      ">FROM PRIMORDIAL EARTH TO THE EDGE OF THE UNIVERSE</div>
-    </div>`;
-
-  const gridBlock = `
-    <div style="
-      display:grid;
-      grid-template-columns: repeat(${cols}, ${gridCell}px);
-      grid-template-rows: repeat(${rows}, ${gridCell}px);
-      gap:${gridGap}px;
-      filter: drop-shadow(0 0 ${Math.round(gridCell*0.3)}px #3a7bd522);
-    ">${blockHtml}</div>`;
-
-  const innerContent = isLandscape
-    ? `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
-         ${textBlock}${gridBlock}
-       </div>`
-    : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;">
-         ${textBlock}${gridBlock}
-       </div>`;
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{width:${w}px;height:${h}px;overflow:hidden;
-      background: #060810;
-    }
-    .bg {
-      position:absolute; inset:0;
-      background:
-        radial-gradient(ellipse 70% 60% at 50% 50%, #3a7bd50a 0%, transparent 65%),
-        radial-gradient(ellipse 40% 30% at 20% 80%, #11998e0a 0%, transparent 55%),
-        radial-gradient(ellipse 40% 30% at 80% 20%, #8e44ad0a 0%, transparent 55%);
-    }
-    /* 격자 배경 */
-    .grid-bg {
-      position:absolute; inset:0; opacity:0.06;
-      background-image:
-        linear-gradient(#3a7bd5 1px, transparent 1px),
-        linear-gradient(90deg, #3a7bd5 1px, transparent 1px);
-      background-size: ${Math.round(w/24)}px ${Math.round(w/24)}px;
-    }
-    .content { position:relative; z-index:1; width:100%; height:100%; }
-  </style>
-  </head><body>
-    <div class="bg"></div>
-    <div class="grid-bg"></div>
-    <div class="content">${innerContent}</div>
-  </body></html>`;
-}
-
+const BASE = 'http://localhost:8081';
 const browser = await chromium.launch();
 
 const SIZES = [
@@ -163,12 +26,32 @@ const SIZES = [
 ];
 
 for (const { name, w, h } of SIZES) {
-  const page = await browser.newPage({ viewport: { width: w, height: h } });
-  await page.setContent(makeCoverHtml(w, h), { waitUntil: 'networkidle' });
-  await page.waitForTimeout(800);  // 웹폰트 렌더 대기
+  const ctx = await browser.newContext({
+    viewport: { width: w, height: h },
+    storageState: { cookies: [], origins: [] },
+  });
+  const page = await ctx.newPage();
+  await page.goto(BASE);
+  await page.waitForTimeout(2000);
+
+  // 히어로 화면만 표시
+  await page.evaluate(() => {
+    document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+    const start = document.getElementById('ol-start');
+    if (start) { start.classList.remove('hidden'); start.style.display = ''; }
+    if (window.showStart) window.showStart();
+    // dev-bar 숨기기
+    const devBar = document.getElementById('dev-bar');
+    if (devBar) devBar.style.display = 'none';
+    const toastRoot = document.getElementById('sg-toast-root');
+    if (toastRoot) toastRoot.innerHTML = '';
+  });
+
+  await page.waitForTimeout(600);
+
   const outPath = path.join(outDir, `${name}.png`);
-  await page.screenshot({ path: outPath, clip: { x: 0, y: 0, width: w, height: h } });
-  await page.close();
+  await page.screenshot({ path: outPath });
+  await ctx.close();
   console.log(`✓ ${name}.png  (${w}×${h})`);
 }
 

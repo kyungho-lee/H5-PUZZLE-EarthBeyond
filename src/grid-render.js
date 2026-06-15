@@ -215,9 +215,8 @@
       }
       ctx.shadowBlur = 0;
       // 이미지를 그린 경우 숫자 오버레이 생략 (이미지에 이미 표기됨).
-      // 콜렉션 이미지가 아직 로드 안 된 fallback 블록은 숫자를 그려 단계를 식별.
-      const drawNumber = drewImage ? false : (DEV || this.colorBySize);
-      if (drawNumber) {
+      // 이미지가 없으면(미로드 포함) 항상 숫자 표시 — colorBySize 여부 무관.
+      if (!drewImage) {
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.colorBySize ? '#0a0e16' : '#6b7299';
         ctx.font = `bold ${Math.round(this.cell * (this.colorBySize ? 0.30 : 0.28))}px 'Rajdhani','Share Tech Mono',monospace`;
