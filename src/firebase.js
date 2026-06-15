@@ -85,6 +85,10 @@
       if (!global.firebase.apps.length) global.firebase.initializeApp(cfg);
       db = global.firebase.firestore();
       console.log('[SG.FB] Firestore connected · project:', cfg.projectId);
+      // IP 조회를 백그라운드로 미리 실행 → 캐시 채우기 (submitScore 시 동기 읽기 가능)
+      detectCountryAsync().then(function (cc) {
+        console.log('[SG.FB] country detected:', cc);
+      }).catch(function () {});
       return true;
     } catch (e) {
       console.warn('[SG.FB] init failed:', e);
@@ -110,7 +114,8 @@
     const pid     = getPlayerId();
     const date    = new Date().toISOString().slice(0, 10);
     const mode    = meta && meta.mode;
-    const country = detectCountry();
+    // 캐시 있으면 즉시, 없으면 IP 조회 후 저장 (게임 시작부터 미리 호출돼 있음)
+    const country = await detectCountryAsync().catch(function () { return detectCountry(); });
     try {
       await db.collection(SCORES_COL).doc(_docKey(mode, date, pid)).set({
         playerId: pid,
@@ -149,34 +154,67 @@
     }
   }
 
-  // ── 국가 코드 감지 ────────────────────────────────────────────────
-  // 전략 1: navigator.languages 전체 순회 → 지역코드 있는 첫 항목 ('ko-KR' → 'KR')
-  // 전략 2: 지역코드 없는 언어코드 → 언어→국가 매핑 ('ko' → 'KR')
-  // 전략 3: Intl.Locale 지원 시 보조 활용
-  var _LANG_MAP = {
-    ko:'KR', ja:'JP', zh:'CN', de:'DE', fr:'FR', es:'ES',
-    pt:'BR', ru:'RU', ar:'SA', hi:'IN', id:'ID', tr:'TR',
-    vi:'VN', th:'TH', nl:'NL', pl:'PL', it:'IT', sv:'SE',
-    no:'NO', da:'DK', fi:'FI', cs:'CZ', hu:'HU', ro:'RO',
-  };
-  function detectCountry() {
+  // ── 국가 코드 감지 (IP 기반) ──────────────────────────────────────
+  // ipapi.co: 무료, API 키 불필요, 1000 req/day
+  // 캐시: localStorage에 당일 결과 저장 → 매 세션마다 호출 안 함
+  var _CC_CACHE_KEY = 'earthbeyond_cc';
+  var _ccPromise = null;   // 중복 호출 방지
+
+  function _langFallback() {
+    // IP 조회 실패 시 브라우저 언어로 최선 추측
     try {
       var langs = (navigator.languages && navigator.languages.length)
-        ? Array.from(navigator.languages)
-        : [navigator.language || ''];
-
-      // 1단계: 지역코드 포함 항목 우선 ('ko-KR', 'en-US' 등)
+        ? Array.from(navigator.languages) : [navigator.language || ''];
+      var map = { ko:'KR', ja:'JP', zh:'CN', de:'DE', fr:'FR', es:'ES',
+                  pt:'BR', ru:'RU', ar:'SA', hi:'IN', id:'ID', tr:'TR',
+                  vi:'VN', th:'TH', nl:'NL', pl:'PL', it:'IT', sv:'SE' };
       for (var i = 0; i < langs.length; i++) {
-        var parts = langs[i].split('-');
-        if (parts.length >= 2) return parts[parts.length - 1].toUpperCase();
+        var p = langs[i].split('-');
+        if (p.length >= 2) return p[p.length - 1].toUpperCase();
       }
-      // 2단계: 언어코드만 있을 때 매핑
       for (var j = 0; j < langs.length; j++) {
         var lc = langs[j].split('-')[0].toLowerCase();
-        if (_LANG_MAP[lc]) return _LANG_MAP[lc];
+        if (map[lc]) return map[lc];
       }
-      return 'US';
-    } catch (_) { return 'US'; }
+    } catch (_) {}
+    return 'US';
+  }
+
+  // 비동기 IP 조회 + 캐시. 결과: ISO 3166-1 alpha-2 문자열
+  async function detectCountryAsync() {
+    if (_ccPromise) return _ccPromise;
+    _ccPromise = (async function () {
+      // 캐시: 오늘 날짜 키로 저장
+      try {
+        var cached = JSON.parse(localStorage.getItem(_CC_CACHE_KEY) || 'null');
+        var today  = new Date().toISOString().slice(0, 10);
+        if (cached && cached.date === today && cached.cc) return cached.cc;
+      } catch (_) {}
+      try {
+        var r  = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+        var d  = await r.json();
+        var cc = (d.country_code || '').toUpperCase() || _langFallback();
+        try {
+          localStorage.setItem(_CC_CACHE_KEY, JSON.stringify({
+            date: new Date().toISOString().slice(0, 10), cc: cc,
+          }));
+        } catch (_) {}
+        return cc;
+      } catch (_) {
+        return _langFallback();
+      }
+    })();
+    return _ccPromise;
+  }
+
+  // 동기 버전 — 캐시 있으면 즉시, 없으면 fallback (submitScore에서 사용)
+  function detectCountry() {
+    try {
+      var cached = JSON.parse(localStorage.getItem(_CC_CACHE_KEY) || 'null');
+      var today  = new Date().toISOString().slice(0, 10);
+      if (cached && cached.date === today && cached.cc) return cached.cc;
+    } catch (_) {}
+    return _langFallback();
   }
 
   // ISO 3166-1 alpha-2 → 국기 이모지 (flag emoji = regional indicator letters)
