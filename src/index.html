@@ -1326,11 +1326,11 @@ function menuEndlessClick() {
   if (isEndlessUnlocked()) {
     startEndless();
   } else {
-    // 잠김 안내 토스트
-    var meta = SG.Collection.loadMeta(localStorage);
-    var done  = (meta.completedThemes && meta.completedThemes.length) || 0;
-    var total = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
-    showGameToast('Chronicles를 모두 완료하면 열립니다  (' + done + '/' + total + ')', 2400);
+    var ko = SG.i18n && SG.i18n.getLang() === 'ko';
+    var msg = ko
+      ? 'Chronicles 챕터를 1개 이상 완료하면 열립니다'
+      : 'Complete at least one Chronicles chapter to unlock Endless';
+    showGameToast(msg, 2400);
   }
 }
 
@@ -2172,14 +2172,20 @@ function startCollection() {
 // ── Endless Mode ──────────────────────────────────────────────────
 
 function isEndlessUnlocked() {
+  const isDev = localStorage.getItem('sg_dev') === '1' ||
+                new URLSearchParams(location.search).has('dev');
+  if (isDev) return true;
   const meta = SG.Collection.loadMeta(localStorage);
-  const allIds = SG.CollectionThemes.map(function (t) { return t.id; });
-  return allIds.every(function (id) { return meta.completedThemes.indexOf(id) !== -1; });
+  // Chronicles 챕터를 1개 이상 완료하면 해금
+  return meta.completedThemes && meta.completedThemes.length > 0;
 }
 
 function startEndless() {
   if (!isEndlessUnlocked()) {
-    showGameToast('Complete all chapters to unlock Endless Mode!', 2200);
+    var ko = SG.i18n && SG.i18n.getLang() === 'ko';
+    showGameToast(ko
+      ? 'Chronicles 챕터를 1개 이상 완료하면 열립니다'
+      : 'Complete at least one Chronicles chapter to unlock Endless', 2200);
     return;
   }
   // 모든 오버레이 닫기
