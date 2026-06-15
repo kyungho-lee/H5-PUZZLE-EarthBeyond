@@ -112,12 +112,36 @@
       this.tween = null;                // { from, result, start, dur, onDone, firedMerges }
       this._lastTs = 0;
       this.collectionTheme = null;      // set via setCollectionTheme() in collection mode
+      this._stepBgPath = null;          // Chronicles: per-step bg override
+      this._stepBgImg = null;
+      this._stepBgFade = 0;            // 0→1 fade-in progress
+      this._stepBgFadeStart = 0;
+      this._stepBgFadeDur = 800;       // ms
       _skinRendererRef = this;          // 스킨 이미지 onload → 즉시 리드로용 참조
       this.resize();
     }
 
     setCollectionTheme(theme) {
       this.collectionTheme = theme || null;
+    }
+
+    // Chronicles: step 완료 시 배경 교체 (페이드인)
+    setStepBg(path) {
+      if (!path || this._stepBgPath === path) return;
+      this._stepBgPath = path;
+      const img = new Image();
+      img.onload = () => {
+        this._stepBgImg = img;
+        this._stepBgFadeStart = performance.now();
+        this._stepBgFade = 0;
+      };
+      img.src = path;
+    }
+
+    clearStepBg() {
+      this._stepBgPath = null;
+      this._stepBgImg = null;
+      this._stepBgFade = 0;
     }
 
     resize() {
@@ -245,9 +269,10 @@
       const x = cx - sz / 2, y = cy - sz / 2;
       ctx.save();
       if (slotImg) {
+        ctx.globalAlpha = 0.55;
         ctx.drawImage(slotImg, x, y, sz, sz);
       } else {
-        ctx.globalAlpha = 0.08; ctx.fillStyle = '#1e2235';
+        ctx.globalAlpha = 0.18; ctx.fillStyle = '#1e2235';
         ctx.fillRect(x, y, sz, sz);
       }
       ctx.restore();
@@ -256,13 +281,46 @@
     // 보드 전체 배경 이미지를 보드 영역에 맞춰 그린다.
     // 슬롯 이미지 없을 때만 개별 셀 배경이 이 위에 얹힌다.
     _drawBoardBg() {
-      const boardImg = _skinImg(this.collectionTheme, 'board');
-      if (!boardImg) return;
       const ctx = this.ctx;
       const boardSize = this.cell * this.n;
-      ctx.save();
-      ctx.drawImage(boardImg, this.pad, this.pad, boardSize, boardSize);
-      ctx.restore();
+      const x = this.pad, y = this.pad;
+
+      // 1) 테마 기본 배경 (흐리게 — 블록 강조를 위해 alpha 0.45, dim 오버레이 추가)
+      const boardImg = _skinImg(this.collectionTheme, 'board');
+      if (boardImg) {
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.drawImage(boardImg, x, y, boardSize, boardSize);
+        ctx.restore();
+
+        // dim 레이어: 배경을 더 눌러 블록 대비 확보
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#050810';
+        ctx.fillRect(x, y, boardSize, boardSize);
+        ctx.restore();
+      }
+
+      // 2) Chronicles step 배경 — 페이드인 후 위에 얹힘 (alpha 최대 0.55, dim 동일)
+      if (this._stepBgImg) {
+        const elapsed = performance.now() - this._stepBgFadeStart;
+        this._stepBgFade = Math.min(1, elapsed / this._stepBgFadeDur);
+        const t = this._stepBgFade;
+        // easeOut
+        const alpha = (1 - (1 - t) * (1 - t)) * 0.55;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(this._stepBgImg, x, y, boardSize, boardSize);
+        ctx.restore();
+
+        // step bg용 dim 오버레이
+        ctx.save();
+        ctx.globalAlpha = (1 - (1 - t) * (1 - t)) * 0.3;
+        ctx.fillStyle = '#050810';
+        ctx.fillRect(x, y, boardSize, boardSize);
+        ctx.restore();
+      }
     }
 
     // Draw the board (cell backgrounds + tiles) WITHOUT clearing. Applies any

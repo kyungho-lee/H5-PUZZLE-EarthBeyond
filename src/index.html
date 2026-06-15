@@ -1547,6 +1547,7 @@ function startCollection() {
   closeModalNav();
   renderer.setMode('daily', gridSize);
   renderer.setCollectionTheme(activeThemeObj);
+  renderer.clearStepBg();
   renderer.drawGrid(grid);
   updateCollectionHud();
   try { SG.CG.gameplayStart(); } catch (_) {}
@@ -1623,6 +1624,12 @@ function chroniclesShowStepToast(theme, step) {
   const desc = theme.stepDescriptions[step - 1];
   if (!desc) return;
   const imgPath = theme.svgPaths && theme.svgPaths[step - 1];
+
+  // Chronicles: step 배경 교체 (stepBgs 배열 우선, 없으면 step 타일 이미지 fallback)
+  const stepBgPath = (theme.stepBgs && theme.stepBgs[step - 1]) || null;
+  if (stepBgPath) {
+    renderer.setStepBg(stepBgPath);
+  }
 
   const el = document.getElementById('chronicles-toast');
   const imgEl = document.getElementById('ctoast-img');

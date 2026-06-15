@@ -21,6 +21,13 @@
       return 'themes/' + id + '/step-' + String(i + 1).padStart(2, '0') + '.' + e;
     });
   }
+  // Chronicles: 스텝별 배경 이미지 경로 (bg-step-01.webp ~ bg-step-11.webp)
+  function makeBgPaths(id) {
+    var n = stepCount();
+    return Array.from({ length: n }, function (_, i) {
+      return 'themes/' + id + '/bg-step-' + String(i + 1).padStart(2, '0') + '.webp';
+    });
+  }
 
   root.SG.CollectionThemes = [
 
@@ -34,6 +41,7 @@
       showStepBadge: true,
       svgPaths: makePaths('primordial-earth', 'webp'),
       boardBg: 'themes/primordial-earth/board-bg.webp',
+      stepBgs: makeBgPaths('primordial-earth'),
       // slotBg1: 'themes/primordial-earth/slot-bg01.webp',
       // slotBg2: 'themes/primordial-earth/slot-bg02.webp',
       chapter: {
@@ -67,6 +75,7 @@
       showStepBadge: true,
       svgPaths: makePaths('human-civilization', 'webp'),
       boardBg: 'themes/human-civilization/board-bg.webp',
+      stepBgs: makeBgPaths('human-civilization'),
       // slotBg1: 'themes/human-civilization/slot-bg01.webp',
       // slotBg2: 'themes/human-civilization/slot-bg02.webp',
       chapter: {
@@ -100,6 +109,7 @@
       showStepBadge: true,
       svgPaths: makePaths('solar-system', 'webp'),
       boardBg: 'themes/solar-system/board-bg.webp',
+      stepBgs: makeBgPaths('solar-system'),
       // slotBg1: 'themes/solar-system/slot-bg01.webp',
       // slotBg2: 'themes/solar-system/slot-bg02.webp',
       chapter: {
