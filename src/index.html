@@ -158,6 +158,7 @@
       border-radius: 8px;
       padding: 32px 28px;
       min-width: 280px; max-width: 360px;
+      max-height: 90dvh; overflow-y: auto;
       text-align: center;
     }
     .ol-title {
@@ -284,6 +285,42 @@
       outline:2px solid var(--accent); outline-offset:2px;
     }
     .modal-hint { color:var(--textdim); font-size:.7rem; margin-top:14px; letter-spacing:1px; }
+
+    /* ── BGM 칩 ─────────────────────────────────────────────────── */
+    .bgm-tone-chip {
+      padding:7px 12px; border:1px solid var(--border); border-radius:8px;
+      background:var(--panel); color:var(--textdim); cursor:pointer; font-family:inherit;
+      font-size:.72rem; letter-spacing:1px; transition:border-color .12s, color .12s;
+    }
+    .bgm-tone-chip[aria-selected="true"] {
+      border-color:var(--accent); color:var(--accent);
+      box-shadow:0 0 10px rgba(58,123,213,.28);
+    }
+    .bgm-theme-chip {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 10px; border:1px solid var(--border); border-radius:9px;
+      background:var(--panel); color:var(--text); cursor:pointer; font-family:inherit;
+      font-size:.75rem; letter-spacing:1px; transition:border-color .12s;
+    }
+    .bgm-theme-chip[aria-selected="true"] {
+      border-color:var(--accent); color:var(--accent);
+      box-shadow:0 0 12px rgba(58,123,213,.25);
+    }
+    .bgm-theme-chip .btc-label { flex:1; text-align:left; }
+    .bgm-theme-chip .btc-prev {
+      background:none; border:1px solid var(--border); border-radius:6px;
+      color:var(--textdim); font-size:.72rem; padding:3px 8px; cursor:pointer;
+      transition:border-color .1s, color .1s; font-family:inherit;
+      white-space:nowrap;
+    }
+    .bgm-theme-chip .btc-prev:hover,
+    .bgm-theme-chip .btc-prev.playing { border-color:var(--accent); color:var(--accent); }
+    .bgm-theme-chip .btc-play {
+      background:none; border:1px solid var(--border); border-radius:6px;
+      color:var(--textdim); font-size:.75rem; padding:3px 9px; cursor:pointer;
+      transition:border-color .1s, color .1s; font-family:inherit;
+    }
+    .bgm-theme-chip .btc-play:hover { border-color:var(--accent); color:var(--accent); }
     /* Daily leaderboard (dummy until token connected) */
     #daily-lb { margin:14px 0 4px; text-align:left; }
 
@@ -575,6 +612,14 @@
       Merge tiles to travel from Primordial Earth to the edge of the Universe
     </p>
     <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()">CHRONICLES</button>
+    <button class="btn-secondary modal-btn" id="btn-daily" data-action="daily" onclick="openDailyMenu()" style="position:relative">
+      DAILY CHALLENGE
+      <span id="menu-daily-dot" class="reddot hidden"></span>
+    </button>
+    <button class="btn-secondary modal-btn" id="btn-gallery-menu" data-action="gallery" onclick="openGalleryFromMenu()" style="position:relative">
+      GALLERY
+      <span id="menu-gallery-dot" class="reddot hidden"></span>
+    </button>
     <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="startEndless()" style="display:none">ENDLESS ∞</button>
     <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()">SETTINGS</button>
     <!-- dev 전용: hidden -->
@@ -582,6 +627,27 @@
     <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
     <div class="modal-hint">↑↓ Move · Enter Select</div>
     <div id="app-version" style="margin-top:14px;color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
+  </div>
+</div>
+
+<!-- ── Daily Challenge 팝업 (메인 메뉴에서 진입 시) ──────────────── -->
+<div id="ol-daily-menu" class="overlay hidden">
+  <div class="ol-panel" style="max-width:320px">
+    <div class="ol-title" style="font-size:1.3rem">DAILY CHALLENGE</div>
+    <div id="daily-menu-type" style="font-size:.65rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px"></div>
+    <div id="daily-menu-status" style="font-size:.8rem;color:var(--textdim);margin-bottom:16px;line-height:1.6"></div>
+    <!-- 남은 시도 있을 때 -->
+    <div id="daily-menu-panel-play">
+      <div id="daily-menu-retries" style="font-size:.7rem;color:var(--textdim);margin-bottom:10px;text-align:center"></div>
+      <button class="btn-primary modal-btn" id="btn-daily-menu-play" onclick="openDailyMenuPlay()">PLAY NOW ›</button>
+    </div>
+    <!-- 오늘 소진 -->
+    <div id="daily-menu-panel-done" style="display:none">
+      <div style="font-size:1.4rem;margin-bottom:8px">🏁</div>
+      <div id="daily-menu-next" style="font-size:.75rem;color:var(--accent);margin-bottom:14px;letter-spacing:1px"></div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px;line-height:1.5">내일 새로운 Daily Challenge가 열립니다</div>
+    </div>
+    <button class="btn-secondary modal-btn" onclick="closeDailyMenu()">BACK</button>
   </div>
 </div>
 
@@ -806,26 +872,58 @@
   </div>
 </div>
 
-<!-- ── 설정 패널 (사운드셋 선택) ──────────────────────────────────── -->
+<!-- ── 설정 패널 (사운드셋 + BGM) ─────────────────────────────────── -->
 <div id="ol-settings" class="overlay hidden">
-  <div class="ol-panel">
+  <div class="ol-panel" style="padding-bottom:16px">
     <div class="ol-title">SETTINGS</div>
-    <div class="ol-label" style="margin-bottom:10px">SOUND SET</div>
+
+    <!-- SOUND SET -->
+    <div class="ol-label" style="margin-bottom:8px">SOUND SET</div>
     <div id="soundset-list"><!-- chips injected by JS --></div>
     <button id="chip-haptic" class="soundset-chip modal-btn" data-action="haptic" onclick="toggleHaptic()">
       <span>HAPTIC</span><span class="sc-desc" id="haptic-state">ON</span>
     </button>
-    <!-- Daily EVENT — 항상 표시, 이벤트 포지션 -->
+
+    <!-- BGM 섹션 — 스크롤 가능한 내부 영역 -->
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ol-label" style="margin:0">BGM</div>
+        <button id="chip-bgm-toggle" class="soundset-chip" style="padding:5px 14px;font-size:.72rem;min-width:0" onclick="toggleBgmEnabled()">
+          <span id="bgm-toggle-state">OFF</span>
+        </button>
+      </div>
+
+      <!-- BGM 음색 칩 -->
+      <div style="font-size:.6rem;color:var(--textdim);letter-spacing:1.5px;margin-bottom:5px">TONE</div>
+      <div id="bgm-tone-list" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+        <!-- chips injected by JS -->
+      </div>
+
+      <!-- BGM 테마 칩 -->
+      <div style="font-size:.6rem;color:var(--textdim);letter-spacing:1.5px;margin-bottom:5px">THEME &amp; PREVIEW</div>
+      <div id="bgm-theme-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+        <!-- chips injected by JS -->
+      </div>
+
+      <!-- 볼륨 슬라이더 -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:.65rem;color:var(--textdim);letter-spacing:1px;white-space:nowrap">VOL</span>
+        <input id="bgm-vol-slider" type="range" min="0" max="100" value="38"
+          style="flex:1;accent-color:var(--accent);height:4px"
+          oninput="onBgmVolSlider(this.value)">
+        <span id="bgm-vol-label" style="font-size:.65rem;color:var(--accent);width:26px;text-align:right">38</span>
+      </div>
+    </div>
+
+    <!-- Daily EVENT -->
     <div class="ol-label" style="margin-top:14px;margin-bottom:6px;font-size:.65rem;letter-spacing:2px;color:var(--textdim)">EVENT</div>
     <button class="btn-secondary modal-btn" id="btn-settings-daily" data-action="daily" onclick="openDailyFromSettings()" style="position:relative">
       DAILY CHALLENGE <span id="settings-daily-dot" class="reddot hidden"></span>
     </button>
-    <!-- 오늘 Daily 소진 시 표시 -->
     <div id="settings-daily-done" style="display:none;font-size:.72rem;color:var(--textdim);text-align:center;line-height:1.6;padding:6px 4px">
       오늘의 도전이 끝났습니다.<br>
       <span id="settings-daily-next" style="color:var(--accent)"></span>
     </div>
-    <!-- 콜렉션 모드일 때만 노출. NEW 블록 있으면 레드닷. -->
     <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative">
       GALLERY <span id="settings-gallery-dot" class="reddot hidden"></span>
     </button>
@@ -841,7 +939,7 @@
 <script src="crazygames.js"></script>
 <script src="playgama.js"></script>
 <script src="firebase.js"></script>
-<script src="sound.js"></script>
+<script src="sound.js?v=4"></script>
 
 <!-- ── 게임 모듈 (의존성 순서) ──────────────────────────────────── -->
 <script src="palette.js"></script>
@@ -942,7 +1040,7 @@ function updateWalletChip() {
   }
 }
 
-// 리워드 광고 버튼 상태 갱신 — 쿼터 소진 시 버튼 비활성화 + 안내 텍스트
+// 리워드 광고 버튼 상태 갱신 — 쿼터 소진 시 버튼 숨김
 // ids: 광고 버튼 element id 목록
 function syncAdButtons(ids) {
   const left = SG.Daily.rewardedAdsLeft(localStorage);
@@ -951,11 +1049,12 @@ function syncAdButtons(ids) {
     const btn = document.getElementById(id);
     if (!btn) return;
     if (exhausted) {
-      btn.disabled = true;
-      btn.style.opacity = '0.4';
-      btn.title = 'Daily ad limit reached. Come back tomorrow!';
+      // 쿼터 소진 → 버튼 숨김 (비활성 버튼이 떠 있으면 혼란스러움)
+      btn.style.display = 'none';
     } else {
-      // 이미 개별 로직이 disabled를 제어하므로 여기선 exhausted일 때만 개입
+      btn.style.display = '';
+      btn.disabled = false;
+      btn.style.opacity = '';
       btn.title = left + ' ad' + (left === 1 ? '' : 's') + ' remaining today';
     }
   });
@@ -1108,7 +1207,102 @@ function showStart() {
   if (endlessBtn) endlessBtn.style.display = isEndlessUnlocked() ? '' : 'none';
   updateWalletChip();
   updateGalleryDot();
+  _refreshMenuDots();
   openModalNav('ol-start');
+}
+
+// 메인 메뉴 레드닷 갱신 (Daily 미정산 / Gallery NEW)
+function _refreshMenuDots() {
+  // Daily 레드닷: 오늘 best 중 미정산 별이 있을 때
+  const ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
+  const hasUnclaimed = SG.Daily.claimableBest(ds) > 0;
+  const dailyDot = document.getElementById('menu-daily-dot');
+  if (dailyDot) dailyDot.classList.toggle('hidden', !hasUnclaimed);
+
+  // Gallery 레드닷: 모든 테마 중 NEW(미수령) 블록 있을 때
+  let hasNew = false;
+  const meta = SG.Collection.loadMeta(localStorage);
+  (SG.CollectionThemes || []).forEach(function (t) {
+    if (meta.unlockedThemes.indexOf(t.id) !== -1) {
+      if (SG.Collection.hasNew(t.id, localStorage, t)) hasNew = true;
+    }
+  });
+  const galDot = document.getElementById('menu-gallery-dot');
+  if (galDot) galDot.classList.toggle('hidden', !hasNew);
+}
+
+// 메인 메뉴 DAILY CHALLENGE 버튼 → Daily 상태 팝업
+function openDailyMenu() {
+  const date = utcDateStr();
+  const ds = SG.Daily.loadDaily(date, localStorage);
+  const isDev = localStorage.getItem('sg_dev') === '1' ||
+                new URLSearchParams(location.search).has('dev');
+  const exhausted = ds.retriesUsed >= SG.Daily.MAX_RETRIES && !isDev;
+  const t = SG.ND.dailyType(utcDayOfWeek());
+
+  document.getElementById('daily-menu-type').textContent = t.label;
+
+  const panelPlay = document.getElementById('daily-menu-panel-play');
+  const panelDone = document.getElementById('daily-menu-panel-done');
+
+  if (exhausted) {
+    panelPlay.style.display = 'none';
+    panelDone.style.display = '';
+    document.getElementById('daily-menu-status').textContent =
+      '오늘의 도전을 모두 완료했습니다.  ⭐' + (ds.bestRun || 0);
+    const nextEl = document.getElementById('daily-menu-next');
+    if (nextEl) nextEl.textContent = '다음 Daily까지 ' + msToNextUtcMidnight();
+    // 타이머 갱신
+    if (_dailyMenuTimer) clearInterval(_dailyMenuTimer);
+    _dailyMenuTimer = setInterval(function () {
+      if (document.getElementById('ol-daily-menu').classList.contains('hidden')) {
+        clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; return;
+      }
+      const nextEl2 = document.getElementById('daily-menu-next');
+      if (nextEl2) nextEl2.textContent = '다음 Daily까지 ' + msToNextUtcMidnight();
+    }, 1000);
+  } else {
+    panelPlay.style.display = '';
+    panelDone.style.display = 'none';
+    const left = SG.Daily.retriesLeft(ds);
+    const retriesEl = document.getElementById('daily-menu-retries');
+    if (retriesEl) retriesEl.textContent = '남은 시도 ' + left + ' / ' + SG.Daily.MAX_RETRIES;
+    const statusEl = document.getElementById('daily-menu-status');
+    if (ds.bestRun > 0) {
+      statusEl.textContent = '오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!';
+    } else {
+      statusEl.textContent = '아직 플레이하지 않았습니다. 도전해보세요!';
+    }
+  }
+
+  document.getElementById('ol-start').classList.add('hidden');
+  document.getElementById('ol-daily-menu').classList.remove('hidden');
+  openModalNav('ol-daily-menu');
+}
+
+var _dailyMenuTimer = null;
+
+function closeDailyMenu() {
+  if (_dailyMenuTimer) { clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; }
+  document.getElementById('ol-daily-menu').classList.add('hidden');
+  closeModalNav();
+  document.getElementById('ol-start').classList.remove('hidden');
+  openModalNav('ol-start');
+}
+
+function openDailyMenuPlay() {
+  if (_dailyMenuTimer) { clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; }
+  document.getElementById('ol-daily-menu').classList.add('hidden');
+  closeModalNav();
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, localStorage);
+  document.getElementById('ol-start').classList.add('hidden');
+  startDailyRun();
+}
+
+// 메인 메뉴 GALLERY 버튼 → 갤러리 열기
+function openGalleryFromMenu() {
+  openGallery();
 }
 
 // 온보딩: boot 시 1회 호출. 첫 접속이면 Daily를 튜토리얼로 바로 시작.
@@ -2073,9 +2267,19 @@ function closeChapterIntro() {
   try { localStorage.setItem(key, '1'); } catch (_) {}
   document.getElementById('ol-chapter-intro').classList.add('hidden');
   closeModalNav();
+
+  // 렌더러 상태를 완전히 재설정한 뒤 보드를 그림
+  // (Intro 모달이 떠 있는 동안 resize 등으로 canvas가 초기화됐을 수 있음)
+  const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  const gridSize = (themeObj && themeObj.gridSize) || 4;
+  renderer.setMode('daily', gridSize);
+  renderer.setCollectionTheme(themeObj);
+  renderer.clearStepBg();
+  renderer.drawGrid(grid);
+
   gameRunning = true;
+
   // Intro 직후 첫 블록 NEW 안내
-  const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; });
   if (SG.Collection.hasNew(activeThemeId, localStorage, themeObj)) {
     setTimeout(function () { showGameToast('첫 번째 블록을 발견했습니다! 갤러리를 확인하세요 ⭐'); }, 400);
   }
@@ -2279,7 +2483,9 @@ async function collectionGameOver() {
   // CONTINUE 가능하면 1단계(이어하기 권유), 아니면 바로 2단계(정산).
   collectionSetOverPhase(canContinue ? 'continue' : 'settle');
 
-  syncAdButtons(['btn-continue-ad', 'btn-double-stars']);
+  // btn-continue-ad는 스타 결제도 가능 — 광고 쿼터와 무관하게 노출 유지
+  // btn-double-stars만 광고 쿼터 체크 (runStars > 0인 경우만 보임)
+  syncAdButtons(['btn-double-stars']);
   document.getElementById('ol-collection-over').classList.remove('hidden');
   openModalNav('ol-collection-over');
 }
@@ -2299,6 +2505,12 @@ function collectionShowSettle() {
   settleRunStars();
   updateCollectionHud();   // BEST(지갑) 갱신
   collectionSetOverPhase('settle');
+  // settle 단계 진입 시 btn-double-stars 광고 쿼터 재체크
+  // (runStars=0이면 이미 display:none이므로 syncAdButtons가 덮어써도 무해)
+  const dblBtn = document.getElementById('btn-double-stars');
+  if (dblBtn && dblBtn.style.display !== 'none') {
+    syncAdButtons(['btn-double-stars']);
+  }
 }
 
 // 게임오버 x2 스타: 리워드 광고 시청 시 이번 판 획득 스타만큼 추가 적립 (1배 더)
@@ -2478,7 +2690,7 @@ function updateGalleryDot() {
 
 function openGallery(themeId) {
   // 현재 열려 있는 오버레이(설정/game-over 등)를 일시 숨김 후 기억
-  const candidates = ['ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over'];
+  const candidates = ['ol-start', 'ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over'];
   _galleryReturnOverlay = null;
   for (const id of candidates) {
     const el = document.getElementById(id);
@@ -2517,11 +2729,25 @@ function openGallery(themeId) {
 function closeGallery() {
   closeModalNav();
   document.getElementById('ol-gallery').classList.add('hidden');
-  // 갤러리를 열기 전에 표시 중이던 오버레이 복원
+
   if (_galleryReturnOverlay) {
-    document.getElementById(_galleryReturnOverlay).classList.remove('hidden');
+    // 게임오버/설정/START 등 이전 오버레이로 복귀
+    const retEl = document.getElementById(_galleryReturnOverlay);
+    if (retEl) retEl.classList.remove('hidden');
     openModalNav(_galleryReturnOverlay);
+    // START로 돌아갈 때 메뉴 닷 갱신
+    if (_galleryReturnOverlay === 'ol-start') _refreshMenuDots();
     _galleryReturnOverlay = null;
+  } else if (collectionMode) {
+    // 게임 진행 중 갤러리를 열었다가 닫는 경우 — 보드 재드로우
+    const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+    const gridSize = (themeObj && themeObj.gridSize) || 4;
+    renderer.setMode('daily', gridSize);
+    renderer.setCollectionTheme(themeObj);
+    renderer.drawGrid(grid);
+  } else {
+    // 메뉴(START)에서 갤러리 진입 후 CLOSE → 시작 화면 복귀
+    showStart();
   }
 }
 
@@ -2785,21 +3011,12 @@ function dailyToMenu() {
   renderer.setMode('main');
   showStart();
   refreshDailyMenu();
+  _refreshMenuDots();
 }
 
 function refreshDailyMenu() {
-  const date = utcDateStr();
-  const ds = SG.Daily.loadDaily(date, window.localStorage);
-  const t = SG.ND.dailyType(utcDayOfWeek());
-  const btn = document.getElementById('btn-daily');
-  if (!btn) return;
-  if (ds.retriesUsed >= SG.Daily.MAX_RETRIES) {
-    btn.disabled = true;
-    btn.textContent = 'NEXT DAILY ' + msToNextUtcMidnight();
-  } else {
-    btn.disabled = false;
-    btn.textContent = 'DAILY · ' + t.label + '  ⭐' + ds.stars + '  R' + SG.Daily.retriesLeft(ds);
-  }
+  // 버튼 텍스트 갱신은 openDailyMenu() 팝업에서 처리 — 여기서는 레드닷만 갱신
+  _refreshMenuDots();
 }
 function msToNextUtcMidnight() {
   const now = new Date();
@@ -2943,14 +3160,220 @@ function buildSoundsetChips() {
 function selectSoundset(id) {
   if (!SG.Sound) return;
   SG.Sound.setPack(id);
-  // refresh selected state (only the sound-pack chips, not the HAPTIC toggle)
   document.querySelectorAll('.soundset-chip[data-pack]').forEach(function (c) {
     c.setAttribute('aria-selected', String(c.dataset.pack === id));
   });
-  // preview: play a short sample merge in the chosen pack
   try { SG.Sound.playMerge([{ blockType: 1, size: 4 }]); } catch (_) {}
   haptic(10);
 }
+
+// ── BGM Settings ──────────────────────────────────────────────────
+var _bgmEnabled = false;
+var _bgmActiveTheme = null;
+var _bgmPreviewId = null;
+
+function _loadBgmPrefs() {
+  try {
+    var s = localStorage.getItem('earthbeyond_bgm');
+    if (s) { var p = JSON.parse(s); _bgmEnabled = !!p.enabled; _bgmActiveTheme = p.theme || 'solar'; }
+    else { _bgmEnabled = false; _bgmActiveTheme = 'solar'; }
+    var vol = localStorage.getItem('earthbeyond_bgm_vol');
+    if (vol !== null && SG.Sound) {
+      var v = parseFloat(vol);
+      if (!isNaN(v)) SG.Sound.setBgmVolume(v);
+    }
+    var tone = localStorage.getItem('earthbeyond_bgm_tone');
+    if (tone && SG.Sound) SG.Sound.setBgmPack(tone);
+  } catch (_) {}
+}
+function _saveBgmPrefs() {
+  try { localStorage.setItem('earthbeyond_bgm', JSON.stringify({ enabled: _bgmEnabled, theme: _bgmActiveTheme })); } catch (_) {}
+}
+
+function buildBgmUI() {
+  _loadBgmPrefs();
+  _buildBgmToneChips();
+  _buildBgmThemeChips();
+  _refreshBgmVolumeUI();
+  _refreshBgmToggleUI();
+}
+
+function _buildBgmToneChips() {
+  var list = document.getElementById('bgm-tone-list');
+  if (!list || !SG.Sound) return;
+  list.innerHTML = '';
+  var tones = [
+    { id: 'pad',     label: 'PAD',     desc: '신비로운 공간감' },
+    { id: 'bell',    label: 'BELL',    desc: '맑은 차임벨' },
+    { id: 'choir',   label: 'CHOIR',   desc: '성악풍 두께감' },
+    { id: 'crystal', label: 'CRYSTAL', desc: '벨 클래식' },
+    { id: 'cyber',   label: 'CYBER',   desc: '사이버' },
+  ];
+  var cur = (SG.Sound.bgmPack) || 'pad';
+  tones.forEach(function (t) {
+    var chip = document.createElement('button');
+    chip.className = 'bgm-tone-chip';
+    chip.dataset.tone = t.id;
+    chip.setAttribute('aria-selected', String(t.id === cur));
+    chip.title = t.desc;
+    chip.textContent = t.label;
+    chip.onclick = function () { selectBgmTone(t.id); };
+    list.appendChild(chip);
+  });
+}
+
+function selectBgmTone(id) {
+  if (!SG.Sound) return;
+  SG.Sound.setBgmPack(id);
+  try { localStorage.setItem('earthbeyond_bgm_tone', id); } catch (_) {}
+  document.querySelectorAll('.bgm-tone-chip').forEach(function (c) {
+    c.setAttribute('aria-selected', String(c.dataset.tone === id));
+  });
+  if (_bgmEnabled && _bgmActiveTheme && SG.Sound.bgmRunning) {
+    SG.Sound.stopBgm();
+    SG.Sound.playBgm(_bgmActiveTheme, id);
+  }
+  haptic(8);
+}
+
+function _buildBgmThemeChips() {
+  var list = document.getElementById('bgm-theme-list');
+  if (!list || !SG.Sound) return;
+  list.innerHTML = '';
+  var themes = SG.Sound.bgmThemes || [];
+  themes.forEach(function (th) {
+    var chip = document.createElement('div');
+    chip.className = 'bgm-theme-chip';
+    chip.dataset.theme = th.id;
+    chip.setAttribute('aria-selected', String(th.id === _bgmActiveTheme));
+
+    var label = document.createElement('span');
+    label.className = 'btc-label';
+    label.textContent = th.label;
+
+    var prevBtn = document.createElement('button');
+    prevBtn.className = 'btc-prev';
+    prevBtn.id = 'bgm-prev-' + th.id;
+    prevBtn.textContent = '▶ 미리듣기';
+    prevBtn.onclick = function (e) {
+      e.stopPropagation();
+      previewBgmTheme(th.id, prevBtn);
+    };
+
+    var playBtn = document.createElement('button');
+    playBtn.className = 'btc-play';
+    playBtn.textContent = th.id === _bgmActiveTheme ? '✓ 선택됨' : '선택';
+    playBtn.onclick = function (e) {
+      e.stopPropagation();
+      selectBgmTheme(th.id);
+    };
+
+    chip.appendChild(label);
+    chip.appendChild(prevBtn);
+    chip.appendChild(playBtn);
+    chip.onclick = function () { selectBgmTheme(th.id); };
+    list.appendChild(chip);
+  });
+}
+
+function previewBgmTheme(themeId, btn) {
+  if (!SG.Sound) return;
+  if (_bgmPreviewId === themeId) {
+    SG.Sound.stopBgm();
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+    if (_bgmEnabled && _bgmActiveTheme) SG.Sound.playBgm(_bgmActiveTheme);
+    return;
+  }
+  SG.Sound.stopBgm();
+  _bgmPreviewId = themeId;
+  _resetPreviewBtns();
+  if (btn) { btn.textContent = '■ 중지'; btn.classList.add('playing'); }
+  SG.Sound.previewBgm(themeId, null, function () {
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+    if (_bgmEnabled && _bgmActiveTheme) SG.Sound.playBgm(_bgmActiveTheme);
+  });
+}
+
+function _resetPreviewBtns() {
+  var themes = SG.Sound ? (SG.Sound.bgmThemes || []) : [];
+  themes.forEach(function (th) {
+    var btn = document.getElementById('bgm-prev-' + th.id);
+    if (btn) { btn.textContent = '▶ 미리듣기'; btn.classList.remove('playing'); }
+  });
+}
+
+function selectBgmTheme(id) {
+  _bgmActiveTheme = id;
+  _saveBgmPrefs();
+  document.querySelectorAll('.bgm-theme-chip').forEach(function (c) {
+    var sel = c.dataset.theme === id;
+    c.setAttribute('aria-selected', String(sel));
+    var playBtn = c.querySelector('.btc-play');
+    if (playBtn) playBtn.textContent = sel ? '✓ 선택됨' : '선택';
+  });
+  if (_bgmEnabled) {
+    SG.Sound.stopBgm();
+    SG.Sound.playBgm(id);
+  }
+  haptic(10);
+}
+
+function toggleBgmEnabled() {
+  _bgmEnabled = !_bgmEnabled;
+  _saveBgmPrefs();
+  _refreshBgmToggleUI();
+  if (_bgmEnabled) {
+    SG.Sound.playBgm(_bgmActiveTheme || 'solar');
+  } else {
+    SG.Sound.stopBgm();
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+  }
+  haptic(12);
+}
+
+function onBgmVolSlider(val) {
+  var v = parseInt(val, 10) / 100;
+  if (SG.Sound) SG.Sound.setBgmVolume(v);
+  try { localStorage.setItem('earthbeyond_bgm_vol', String(v)); } catch (_) {}
+  var lbl = document.getElementById('bgm-vol-label');
+  if (lbl) lbl.textContent = val;
+}
+
+function _refreshBgmVolumeUI() {
+  var rawVol = (SG.Sound && SG.Sound.bgmVolume != null) ? SG.Sound.bgmVolume : 0.38;
+  var vol = Math.round(rawVol * 100);
+  if (isNaN(vol)) vol = 38;
+  var slider = document.getElementById('bgm-vol-slider');
+  var lbl    = document.getElementById('bgm-vol-label');
+  if (slider) slider.value = vol;
+  if (lbl)    lbl.textContent = vol;
+}
+
+function _refreshBgmToggleUI() {
+  var st   = document.getElementById('bgm-toggle-state');
+  var chip = document.getElementById('chip-bgm-toggle');
+  if (st)   st.textContent = _bgmEnabled ? 'ON' : 'OFF';
+  if (chip) chip.setAttribute('aria-selected', String(_bgmEnabled));
+}
+
+// Era → BGM 자동 매핑 (startCollection / startEndless 등에서 호출)
+function applyBgmForMode(modeOrEra) {
+  if (!_bgmEnabled || !SG.Sound) return;
+  var map = {
+    'primordial-earth': 'earth',
+    'human-civilization': 'civilization',
+    'solar-system': 'solar',
+    'daily': 'solar',
+    'endless': 'solar',
+  };
+  var th = map[modeOrEra] || _bgmActiveTheme || 'solar';
+  if (SG.Sound.bgmTheme === th && SG.Sound.bgmRunning) return;
+  SG.Sound.playBgm(th);
+}
+
 function refreshHapticChip() {
   const st = document.getElementById('haptic-state');
   const chip = document.getElementById('chip-haptic');
@@ -2964,6 +3387,7 @@ function toggleHaptic() {
 }
 function openSettings() {
   buildSoundsetChips();
+  buildBgmUI();
   refreshHapticChip();
   // Show MENU button only when not already on the START screen (i.e. game is running).
   const onStartScreen = !document.getElementById('ol-start').classList.contains('hidden');
@@ -3239,8 +3663,14 @@ function pgSyncStorage() {
   requestAnimationFrame(loop);
 
   // 첫 접속이면 Daily 튜토리얼, 재접속이면 메뉴 표시
-  if (!isFirstVisit()) { openModalNav('ol-start'); refreshDailyMenu(); }
-  else { _checkOnboarding(); }
+  if (!isFirstVisit()) {
+    // ENDLESS 버튼 표시 여부 초기화
+    const _ebtn = document.getElementById('btn-endless-menu');
+    if (_ebtn) _ebtn.style.display = isEndlessUnlocked() ? '' : 'none';
+    openModalNav('ol-start');
+    refreshDailyMenu();
+    _refreshMenuDots();
+  } else { _checkOnboarding(); }
   setInterval(function () { if (!document.getElementById('ol-start').classList.contains('hidden')) refreshDailyMenu(); }, 1000);
 
   // 로딩 시작 알림
