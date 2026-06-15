@@ -393,6 +393,29 @@
     .lb-row .lb-score { color:#ffd23f; }
     .lb-row.lb-empty { color:var(--textdim); justify-content:center; border:none; }
 
+    /* ── Chronicles: Step-01 Reveal 모달 ───────────────────────────── */
+    #ol-step-reveal .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #step-reveal-img {
+      width: 100%; height: 180px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #step-reveal-body { padding: 18px 20px 16px; }
+    #step-reveal-badge {
+      font-size: .6rem; color: #ffd23f; letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    #step-reveal-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700;
+      color: var(--text); letter-spacing: 1px; margin-bottom: 10px;
+    }
+    #step-reveal-desc {
+      font-size: .78rem; color: var(--textdim); line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
     /* ── Chronicles: Chapter Intro 모달 ────────────────────────────── */
     #ol-chapter-intro .ol-panel {
       padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
@@ -770,6 +793,19 @@
       <div id="chapter-intro-title">PRIMORDIAL EARTH</div>
       <div id="chapter-intro-tagline"></div>
       <button class="btn-primary modal-btn" id="btn-chapter-start" onclick="closeChapterIntro()" data-i18n="ui.btn.beginChapter">BEGIN CHAPTER ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chronicles: Step-01 Reveal 팝업 ──────────────────────────── -->
+<div id="ol-step-reveal" class="overlay hidden">
+  <div class="ol-panel">
+    <img id="step-reveal-img" src="" alt="">
+    <div id="step-reveal-body">
+      <div id="step-reveal-badge">⭐ STEP 01 — FIRST DISCOVERY</div>
+      <div id="step-reveal-title"></div>
+      <div id="step-reveal-desc"></div>
+      <button class="btn-primary modal-btn" id="btn-step-reveal-start" onclick="closeStepReveal()">START ›</button>
     </div>
   </div>
 </div>
@@ -2343,22 +2379,55 @@ function closeChapterIntro() {
   try { localStorage.setItem(key, '1'); } catch (_) {}
   document.getElementById('ol-chapter-intro').classList.add('hidden');
   closeModalNav();
-
-  // 렌더러 상태를 완전히 재설정한 뒤 보드를 그림
-  // (Intro 모달이 떠 있는 동안 resize 등으로 canvas가 초기화됐을 수 있음)
+  // 렌더러 준비 (canvas resize 대응)
   const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   const gridSize = (themeObj && themeObj.gridSize) || 4;
   renderer.setMode('daily', gridSize);
   renderer.setCollectionTheme(themeObj);
   renderer.clearStepBg();
   renderer.drawGrid(grid);
+  // Intro → Step-01 Reveal
+  showStepReveal(themeObj, 1);
+}
 
+function showStepReveal(themeObj, step) {
+  if (!themeObj || !themeObj.stepDescriptions) { _startGameAfterReveal(themeObj); return; }
+  const fullDesc = themeObj.stepDescriptions[step - 1];
+  if (!fullDesc) { _startGameAfterReveal(themeObj); return; }
+
+  const dashIdx = fullDesc.indexOf(' — ');
+  const title = dashIdx !== -1 ? fullDesc.slice(0, dashIdx) : fullDesc;
+  const body  = dashIdx !== -1 ? fullDesc.slice(dashIdx + 3) : '';
+
+  const imgPath = (themeObj.stepBgs && themeObj.stepBgs[step - 1]) ||
+                  (themeObj.svgPaths && themeObj.svgPaths[step - 1]) || '';
+  const imgEl = document.getElementById('step-reveal-img');
+  if (imgPath) { imgEl.src = imgPath; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+
+  const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+  document.getElementById('step-reveal-badge').textContent =
+    ko ? '⭐ STEP 01 — 첫 번째 발견' : '⭐ STEP 01 — FIRST DISCOVERY';
+  document.getElementById('step-reveal-title').textContent = title;
+  document.getElementById('step-reveal-desc').textContent = body;
+  const startBtn = document.getElementById('btn-step-reveal-start');
+  if (startBtn) startBtn.textContent = ko ? '시작 ›' : 'START ›';
+
+  document.getElementById('ol-step-reveal').classList.remove('hidden');
+  openModalNav('ol-step-reveal');
+}
+
+function closeStepReveal() {
+  document.getElementById('ol-step-reveal').classList.add('hidden');
+  closeModalNav();
+  const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  _startGameAfterReveal(themeObj);
+}
+
+function _startGameAfterReveal(themeObj) {
+  // 나레이션 바에도 step-01 표시
+  if (themeObj) chroniclesShowStepToast(themeObj, 1);
   gameRunning = true;
-
-  // Intro 직후 첫 블록 NEW 안내
-  if (SG.Collection.hasNew(activeThemeId, localStorage, themeObj)) {
-    setTimeout(function () { showGameToast('첫 번째 블록을 발견했습니다! 갤러리를 확인하세요 ⭐'); }, 400);
-  }
 }
 
 // Chronicles 나레이션 바 업데이트
