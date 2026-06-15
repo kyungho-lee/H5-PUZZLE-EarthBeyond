@@ -149,17 +149,33 @@
     }
   }
 
-  // ── 국가 코드 감지 (navigator.language 기반, 경량) ──────────────────
-  // 'ko-KR' → 'KR', 'en-US' → 'US', 'en' → 'US' (fallback)
+  // ── 국가 코드 감지 ────────────────────────────────────────────────
+  // 전략 1: navigator.languages 전체 순회 → 지역코드 있는 첫 항목 ('ko-KR' → 'KR')
+  // 전략 2: 지역코드 없는 언어코드 → 언어→국가 매핑 ('ko' → 'KR')
+  // 전략 3: Intl.Locale 지원 시 보조 활용
+  var _LANG_MAP = {
+    ko:'KR', ja:'JP', zh:'CN', de:'DE', fr:'FR', es:'ES',
+    pt:'BR', ru:'RU', ar:'SA', hi:'IN', id:'ID', tr:'TR',
+    vi:'VN', th:'TH', nl:'NL', pl:'PL', it:'IT', sv:'SE',
+    no:'NO', da:'DK', fi:'FI', cs:'CZ', hu:'HU', ro:'RO',
+  };
   function detectCountry() {
     try {
-      var lang = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-      var parts = lang.split('-');
-      if (parts.length >= 2) return parts[parts.length - 1].toUpperCase();
-      // 언어코드만 있을 때 주요 매핑
-      var map = { ko:'KR', ja:'JP', zh:'CN', de:'DE', fr:'FR', es:'ES',
-                  pt:'BR', ru:'RU', ar:'SA', hi:'IN', id:'ID', tr:'TR' };
-      return map[parts[0]] || 'US';
+      var langs = (navigator.languages && navigator.languages.length)
+        ? Array.from(navigator.languages)
+        : [navigator.language || ''];
+
+      // 1단계: 지역코드 포함 항목 우선 ('ko-KR', 'en-US' 등)
+      for (var i = 0; i < langs.length; i++) {
+        var parts = langs[i].split('-');
+        if (parts.length >= 2) return parts[parts.length - 1].toUpperCase();
+      }
+      // 2단계: 언어코드만 있을 때 매핑
+      for (var j = 0; j < langs.length; j++) {
+        var lc = langs[j].split('-')[0].toLowerCase();
+        if (_LANG_MAP[lc]) return _LANG_MAP[lc];
+      }
+      return 'US';
     } catch (_) { return 'US'; }
   }
 
