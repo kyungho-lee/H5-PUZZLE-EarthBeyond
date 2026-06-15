@@ -608,10 +608,10 @@
 <div id="ol-start" class="overlay">
   <div class="ol-panel">
     <div class="ol-title">EARTH &amp; BEYOND</div>
-    <p style="color:var(--textdim);font-size:.8rem;margin-bottom:24px;line-height:1.6">
+    <p id="start-subtitle" style="color:var(--textdim);font-size:.8rem;margin-bottom:24px;line-height:1.6" data-i18n="ui.gameSubtitle">
       Merge tiles to travel from Primordial Earth to the edge of the Universe
     </p>
-    <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()">CHRONICLES</button>
+    <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()" data-i18n="ui.btn.chronicles">CHRONICLES</button>
     <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="menuEndlessClick()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
       <span id="endless-menu-label">ENDLESS ∞</span>
       <span id="endless-menu-sub" style="font-size:.6rem;letter-spacing:1px;opacity:.65"></span>
@@ -625,7 +625,7 @@
       GALLERY
       <span id="menu-gallery-dot" class="reddot hidden"></span>
     </button>
-    <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()">SETTINGS</button>
+    <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()" data-i18n="ui.btn.settings">SETTINGS</button>
     <!-- dev 전용: hidden -->
     <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
     <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
@@ -637,21 +637,21 @@
 <!-- ── Daily Challenge 팝업 (메인 메뉴에서 진입 시) ──────────────── -->
 <div id="ol-daily-menu" class="overlay hidden">
   <div class="ol-panel" style="max-width:320px">
-    <div class="ol-title" style="font-size:1.3rem">DAILY CHALLENGE</div>
+    <div class="ol-title" style="font-size:1.3rem" data-i18n="ui.btn.dailyChallenge">DAILY CHALLENGE</div>
     <div id="daily-menu-type" style="font-size:.65rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px"></div>
     <div id="daily-menu-status" style="font-size:.8rem;color:var(--textdim);margin-bottom:16px;line-height:1.6"></div>
     <!-- 남은 시도 있을 때 -->
     <div id="daily-menu-panel-play">
       <div id="daily-menu-retries" style="font-size:.7rem;color:var(--textdim);margin-bottom:10px;text-align:center"></div>
-      <button class="btn-primary modal-btn" id="btn-daily-menu-play" onclick="openDailyMenuPlay()">PLAY NOW ›</button>
+      <button class="btn-primary modal-btn" id="btn-daily-menu-play" onclick="openDailyMenuPlay()" data-i18n="ui.btn.playNow">PLAY NOW ›</button>
     </div>
     <!-- 오늘 소진 -->
     <div id="daily-menu-panel-done" style="display:none">
       <div style="font-size:1.4rem;margin-bottom:8px">🏁</div>
       <div id="daily-menu-next" style="font-size:.75rem;color:var(--accent);margin-bottom:14px;letter-spacing:1px"></div>
-      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px;line-height:1.5">내일 새로운 Daily Challenge가 열립니다</div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px;line-height:1.5" data-i18n="ui.label.dailyDoneMsg">내일 새로운 Daily Challenge가 열립니다</div>
     </div>
-    <button class="btn-secondary modal-btn" onclick="closeDailyMenu()">BACK</button>
+    <button class="btn-secondary modal-btn" onclick="closeDailyMenu()" data-i18n="ui.btn.back">BACK</button>
   </div>
 </div>
 
@@ -670,34 +670,34 @@
 <!-- Daily game-over -->
 <div id="ol-daily-over" class="overlay hidden">
   <div class="ol-panel">
-    <div class="ol-title">GAME OVER</div>
-    <div class="ol-label">THIS RUN <span id="daily-run-stars">⭐0</span> · TODAY BEST <span id="daily-total-stars">⭐0</span></div>
+    <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
+    <div class="ol-label"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="daily-run-stars">⭐0</span> · <span data-i18n="ui.label.todayBest">TODAY BEST</span> <span id="daily-total-stars">⭐0</span></div>
     <!-- 더미 리더보드: QA 통과 후 Playgama public token 연결 전까지 DEMO 표시 -->
     <div id="daily-lb">
-      <div class="lb-title">TODAY'S RANKING <span id="daily-lb-badge" class="lb-badge">DEMO</span></div>
+      <div class="lb-title"><span data-i18n="ui.label.todayRanking">TODAY'S RANKING</span> <span id="daily-lb-badge" class="lb-badge">DEMO</span></div>
       <div id="daily-lb-rows"></div>
     </div>
 
     <!-- [A] 리트라이 가능: RETRY 우선 → 지금 받기 보조 -->
     <div id="daily-panel-retry" style="display:none">
-      <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px">RETRIES REMAINING <span id="daily-retries">3/3</span> · higher BEST = bigger CLAIM</div>
-      <button class="btn-ad modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" style="background:var(--warn)">📺 RETRY FOR HIGHER BEST</button>
-      <button class="btn-secondary modal-btn" id="btn-daily-claim-now" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px">CLAIM NOW ⭐<span id="daily-claim-now-amt">0</span></button>
+      <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px"><span data-i18n="ui.label.retriesRemaining">RETRIES REMAINING</span> <span id="daily-retries">3/3</span> · <span data-i18n="ui.label.higherBestTip">higher BEST = bigger CLAIM</span></div>
+      <button class="btn-ad modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" style="background:var(--warn)" data-i18n="ui.btn.retryAd">📺 RETRY FOR HIGHER BEST</button>
+      <button class="btn-secondary modal-btn" id="btn-daily-claim-now" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimNow">CLAIM NOW</span> ⭐<span id="daily-claim-now-amt">0</span></button>
     </div>
 
     <!-- [B] 리트라이 소진 (일반): CLAIM 하나 + MENU -->
     <div id="daily-panel-done" style="display:none">
-      <button class="btn-ad ad-gold modal-btn" id="btn-daily-claim" onclick="claimDailyAndExit()">CLAIM ⭐<span id="daily-claim-amt">0</span></button>
-      <button class="btn-secondary modal-btn" onclick="dailyToMenu()">MENU</button>
+      <button class="btn-ad ad-gold modal-btn" id="btn-daily-claim" onclick="claimDailyAndExit()"><span data-i18n="ui.btn.claim">CLAIM</span> ⭐<span id="daily-claim-amt">0</span></button>
+      <button class="btn-secondary modal-btn" onclick="dailyToMenu()" data-i18n="ui.btn.menu">MENU</button>
     </div>
 
     <!-- [C] 온보딩 (첫 접속): Chronicles CTA 우선 → CLAIM 보조 -->
     <div id="daily-panel-onboard" style="display:none">
-      <button class="btn-primary modal-btn" id="btn-daily-onboard" onclick="onboardToChronicles()">START YOUR JOURNEY →</button>
-      <button class="btn-secondary modal-btn" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px">CLAIM ⭐<span id="daily-claim-onboard-amt">0</span> &amp; go to menu</button>
+      <button class="btn-primary modal-btn" id="btn-daily-onboard" onclick="onboardToChronicles()" data-i18n="ui.btn.startJourney">START YOUR JOURNEY →</button>
+      <button class="btn-secondary modal-btn" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimAndMenu">CLAIM &amp; go to menu</span> ⭐<span id="daily-claim-onboard-amt">0</span></button>
     </div>
 
-    <div class="modal-hint">↑↓ Move · Enter Select</div>
+    <div class="modal-hint" data-i18n="ui.hint.keyboard">↑↓ Move · Enter Select</div>
   </div>
 </div>
 
@@ -710,7 +710,7 @@
       <div style="color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:2rem">★</div>
     </div>
     <div class="ol-label" id="unlock-theme-label">NEON CITY — STEP 1</div>
-    <button class="btn-primary modal-btn" onclick="closeUnlockPopup()">CONTINUE</button>
+    <button class="btn-primary modal-btn" onclick="closeUnlockPopup()" data-i18n="ui.btn.continueGame">CONTINUE</button>
   </div>
 </div>
 
@@ -756,7 +756,7 @@
       <div id="gd-step" style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px">STEP 01</div>
       <div id="gd-title" style="font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:8px"></div>
       <div id="gd-desc" style="font-size:.78rem;color:var(--textdim);line-height:1.6;margin-bottom:16px"></div>
-      <button class="btn-primary modal-btn" onclick="closeGalleryDetail()">CLOSE</button>
+      <button class="btn-primary modal-btn" onclick="closeGalleryDetail()" data-i18n="ui.btn.close">CLOSE</button>
     </div>
   </div>
 </div>
@@ -769,7 +769,7 @@
       <div id="chapter-intro-num">CHAPTER 1</div>
       <div id="chapter-intro-title">PRIMORDIAL EARTH</div>
       <div id="chapter-intro-tagline"></div>
-      <button class="btn-primary modal-btn" id="btn-chapter-start" onclick="closeChapterIntro()">BEGIN CHAPTER ›</button>
+      <button class="btn-primary modal-btn" id="btn-chapter-start" onclick="closeChapterIntro()" data-i18n="ui.btn.beginChapter">BEGIN CHAPTER ›</button>
     </div>
   </div>
 </div>
@@ -787,7 +787,7 @@
         <span id="chapter-complete-reward-label" style="color:#ffd23f;font-weight:700;font-size:.9rem">⭐20</span> EARNED
         &nbsp;·&nbsp; <span id="epoch-stamp-count">0 / 3</span> CHAPTERS
       </div>
-      <button class="btn-primary modal-btn" id="btn-chapter-next" onclick="chroniclesNextChapter()">NEXT CHAPTER ›</button>
+      <button class="btn-primary modal-btn" id="btn-chapter-next" onclick="chroniclesNextChapter()" data-i18n="ui.btn.nextChapter">NEXT CHAPTER ›</button>
       <button class="btn-ad ad-gold modal-btn" id="btn-chapter-double" onclick="chapterCompleteDoubleStars()" style="margin-top:6px">
         📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
       </button>
@@ -841,8 +841,8 @@
     <div id="gallery-progress">0 / 10</div>
     <div id="gallery-bar-wrap"><div id="gallery-bar" style="width:0%"></div></div>
     <div id="gallery-grid"><!-- cells injected by JS --></div>
-    <button class="btn-primary modal-btn" id="btn-gallery-play" onclick="startCollectionFromGallery()">PLAY CHAPTER</button>
-    <button class="btn-secondary modal-btn" onclick="closeGallery()">CLOSE</button>
+    <button class="btn-primary modal-btn" id="btn-gallery-play" onclick="startCollectionFromGallery()" data-i18n="ui.btn.playChapter">PLAY CHAPTER</button>
+    <button class="btn-secondary modal-btn" onclick="closeGallery()" data-i18n="ui.btn.close">CLOSE</button>
   </div>
 </div>
 
@@ -851,38 +851,49 @@
 <!-- 2단계: (1) CONTINUE 권유 → (2) 거절 시 DOUBLE STARS 정산. 광고 버튼 동시 노출 금지. -->
 <div id="ol-collection-over" class="overlay hidden">
   <div class="ol-panel">
-    <div class="ol-title">GAME OVER</div>
+    <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
     <div class="ol-score" id="collection-chain-display">3/10</div>
 
     <!-- 1단계: 이어하기 권유 -->
     <div id="co-phase-continue">
-      <div class="ol-label" id="continue-info" style="font-size:0.72rem;margin-bottom:6px;color:var(--textdim)">Clear all but the top 3 tiers and keep going</div>
+      <div class="ol-label" id="continue-info" style="font-size:0.72rem;margin-bottom:6px;color:var(--textdim)" data-i18n="ui.label.clearAllBut">Clear all but the top 3 tiers and keep going</div>
       <button class="btn-ad ad-green modal-btn" id="btn-continue-ad" onclick="collectionContinueWithAd()">
         📺 CONTINUE <span style="opacity:.8">(AD)</span>
       </button>
-      <button class="btn-secondary modal-btn" id="btn-end-run" onclick="collectionShowSettle()">END RUN ▸</button>
+      <button class="btn-secondary modal-btn" id="btn-end-run" onclick="collectionShowSettle()" data-i18n="ui.btn.endRun">END RUN ▸</button>
     </div>
 
     <!-- 2단계: 이번 판 스타 정산 (x2 광고) -->
     <div id="co-phase-settle" class="hidden">
-      <div class="ol-label" style="margin-bottom:2px">THIS RUN <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
+      <div class="ol-label" style="margin-bottom:2px"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
       <button class="btn-ad ad-gold modal-btn" id="btn-double-stars" onclick="collectionDoubleStars()">
         📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
       </button>
     </div>
 
-    <button class="btn-secondary modal-btn" onclick="openGallery()">GALLERY</button>
-    <button class="btn-secondary modal-btn" onclick="collectionToMenu()">MENU</button>
+    <button class="btn-secondary modal-btn" onclick="openGallery()" data-i18n="ui.btn.gallery">GALLERY</button>
+    <button class="btn-secondary modal-btn" onclick="collectionToMenu()" data-i18n="ui.btn.menu">MENU</button>
   </div>
 </div>
 
 <!-- ── 설정 패널 (사운드셋 + BGM) ─────────────────────────────────── -->
 <div id="ol-settings" class="overlay hidden">
   <div class="ol-panel" style="padding-bottom:16px">
-    <div class="ol-title">SETTINGS</div>
+    <div class="ol-title" data-i18n="ui.label.settings">SETTINGS</div>
+
+    <!-- 언어 선택 -->
+    <div class="ol-label" style="margin-bottom:8px" data-i18n="ui.label.language">LANGUAGE</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="chip-lang-ko" class="soundset-chip modal-btn" data-action="lang-ko" onclick="selectLang('ko')" style="flex:1;justify-content:center">
+        <span>한국어</span>
+      </button>
+      <button id="chip-lang-en" class="soundset-chip modal-btn" data-action="lang-en" onclick="selectLang('en')" style="flex:1;justify-content:center">
+        <span>English</span>
+      </button>
+    </div>
 
     <!-- SOUND SET -->
-    <div class="ol-label" style="margin-bottom:8px">SOUND SET</div>
+    <div class="ol-label" style="margin-bottom:8px" data-i18n="ui.label.soundSet">SOUND SET</div>
     <div id="soundset-list"><!-- chips injected by JS --></div>
     <button id="chip-haptic" class="soundset-chip modal-btn" data-action="haptic" onclick="toggleHaptic()">
       <span>HAPTIC</span><span class="sc-desc" id="haptic-state">ON</span>
@@ -920,20 +931,20 @@
     </div>
 
     <!-- Daily EVENT -->
-    <div class="ol-label" style="margin-top:14px;margin-bottom:6px;font-size:.65rem;letter-spacing:2px;color:var(--textdim)">EVENT</div>
-    <button class="btn-secondary modal-btn" id="btn-settings-daily" data-action="daily" onclick="openDailyFromSettings()" style="position:relative">
+    <div class="ol-label" style="margin-top:14px;margin-bottom:6px;font-size:.65rem;letter-spacing:2px;color:var(--textdim)" data-i18n="ui.label.event">EVENT</div>
+    <button class="btn-secondary modal-btn" id="btn-settings-daily" data-action="daily" onclick="openDailyFromSettings()" style="position:relative" data-i18n="ui.btn.dailyChallenge">
       DAILY CHALLENGE <span id="settings-daily-dot" class="reddot hidden"></span>
     </button>
     <div id="settings-daily-done" style="display:none;font-size:.72rem;color:var(--textdim);text-align:center;line-height:1.6;padding:6px 4px">
-      오늘의 도전이 끝났습니다.<br>
+      <span data-i18n="ui.label.dailyDone">오늘의 도전이 끝났습니다.</span><br>
       <span id="settings-daily-next" style="color:var(--accent)"></span>
     </div>
-    <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative">
+    <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative" data-i18n="ui.btn.gallery">
       GALLERY <span id="settings-gallery-dot" class="reddot hidden"></span>
     </button>
-    <button class="btn-primary modal-btn" data-action="close" onclick="closeSettings()">CLOSE</button>
-    <button class="btn-secondary modal-btn" id="btn-settings-menu" data-action="menu" onclick="settingsToMenu()" style="display:none">MENU</button>
-    <div class="modal-hint">↑↓ Move · ←→ Sound Set · Enter Select</div>
+    <button class="btn-primary modal-btn" data-action="close" onclick="closeSettings()" data-i18n="ui.btn.close">CLOSE</button>
+    <button class="btn-secondary modal-btn" id="btn-settings-menu" data-action="menu" onclick="settingsToMenu()" style="display:none" data-i18n="ui.btn.menu">MENU</button>
+    <div class="modal-hint" data-i18n="ui.hint.keyboardSound">↑↓ Move · ←→ Sound Set · Enter Select</div>
   </div>
 </div>
 
@@ -1219,6 +1230,7 @@ function _refreshMenuDots() {
   const endlessBtn = document.getElementById('btn-endless-menu');
   const endlessLabel = document.getElementById('endless-menu-label');
   const endlessSub   = document.getElementById('endless-menu-sub');
+  var _ko = (SG.i18n && SG.i18n.getLang() === 'ko');
   if (endlessBtn) {
     endlessBtn.style.display = '';   // 항상 표시
     if (endlessUnlocked) {
@@ -1231,11 +1243,12 @@ function _refreshMenuDots() {
       endlessBtn.style.opacity = '';
     } else {
       if (endlessLabel) endlessLabel.textContent = '🔒  ENDLESS ∞';
-      // Chronicles 남은 챕터 수 표시
       var meta0 = SG.Collection.loadMeta(localStorage);
       var total0 = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
       var done0  = (meta0.completedThemes && meta0.completedThemes.length) || 0;
-      if (endlessSub) endlessSub.textContent = 'CHRONICLES  ' + done0 + ' / ' + total0 + '  COMPLETE';
+      if (endlessSub) endlessSub.textContent = _ko
+        ? ('CHRONICLES  ' + done0 + ' / ' + total0 + '  완료')
+        : ('CHRONICLES  ' + done0 + ' / ' + total0 + '  COMPLETE');
       endlessBtn.style.opacity = '0.55';
     }
   }
@@ -1245,13 +1258,15 @@ function _refreshMenuDots() {
   var exhausted = ds.retriesUsed >= SG.Daily.MAX_RETRIES;
   var dailyLabel = document.getElementById('daily-menu-label');
   var dailySub   = document.getElementById('daily-menu-sub');
-  if (dailyLabel) dailyLabel.textContent = 'DAILY CHALLENGE';
+  if (dailyLabel) dailyLabel.textContent = _t('ui.btn.dailyChallenge');
   if (dailySub) {
     if (exhausted) {
-      dailySub.textContent = '다음 열림  ' + msToNextUtcMidnight();
+      dailySub.textContent = (_ko ? '다음 열림  ' : 'Opens in  ') + msToNextUtcMidnight();
     } else {
       var left = SG.Daily.retriesLeft(ds);
-      dailySub.textContent = left + ' / ' + SG.Daily.MAX_RETRIES + '  시도 남음';
+      dailySub.textContent = _ko
+        ? (left + ' / ' + SG.Daily.MAX_RETRIES + '  시도 남음')
+        : (left + ' / ' + SG.Daily.MAX_RETRIES + '  retries left');
     }
   }
   var dailyDot = document.getElementById('menu-daily-dot');
@@ -1300,10 +1315,11 @@ function openDailyMenu() {
   if (exhausted) {
     panelPlay.style.display = 'none';
     panelDone.style.display = '';
+    var _ko = SG.i18n.getLang() === 'ko';
     document.getElementById('daily-menu-status').textContent =
-      '오늘의 도전을 모두 완료했습니다.  ⭐' + (ds.bestRun || 0);
+      (_ko ? '오늘의 도전을 모두 완료했습니다.' : "Today's challenge is complete.") + '  ⭐' + (ds.bestRun || 0);
     const nextEl = document.getElementById('daily-menu-next');
-    if (nextEl) nextEl.textContent = '다음 Daily까지 ' + msToNextUtcMidnight();
+    if (nextEl) nextEl.textContent = (_ko ? '다음 Daily까지 ' : 'Next Daily in ') + msToNextUtcMidnight();
     // 타이머 갱신
     if (_dailyMenuTimer) clearInterval(_dailyMenuTimer);
     _dailyMenuTimer = setInterval(function () {
@@ -1318,12 +1334,20 @@ function openDailyMenu() {
     panelDone.style.display = 'none';
     const left = SG.Daily.retriesLeft(ds);
     const retriesEl = document.getElementById('daily-menu-retries');
-    if (retriesEl) retriesEl.textContent = '남은 시도 ' + left + ' / ' + SG.Daily.MAX_RETRIES;
+    var _ko3 = SG.i18n.getLang() === 'ko';
+    if (retriesEl) retriesEl.textContent = _ko3
+      ? ('남은 시도 ' + left + ' / ' + SG.Daily.MAX_RETRIES)
+      : (left + ' / ' + SG.Daily.MAX_RETRIES + ' retries left');
     const statusEl = document.getElementById('daily-menu-status');
+    var _ko2 = SG.i18n.getLang() === 'ko';
     if (ds.bestRun > 0) {
-      statusEl.textContent = '오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!';
+      statusEl.textContent = _ko2
+        ? ('오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!')
+        : ('Best today ⭐' + ds.bestRun + '  ·  Go for a higher score!');
     } else {
-      statusEl.textContent = '아직 플레이하지 않았습니다. 도전해보세요!';
+      statusEl.textContent = _ko2
+        ? '아직 플레이하지 않았습니다. 도전해보세요!'
+        : "You haven't played yet. Give it a try!";
     }
   }
 
@@ -3437,10 +3461,85 @@ function toggleHaptic() {
   refreshHapticChip();
   haptic(12);   // brief feedback if turning ON (and after interaction)
 }
+// ── 언어 설정 ──────────────────────────────────────────────────────
+var LANG_KEY = 'earthbeyond_lang';
+
+function _t(key) {
+  try { return SG.i18n.t(key); } catch (_) { return key; }
+}
+
+// data-i18n 속성을 가진 모든 요소의 텍스트를 현재 언어로 일괄 교체.
+// 요소 내부에 자식 요소(span, reddot 등)가 있을 때 firstChild 텍스트만 교체.
+function applyLang() {
+  var lang = SG.i18n.getLang();
+  document.querySelectorAll('[data-i18n]').forEach(function (el) {
+    var key = el.getAttribute('data-i18n');
+    var txt = _t(key);
+    if (txt === key) return; // 번역 없으면 스킵
+    // 자식 요소가 있는 경우: 첫 번째 텍스트 노드만 교체 (reddot 등 유지)
+    var hasChildElements = el.children.length > 0;
+    if (hasChildElements) {
+      // 첫 번째 텍스트 노드를 찾아 교체
+      for (var i = 0; i < el.childNodes.length; i++) {
+        var node = el.childNodes[i];
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          node.textContent = txt + ' ';
+          break;
+        }
+      }
+    } else {
+      el.textContent = txt;
+    }
+  });
+  // 언어별 동적 문자열 패치
+  _applyLangDynamic(lang);
+}
+
+// JS가 동적으로 생성하거나 i18n 팩에 없는 특수 문자열 패치
+function _applyLangDynamic(lang) {
+  var ko = lang === 'ko';
+  // Settings Daily done 메시지
+  var doneEl = document.getElementById('settings-daily-done');
+  if (doneEl) {
+    var span = doneEl.querySelector('span[data-i18n]');
+    if (span) span.textContent = ko ? '오늘의 도전이 끝났습니다.' : "Today's challenge is over.";
+  }
+  // Daily 메뉴 팝업 내 "내일" 메시지
+  var dmMsg = document.querySelector('[data-i18n="ui.label.dailyDoneMsg"]');
+  if (dmMsg) dmMsg.textContent = ko ? '내일 새로운 Daily Challenge가 열립니다' : 'A new Daily Challenge opens tomorrow.';
+  // 메뉴 Endless 서브레이블 재갱신 (잠김 텍스트 포함)
+  _refreshMenuDots();
+}
+
+function _refreshLangChips() {
+  var cur = SG.i18n.getLang();
+  ['ko', 'en'].forEach(function (lang) {
+    var chip = document.getElementById('chip-lang-' + lang);
+    if (chip) chip.setAttribute('aria-selected', String(cur === lang));
+  });
+}
+
+function selectLang(lang) {
+  if (!SG.i18n) return;
+  SG.i18n.setLang(lang);
+  try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
+  _refreshLangChips();
+  applyLang();
+  haptic(10);
+}
+
+function _loadLang() {
+  try {
+    var saved = localStorage.getItem(LANG_KEY);
+    if (saved && SG.i18n) SG.i18n.setLang(saved);
+  } catch (_) {}
+}
+
 function openSettings() {
   buildSoundsetChips();
   buildBgmUI();
   refreshHapticChip();
+  _refreshLangChips();
   // Show MENU button only when not already on the START screen (i.e. game is running).
   const onStartScreen = !document.getElementById('ol-start').classList.contains('hidden');
   const menuBtn = document.getElementById('btn-settings-menu');
@@ -3472,7 +3571,7 @@ function openSettings() {
       doneEl.style.display = (exhausted && !isDev) ? '' : 'none';
       if (exhausted && !isDev) {
         const nextEl = document.getElementById('settings-daily-next');
-        if (nextEl) nextEl.textContent = '다음 Daily까지 ' + msToNextUtcMidnight();
+        if (nextEl) nextEl.textContent = _t('ui.label.nextDaily') + ' ' + msToNextUtcMidnight();
       }
     }
     if (dot) {
@@ -3705,6 +3804,10 @@ function pgSyncStorage() {
   // 캔버스 크기 설정
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
+
+  // 언어 설정 복원 + UI 적용
+  _loadLang();
+  applyLang();
 
   // 사운드 인스턴스 생성 (sound.js는 SG.SoundManager 클래스만 노출)
   try { SG.Sound = new SG.SoundManager(); } catch (_) { SG.Sound = null; }
