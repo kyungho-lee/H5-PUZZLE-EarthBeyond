@@ -480,6 +480,7 @@
   <span style="color:#ff4060;font-weight:bold">DEV</span>
   <button onclick="devResetAll()">RESET DATA</button>
   <button id="btn-cheat" onclick="devToggleCheat()">CHEAT OFF</button>
+  <button onclick="devStartDaily()" style="color:#ffd23f;border-color:#ffd23f">DAILY</button>
   <label style="font-size:.75rem;color:#aaa">THEME:</label>
   <select id="dev-theme-select" onchange="devSetTheme(this.value)" style="background:#111;color:#fff;border:1px solid #444;font-size:.75rem;padding:1px 4px"></select>
   <button onclick="devUnlockActiveTheme()">UNLOCK</button>
@@ -1112,20 +1113,39 @@ function buildDailyOpts(typeCfg) {
   };
 }
 
+let _devDailyAllThemes = false;  // dev Daily: 모든 테마 랜덤 소개
+
 function startDailyRun() {
   const date = utcDateStr();
   const dow = utcDayOfWeek();
   dailyTypeCfg = SG.ND.dailyType(dow);
   dailyOpts = buildDailyOpts(dailyTypeCfg);
-  rng = dailySeededRng(date);
+  // Dev Daily는 매번 새 랜덤 보드, 일반 Daily는 날짜 시드
+  rng = _devDailyAllThemes ? makeRng() : dailySeededRng(date);
   grid = SG.Daily.dailyBoard(date, dow, rng);
 
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0;
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
   closeModalNav();
-  // Daily: 테마 배경·Chronicles UI 없이 순수 격자만
-  renderer.setCollectionTheme(null);
+
+  // 테마 선택: dev Daily는 전체 테마 랜덤, 일반 Daily는 해금 테마 랜덤
+  const _allThemes = SG.CollectionThemes || [];
+  let _dailyTheme = null;
+  if (_devDailyAllThemes && _allThemes.length > 0) {
+    // 전 테마 랜덤 — 해금 여부 무관 (미해금 테마 소개 효과)
+    _dailyTheme = _allThemes[Math.floor(makeRng()() * _allThemes.length)];
+  } else {
+    const _collMeta = SG.Collection.loadMeta(window.localStorage);
+    const _unlocked = _allThemes.filter(function (t) {
+      return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
+    });
+    const _themeRng = dailySeededRng(date + ':theme');
+    if (_unlocked.length > 0) _dailyTheme = _unlocked[Math.floor(_themeRng() * _unlocked.length)];
+  }
+
+  // Daily: Chronicles 진행 UI 숨김, 배경만 테마 적용 (step 배경 없음)
+  renderer.setCollectionTheme(_dailyTheme || null);
   renderer.clearStepBg();
   document.getElementById('chronicles-progress').classList.remove('visible');
   const _toast = document.getElementById('chronicles-toast');
@@ -1198,7 +1218,7 @@ async function dailyGameOver() {
   document.getElementById('daily-run-stars').textContent = '⭐' + dailyRunStars;
   document.getElementById('daily-total-stars').textContent = '⭐' + (dailyState.bestRun || 0);
   document.getElementById('daily-retries').textContent = SG.Daily.retriesLeft(dailyState) + '/' + SG.Daily.MAX_RETRIES;
-  const canRetry = SG.Daily.canRetry(dailyState);
+  const canRetry = _devDailyAllThemes || SG.Daily.canRetry(dailyState);
   document.getElementById('btn-daily-retry').style.display = canRetry ? '' : 'none';
 
   // CLAIM 버튼: 오늘 best 중 미정산분(claimable). 0이면 라벨만 '없음'.
@@ -2174,7 +2194,7 @@ async function renderDailyLeaderboard() {
 }
 
 async function dailyRetry() {
-  if (!SG.Daily.canRetry(dailyState)) return;
+  if (!_devDailyAllThemes && !SG.Daily.canRetry(dailyState)) return;
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
   let granted = true;
@@ -2190,6 +2210,7 @@ function dailyToMenu() {
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
   dailyMode = false;
+  _devDailyAllThemes = false;  // dev Daily 플래그 리셋
   try { SG.CG.requestMidgameAd(); } catch (_) {}
   renderer.setMode('main');
   showStart();
@@ -2485,6 +2506,17 @@ function devCheatPatchSpawn(result) {
 }
 
 // ── DEV BAR ───────────────────────────────────────────────────────
+// Dev Daily: 제한 없이 진입, 전 테마 랜덤 배경으로 미해금 테마 소개
+function devStartDaily() {
+  _devDailyAllThemes = true;
+  _pendingOnboard = false;  // 온보딩 CTA 비활성
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  // retries 제한 무시 — dev용 강제 진입
+  dailyState.retriesUsed = 0;
+  startDailyRun();
+}
+
 // dev 모드: 테마 드롭다운을 CollectionThemes 목록으로 채운다.
 function devPopulateThemeSelect() {
   const sel = document.getElementById('dev-theme-select');
