@@ -322,8 +322,11 @@
       transition:border-color .1s, color .1s; font-family:inherit;
     }
     .bgm-theme-chip .btc-play:hover { border-color:var(--accent); color:var(--accent); }
-    /* Daily leaderboard (dummy until token connected) */
-    #daily-lb { margin:14px 0 4px; text-align:left; }
+    /* Daily / Endless leaderboard */
+    #daily-lb, #endless-lb { margin:14px 0 4px; text-align:left; }
+    .lb-flag { font-size:.9rem; margin-right:4px; line-height:1; }
+    .lb-row.lb-me { background:rgba(58,123,213,.12); border-radius:3px; }
+    .lb-row.lb-me .lb-rank { color:var(--accent); font-weight:700; }
 
     /* ── Collection 오버레이 ────────────────────────────────────────── */
     #ol-unlock .unlock-thumb {
@@ -835,12 +838,20 @@
 
 <!-- ── Endless Mode: 게임오버 ─────────────────────────────────────── -->
 <div id="ol-endless-over" class="overlay hidden">
-  <div class="ol-panel">
+  <div class="ol-panel" style="max-width:360px;width:94vw">
     <div class="ol-title">GAME OVER</div>
     <div style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:8px">ENDLESS MODE</div>
-    <div class="ol-score" id="endless-run-stars-display" style="font-size:1.3rem;line-height:1.4">0 pts</div>
-    <div class="ol-label" style="font-size:.68rem;color:var(--textdim);margin-bottom:14px">SCORE · ⭐ PER 100 PTS</div>
-    <button class="btn-ad ad-gold modal-btn" id="btn-endless-double" onclick="endlessDoubleStars()">
+    <div class="ol-score" id="endless-run-score" style="font-size:1.5rem;line-height:1.2;color:#ffd23f">0</div>
+    <div style="font-size:.62rem;color:var(--textdim);letter-spacing:2px;margin-bottom:4px">SCORE</div>
+    <div id="endless-run-meta" style="font-size:.72rem;color:var(--textdim);margin-bottom:14px"></div>
+    <!-- 리더보드 -->
+    <div id="endless-lb">
+      <div class="lb-title" style="color:var(--textdim);font-size:.68rem;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        RANKING <span id="endless-lb-badge" class="lb-badge">DEMO</span>
+      </div>
+      <div id="endless-lb-rows"></div>
+    </div>
+    <button class="btn-ad ad-gold modal-btn" id="btn-endless-double" onclick="endlessDoubleStars()" style="margin-top:10px">
       📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
     </button>
     <button class="btn-primary modal-btn" onclick="endlessAgain()">PLAY AGAIN</button>
@@ -2309,14 +2320,62 @@ async function endlessGameOver() {
     dblBtn.dataset.runStars = String(earnedStars);
   }
 
-  let scoreLabel = endlessScore + ' pts  ⭐' + earnedStars;
-  if (isNewBest) scoreLabel += '  🏆 NEW BEST!';
-  if (capReached) scoreLabel += '  (daily cap reached)';
-  document.getElementById('endless-run-stars-display').textContent = scoreLabel;
+  // 점수 표시
+  const scoreEl = document.getElementById('endless-run-score');
+  if (scoreEl) scoreEl.textContent = endlessScore.toLocaleString();
+  const metaEl = document.getElementById('endless-run-meta');
+  if (metaEl) {
+    var metaParts = ['⭐ ' + earnedStars + ' earned'];
+    if (isNewBest) metaParts.push('🏆 NEW BEST');
+    if (capReached) metaParts.push('daily cap reached');
+    metaEl.textContent = metaParts.join('  ·  ');
+  }
 
   syncAdButtons(['btn-endless-double']);
   document.getElementById('ol-endless-over').classList.remove('hidden');
   openModalNav('ol-endless-over');
+  renderEndlessLeaderboard();
+}
+
+async function renderEndlessLeaderboard() {
+  const box   = document.getElementById('endless-lb-rows');
+  const badge = document.getElementById('endless-lb-badge');
+  if (!box) return;
+  box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
+
+  let rows = [];
+  let isDemo = true;
+  try {
+    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      isDemo = false;
+      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'endless', limit: 10 });
+    } else {
+      rows = SG.FB ? SG.FB._demoRows() : [];
+    }
+  } catch (_) { rows = []; }
+
+  if (!rows || !rows.length) {
+    try { rows = SG.FB._demoRows ? SG.FB._demoRows() : []; } catch (_) { rows = []; }
+    isDemo = true;
+  }
+  if (badge) badge.style.display = isDemo ? '' : 'none';
+
+  const myId = SG.FB ? SG.FB.getPlayerId() : '';
+  const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
+
+  box.innerHTML = rows.slice(0, 10).map(function (r, i) {
+    const cc  = r.country || '';
+    const fl  = cc ? flag(cc) : '🌐';
+    const id  = (r.playerId || 'player').slice(-6);
+    const sc  = (r.score != null ? Number(r.score).toLocaleString() : '0');
+    const isMe = r.playerId === myId;
+    return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
+      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-flag">' + fl + '</span>' +
+      '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
+      '<span class="lb-score">' + sc + '</span>' +
+      '</div>';
+  }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
 }
 
 async function endlessDoubleStars() {
@@ -3167,22 +3226,36 @@ function renderThemeAssetToCell(theme, step, cell, fallbackHtml) {
 // Render the daily leaderboard rows (dummy when backend not connected).
 // fetchLeaderboard returns _demoLeaderboard() until Firebase/token is live.
 async function renderDailyLeaderboard() {
-  const box = document.getElementById('daily-lb-rows');
+  const box   = document.getElementById('daily-lb-rows');
   const badge = document.getElementById('daily-lb-badge');
   if (!box) return;
   let rows = [];
   let isDemo = true;
   try {
-    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) isDemo = false;
-    rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'daily' });
+    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      isDemo = false;
+      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'daily', limit: 10 });
+    } else {
+      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
+    }
   } catch (_) { rows = []; }
   if (badge) badge.style.display = isDemo ? '' : 'none';
-  box.innerHTML = rows.slice(0, 5).map(function (r, i) {
-    const id = (r.playerId || 'player').slice(0, 8);
-    const sc = (r.score != null ? r.score : 0);
-    return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span>' +
-           '<span class="lb-id">' + id + '</span>' +
-           '<span class="lb-score">⭐' + sc + '</span></div>';
+
+  const myId = SG.FB ? SG.FB.getPlayerId() : '';
+  const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
+
+  box.innerHTML = rows.slice(0, 10).map(function (r, i) {
+    const cc   = r.country || '';
+    const fl   = cc ? flag(cc) : '🌐';
+    const id   = (r.playerId || 'player').slice(-6);
+    const sc   = (r.score != null ? r.score : 0);
+    const isMe = r.playerId === myId;
+    return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
+      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-flag">' + fl + '</span>' +
+      '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
+      '<span class="lb-score">⭐' + sc + '</span>' +
+      '</div>';
   }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
 }
 

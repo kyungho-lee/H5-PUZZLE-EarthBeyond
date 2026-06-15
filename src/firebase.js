@@ -107,14 +107,16 @@
   //   maxChain: number  (Main)
   async function submitScore(score, meta) {
     if (!db) return;
-    const pid  = getPlayerId();
-    const date = new Date().toISOString().slice(0, 10);
-    const mode = meta && meta.mode;
+    const pid     = getPlayerId();
+    const date    = new Date().toISOString().slice(0, 10);
+    const mode    = meta && meta.mode;
+    const country = detectCountry();
     try {
       await db.collection(SCORES_COL).doc(_docKey(mode, date, pid)).set({
         playerId: pid,
         score,
         date,
+        country,
         ...(meta || {}),
         ts: global.firebase.firestore.FieldValue.serverTimestamp(),
       });
@@ -147,14 +149,41 @@
     }
   }
 
+  // ── 국가 코드 감지 (navigator.language 기반, 경량) ──────────────────
+  // 'ko-KR' → 'KR', 'en-US' → 'US', 'en' → 'US' (fallback)
+  function detectCountry() {
+    try {
+      var lang = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+      var parts = lang.split('-');
+      if (parts.length >= 2) return parts[parts.length - 1].toUpperCase();
+      // 언어코드만 있을 때 주요 매핑
+      var map = { ko:'KR', ja:'JP', zh:'CN', de:'DE', fr:'FR', es:'ES',
+                  pt:'BR', ru:'RU', ar:'SA', hi:'IN', id:'ID', tr:'TR' };
+      return map[parts[0]] || 'US';
+    } catch (_) { return 'US'; }
+  }
+
+  // ISO 3166-1 alpha-2 → 국기 이모지 (flag emoji = regional indicator letters)
+  function countryFlag(cc) {
+    try {
+      if (!cc || cc.length !== 2) return '🌐';
+      var base = 0x1F1E6 - 65;
+      return String.fromCodePoint(base + cc.charCodeAt(0)) +
+             String.fromCodePoint(base + cc.charCodeAt(1));
+    } catch (_) { return '🌐'; }
+  }
+
   function _demoLeaderboard() {
     return [
-      { playerId: 'demo_1', score: 9800 },
-      { playerId: 'demo_2', score: 7200 },
-      { playerId: 'demo_3', score: 5100 },
+      { playerId: 'demo_1', score: 9800, country: 'KR' },
+      { playerId: 'demo_2', score: 7200, country: 'US' },
+      { playerId: 'demo_3', score: 5100, country: 'JP' },
+      { playerId: 'demo_4', score: 3400, country: 'DE' },
+      { playerId: 'demo_5', score: 1200, country: 'BR' },
     ];
   }
 
-  SG.FB = { init, isConnected, getPlayerId, submitScore, fetchLeaderboard };
+  SG.FB = { init, isConnected, getPlayerId, submitScore, fetchLeaderboard,
+            detectCountry, countryFlag, _demoRows: _demoLeaderboard };
 
 })(typeof window !== 'undefined' ? window : global);
