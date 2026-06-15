@@ -1605,6 +1605,12 @@ function startDailyRun() {
   // Dev Daily는 매번 새 랜덤 보드, 일반 Daily는 날짜 시드
   rng = _devDailyAllThemes ? makeRng() : dailySeededRng(date);
   grid = SG.Daily.dailyBoard(date, dow, rng);
+  // 판 시작 시 retry 1회 소모 (dev 모드 제외)
+  const _isDev = localStorage.getItem('sg_dev') === '1' ||
+                 new URLSearchParams(location.search).has('dev');
+  if (!_isDev && !_devDailyAllThemes) {
+    SG.Daily.useRetry(dailyState, window.localStorage);
+  }
 
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0;
   document.getElementById('ol-start').classList.add('hidden');
@@ -3147,7 +3153,6 @@ async function dailyRetry() {
   let granted = true;
   try { const res = await requestRewardedAdWithQuota('daily_retry'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
   if (!granted) { document.getElementById('ol-daily-over').classList.remove('hidden'); openModalNav('ol-daily-over'); return; }
-  SG.Daily.useRetry(dailyState, window.localStorage);
   startDailyRun();
 }
 
