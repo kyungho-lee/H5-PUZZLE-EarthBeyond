@@ -41,6 +41,7 @@
         dailyChallenge: 'DAILY CHALLENGE',
         gallery:      'GALLERY',
         unlock:       'UNLOCK',
+        tutorial:     '튜토리얼 보기',
       },
       hint: {
         keyboard:     '↑↓ 이동 · Enter 선택',
@@ -189,6 +190,7 @@
         dailyChallenge: 'DAILY CHALLENGE',
         gallery:      'GALLERY',
         unlock:       'UNLOCK',
+        tutorial:     'HOW TO PLAY',
       },
       hint: {
         keyboard:     '↑↓ Move · Enter Select',
