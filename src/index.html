@@ -546,13 +546,11 @@
     <p style="color:var(--textdim);font-size:.8rem;margin-bottom:24px;line-height:1.6">
       Merge tiles to travel from Primordial Earth to the edge of the Universe
     </p>
-    <button class="btn-primary modal-btn" id="btn-daily" data-action="daily" onclick="openDaily()">DAILY</button>
-    <button class="btn-secondary modal-btn" id="btn-practice" data-action="practice" onclick="startPractice()">PRACTICE</button>
-    <button class="btn-secondary modal-btn" id="btn-collection" data-action="collection" onclick="startCollection()">COLLECTION</button>
-    <!-- 본게임(8x8) + 스토리모드: dev 전용. 기본 hidden — 검수 빌드에서 노출 안 됨. -->
+    <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()">CHRONICLES</button>
+    <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()">SETTINGS</button>
+    <!-- dev 전용: hidden -->
     <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
     <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
-    <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()">SETTINGS</button>
     <div class="modal-hint">↑↓ Move · Enter Select</div>
     <div id="app-version" style="margin-top:14px;color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
   </div>
@@ -587,17 +585,6 @@
   </div>
 </div>
 
-<!-- Practice game-over (not ranked) -->
-<div id="ol-practice-over" class="overlay hidden">
-  <div class="ol-panel">
-    <div class="ol-title">PRACTICE</div>
-    <div class="ol-score" id="practice-run-stars">⭐0</div>
-    <div class="ol-label">PRACTICE · NOT RANKED</div>
-    <button class="btn-primary modal-btn" data-action="again" onclick="practiceAgain()">AGAIN</button>
-    <button class="btn-secondary modal-btn" data-action="menu" onclick="practiceToMenu()">MENU</button>
-    <div class="modal-hint">↑↓ Move · Enter Select</div>
-  </div>
-</div>
 
 <!-- ── Collection: 체인 해금 팝업 ─────────────────────────────────── -->
 <div id="ol-unlock" class="overlay hidden">
@@ -714,6 +701,11 @@
     <button id="chip-haptic" class="soundset-chip modal-btn" data-action="haptic" onclick="toggleHaptic()">
       <span>HAPTIC</span><span class="sc-desc" id="haptic-state">ON</span>
     </button>
+    <!-- Daily EVENT — 항상 표시, 이벤트 포지션 -->
+    <div class="ol-label" style="margin-top:14px;margin-bottom:6px;font-size:.65rem;letter-spacing:2px;color:var(--textdim)">EVENT</div>
+    <button class="btn-secondary modal-btn" id="btn-settings-daily" data-action="daily" onclick="openDailyFromSettings()" style="position:relative">
+      DAILY CHALLENGE <span id="settings-daily-dot" class="reddot hidden"></span>
+    </button>
     <!-- 콜렉션 모드일 때만 노출. NEW 블록 있으면 레드닷. -->
     <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative">
       GALLERY <span id="settings-gallery-dot" class="reddot hidden"></span>
@@ -769,7 +761,7 @@ let dailyMode = false;
 let dailyState = null;     // SG.Daily DailyState
 let dailyRunStars = 0;     // stars in the current run (truth — drives game-over)
 let dailyStarsShown = 0;   // stars displayed in HUD (lags via fly-in animation)
-let practiceMode = false;  // Practice run: daily mechanics, NOT ranked/persisted
+// practiceMode removed — Practice 모드 제거 (v0.4)
 let dailyTypeCfg = null;   // today's type config
 let dailyOpts = null;      // applyMove opts for daily
 let mainOpts = null;       // applyMove opts for main game (START Dev)
@@ -916,13 +908,8 @@ function doMove(dir) {
         if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
         return;
       }
-      if (result.collapse) {
-        practiceMode ? practiceCollapse(result.collapse) : dailyCollapse(result.collapse);
-        return;
-      }
-      if (ND.checkGameOver(grid, 'sizeOnly')) {
-        practiceMode ? practiceGameOver() : dailyGameOver();
-      }
+      if (result.collapse) { dailyCollapse(result.collapse); return; }
+      if (ND.checkGameOver(grid, 'sizeOnly')) { dailyGameOver(); }
       return;
     }
     // 본게임 클리어 = 아무 색이든 1024 블록 1개 도달.
@@ -1003,7 +990,7 @@ function startStory() {
 async function startGame() {
   dailyMode = false;
   collectionMode = false;
-  practiceMode = false;
+
   if (renderer) { renderer.setCollectionTheme(null); renderer.setMode('main'); }
   closeModalNav();
   document.getElementById('ol-start').classList.add('hidden');
@@ -1019,6 +1006,26 @@ async function startGame() {
 }
 
 // ── Daily mode lifecycle ──────────────────────────────────────────
+// Chronicles 진입점 — 메인 메뉴 CHRONICLES 버튼
+// 갤러리를 기본 화면으로 열고, 갤러리에서 플레이 시작
+function openChroniclesEntry() {
+  document.getElementById('ol-start').classList.add('hidden');
+  closeModalNav();
+  openGallery();
+}
+
+// Settings에서 Daily EVENT 진입
+function openDailyFromSettings() {
+  closeSettings();
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  if (dailyState.retriesUsed >= SG.Daily.MAX_RETRIES) {
+    refreshDailyMenu();
+    return;
+  }
+  startDailyRun();
+}
+
 function openDaily() {
   const date = utcDateStr();
   dailyState = SG.Daily.loadDaily(date, window.localStorage);
@@ -1053,7 +1060,7 @@ function startDailyRun() {
   dailyOpts = buildDailyOpts(dailyTypeCfg);
   rng = dailySeededRng(date);
   grid = SG.Daily.dailyBoard(date, dow, rng);
-  practiceMode = false;
+
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0;
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
@@ -1076,7 +1083,6 @@ function startDailyRun() {
 // Practice: daily mechanics (4x4, sizeOnly, star targets) but a fresh RANDOM
 // board each run and NO ranking/persistence. Free to start, unlimited AGAIN.
 // collapseSize:1024 is Practice-only — 1024 merge resets the board and continues.
-let practiceCollapseCount = 0;  // how many 1024 collapses this Practice run
 
 // ── Collection mode state ─────────────────────────────────────────
 let collectionMode = false;
@@ -1087,40 +1093,12 @@ const CONTINUE_COSTS = [5, 10, 20, 40];   // 회수당 스타 비용 (이후는 
 let lastInterstitialAt = 0;
 const INTERSTITIAL_COOLDOWN_MS = 60000;
 
-function startPractice() {
-  const dow = utcDayOfWeek();
-  dailyTypeCfg = SG.ND.dailyType(dow);
-  const base = buildDailyOpts(dailyTypeCfg);
-  dailyOpts = Object.assign({}, base, { collapseSize: 1024 });
-  rng = makeRng();                                  // random seed — new board each run
-  grid = SG.Daily.dailyBoard(utcDateStr(), dow, rng);
-  devCheatPatchInitialGrid(grid);
-  practiceMode = true;
-  practiceCollapseCount = 0;
-  dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0;
-  document.getElementById('ol-start').classList.add('hidden');
-  document.getElementById('ol-daily-over').classList.add('hidden');
-  document.getElementById('ol-practice-over').classList.add('hidden');
-  closeModalNav();
-  renderer.setCollectionTheme(null);
-  renderer.setMode('daily');
-  renderer.drawGrid(grid);
-  updateDailyHud();
-  try { SG.CG.gameplayStart(); } catch (_) {}
-}
 
 function updateDailyHud() {
   const label = dailyTypeCfg ? dailyTypeCfg.label : '';
-  const collapseTag = (practiceMode && practiceCollapseCount > 0) ? ' ×' + practiceCollapseCount : '';
-  document.getElementById('game-title').textContent = (practiceMode ? 'PRACTICE · ' : 'DAILY · ') + label + collapseTag;
-  if (practiceMode) {
-    // Practice: 이번 판 ⭐만 (랭크/리트라이 없음)
-    setStats('THIS RUN', '⭐' + dailyStarsShown, null, null);
-  } else {
-    // Daily: 이번 판 ⭐ + 남은 리트라이
-    setStats('THIS RUN', '⭐' + dailyStarsShown,
-             'RETRY', 'R' + (dailyState ? SG.Daily.retriesLeft(dailyState) : 0));
-  }
+  document.getElementById('game-title').textContent = 'DAILY · ' + label;
+  setStats('THIS RUN', '⭐' + dailyStarsShown,
+           'RETRY', 'R' + (dailyState ? SG.Daily.retriesLeft(dailyState) : 0));
   updateWalletChip();
   updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
 }
@@ -1194,17 +1172,6 @@ function claimDailyAndExit() {
 
 // Practice game-over: NOT ranked, NOT persisted. Free, unlimited AGAIN.
 // Flow (per spec): game-over → interstitial ad → result overlay.
-async function practiceGameOver() {
-  gameRunning = false;
-  try { SG.CG.gameplayStop(); } catch (_) {}
-  try { if (SG.Sound && SG.Sound.playGameOver) SG.Sound.playGameOver(); } catch (_) {}
-  // Sync the displayed count (a fly-in may still be mid-flight on the last move).
-  dailyStarsShown = dailyRunStars;
-  try { await SG.CG.requestMidgameAd(); } catch (_) {}   // ad before showing result
-  document.getElementById('practice-run-stars').textContent = '⭐' + dailyRunStars;
-  document.getElementById('ol-practice-over').classList.remove('hidden');
-  openModalNav('ol-practice-over');
-}
 
 // ── 공통 Collapse 처리 (FX + 광고 쿨다운 + 보드 리셋) ────────────
 async function _collapseShared(collapseInfo) {
@@ -1241,16 +1208,7 @@ async function _collapseShared(collapseInfo) {
   gameRunning = true;
 }
 
-// Practice 1024 Collapse
-async function practiceCollapse(collapseInfo) {
-  gameRunning = false;
-  practiceCollapseCount++;
-  await _collapseShared(collapseInfo);
-  updateDailyHud();
-  renderer.drawGrid(grid);
-}
-
-// Daily 1024 Collapse — Practice와 동일 효과: FX + 보드 리셋 후 계속 플레이
+// Daily 1024 Collapse — FX + 보드 리셋 후 계속 플레이
 async function dailyCollapse(collapseInfo) {
   gameRunning = false;
   await _collapseShared(collapseInfo);
@@ -1258,19 +1216,6 @@ async function dailyCollapse(collapseInfo) {
   renderer.drawGrid(grid);
 }
 
-function practiceAgain() {
-  closeModalNav();
-  document.getElementById('ol-practice-over').classList.add('hidden');
-  startPractice();
-}
-
-function practiceToMenu() {
-  closeModalNav();
-  document.getElementById('ol-practice-over').classList.add('hidden');
-  dailyMode = false; practiceMode = false;
-  renderer.setMode('main');
-  showStart();
-}
 
 // ── Collection: 머지 감지 → step 획득 처리 ────────────────────────
 // doMove animate 콜백에서 mergedSizes 배열을 받아 처리.
@@ -1535,7 +1480,7 @@ function startCollection() {
   collectionMode = true;
   collectionCollapseCount = 0;
   collectionContinueCount = 0;
-  practiceMode = false;
+
   dailyMode = true;
   gameRunning = true;
   dailyRunStars = 0;
@@ -1922,7 +1867,7 @@ function collectionToMenu() {
   });
   collectionMode = false;
   dailyMode = false;
-  practiceMode = false;
+
   if (renderer) { renderer.setCollectionTheme(null); renderer.setMode('main'); }
   showStart();
 }
@@ -1954,7 +1899,7 @@ function updateGalleryDot() {
 
 function openGallery(themeId) {
   // 현재 열려 있는 오버레이(설정/game-over 등)를 일시 숨김 후 기억
-  const candidates = ['ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over', 'ol-practice-over'];
+  const candidates = ['ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over'];
   _galleryReturnOverlay = null;
   for (const id of candidates) {
     const el = document.getElementById(id);
@@ -2385,6 +2330,13 @@ function openSettings() {
     const hasNew = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage, _settingsTheme);
     if (dot) dot.classList.toggle('hidden', !hasNew);
   }
+  // Daily EVENT 레드닷 — 오늘 아직 클레임 안 한 best가 있으면 표시
+  const dailyDot = document.getElementById('settings-daily-dot');
+  if (dailyDot) {
+    const _ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
+    const hasUnclaimed = SG.Daily.claimableBest(_ds) > 0;
+    dailyDot.classList.toggle('hidden', !hasUnclaimed);
+  }
   document.getElementById('ol-settings').classList.remove('hidden');
   openModalNav('ol-settings');
 }
@@ -2402,7 +2354,7 @@ function settingsToMenu() {
   // Stop any running game/daily/practice and return to START screen.
   gameRunning = false;
   dailyMode = false;
-  practiceMode = false;
+
   if (renderer) renderer.setMode('main');
   showStart();
 }
@@ -2433,7 +2385,6 @@ function _testGetGameRunning() { return gameRunning; }
 function _testSetGrid(g)     { grid = g; if (renderer) renderer.drawGrid(grid); }
 function _testSetGameRunning(v) { gameRunning = v; }
 function _testSetIsAnimating(v) { isAnimating = v; }
-function _testGetCollapseCount() { return practiceCollapseCount; }
 
 // ── DEV CHEAT ─────────────────────────────────────────────────────
 // Cheat sequence: pairs of same-size tiles so every push merges them.

@@ -86,17 +86,15 @@
   // ── Wallet (별 2-tier) ─────────────────────────────────────────────
   var WALLET_KEY = 'earthbeyond_wallet';
   var WALLET_DAILY_CAP = 80;
-  var WALLET_PRACTICE_CAP = 12;
 
   function loadWallet(store) {
     var w = _read(store, WALLET_KEY);
     if (!w) {
-      w = { stars: 0, totalEarned: 0, totalSpent: 0, dailyEarnedToday: 0, practiceEarnedToday: 0, lastUpdated: '' };
+      w = { stars: 0, totalEarned: 0, totalSpent: 0, dailyEarnedToday: 0, lastUpdated: '' };
     }
     var today = new Date().toISOString().slice(0, 10);
     if (w.lastUpdated !== today) {
       w.dailyEarnedToday = 0;
-      w.practiceEarnedToday = 0;
       w.lastUpdated = today;
     }
     return w;
@@ -113,10 +111,6 @@
       var room = Math.max(0, WALLET_DAILY_CAP - w.dailyEarnedToday);
       earned = Math.min(runStars, room);
       w.dailyEarnedToday += earned;
-    } else if (mode === 'practice') {
-      var proom = Math.max(0, WALLET_PRACTICE_CAP - w.practiceEarnedToday);
-      earned = Math.min(runStars, proom);
-      w.practiceEarnedToday += earned;
     } else {
       earned = runStars;
     }
@@ -145,6 +139,6 @@
     dailyBoard, loadDaily, addStars, setBestRun, canRetry, useRetry, retriesLeft,
     claimBestToWallet, claimableBest,
     loadWallet, saveWallet, earnStarsToWallet, spendStars, getWalletStars,
-    WALLET_KEY, WALLET_DAILY_CAP, WALLET_PRACTICE_CAP,
+    WALLET_KEY, WALLET_DAILY_CAP,
   };
 });
