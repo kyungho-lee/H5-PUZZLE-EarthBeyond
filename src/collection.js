@@ -156,7 +156,8 @@
     var sizeToStep = _sizeToStep(theme);
     var finalSize = _finalSize(theme);
     var state = loadTheme(themeId, store, theme);
-    if (state.status === 'completed') return { newSteps: [], isComplete: true };
+    // 이미 완료된 테마는 아무 이벤트도 내지 않음 (startCollection이 다음 테마로 교정해야 함)
+    if (state.status === 'completed') return { newSteps: [], isComplete: false };
 
     var newSteps = [];
     var isComplete = false;

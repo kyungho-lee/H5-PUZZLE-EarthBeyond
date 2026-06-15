@@ -102,16 +102,19 @@
   function saveWallet(store, w) { _write(store, WALLET_KEY, w); }
 
   // 세션 종료 시 runStars를 wallet으로 이전
-  // mode: 'daily' | 'practice' | 'collection'
+  // mode: 'daily' | 'endless' → 일일 캡(WALLET_DAILY_CAP) 공유
+  //       'collection'        → 테마 완성 일회성 보상, 캡 제외
   // 반환: 실제 적립된 별 수 (캡 초과분 제거됨)
   function earnStarsToWallet(runStars, mode, store) {
     var w = loadWallet(store);
     var earned = 0;
-    if (mode === 'daily') {
+    if (mode === 'daily' || mode === 'endless') {
+      // daily + endless 합산 일일 캡
       var room = Math.max(0, WALLET_DAILY_CAP - w.dailyEarnedToday);
       earned = Math.min(runStars, room);
       w.dailyEarnedToday += earned;
     } else {
+      // 'collection': 테마 완성 일회성 보상 — 캡 없음
       earned = runStars;
     }
     w.stars += earned;
@@ -134,11 +137,47 @@
     return loadWallet(store).stars;
   }
 
+  // ── Rewarded Ad Daily Limit ────────────────────────────────────────
+  var AD_KEY = 'earthbeyond_ad_quota';
+  var REWARDED_DAILY_LIMIT = 3;
+
+  function loadAdQuota(store) {
+    var q = _read(store, AD_KEY);
+    var today = new Date().toISOString().slice(0, 10);
+    if (!q || q.date !== today) {
+      q = { date: today, used: 0 };
+    }
+    return q;
+  }
+  function saveAdQuota(store, q) { _write(store, AD_KEY, q); }
+
+  // 리워드 광고 소비 가능 여부 확인. 가능하면 true + 카운트 증가.
+  function useRewardedAd(store) {
+    var q = loadAdQuota(store);
+    if (q.used >= REWARDED_DAILY_LIMIT) return false;
+    q.used++;
+    saveAdQuota(store, q);
+    return true;
+  }
+
+  function rewardedAdsLeft(store) {
+    var q = loadAdQuota(store);
+    return Math.max(0, REWARDED_DAILY_LIMIT - q.used);
+  }
+
+  // 광고 실패 시 쿼터 1회 반환
+  function refundRewardedAd(store) {
+    var q = loadAdQuota(store);
+    if (q.used > 0) { q.used--; saveAdQuota(store, q); }
+  }
+
   return {
     N, MAX_RETRIES,
     dailyBoard, loadDaily, addStars, setBestRun, canRetry, useRetry, retriesLeft,
     claimBestToWallet, claimableBest,
     loadWallet, saveWallet, earnStarsToWallet, spendStars, getWalletStars,
     WALLET_KEY, WALLET_DAILY_CAP,
+    useRewardedAd, rewardedAdsLeft, refundRewardedAd, REWARDED_DAILY_LIMIT,
+    AD_KEY,
   };
 });

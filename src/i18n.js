@@ -1,0 +1,349 @@
+// src/i18n.js — Earth & Beyond 언어팩 시스템
+// 사용법: SG.i18n.t('ui.btn.chronicles')
+//         SG.i18n.t('themes.primordial-earth.stepDescriptions.3')
+// 언어 전환: SG.i18n.setLang('en') — 기본값 'ko'
+(function (root) {
+  'use strict';
+  root.SG = root.SG || {};
+
+  // ── 언어팩 정의 ────────────────────────────────────────────────────
+  var PACKS = {};
+
+  // ── 한국어 (기본) ──────────────────────────────────────────────────
+  PACKS['ko'] = {
+    ui: {
+      gameTitle:    'EARTH & BEYOND',
+      gameSubtitle: '원시 지구에서 우주의 끝까지, 머지로 시대를 완성하라',
+      btn: {
+        chronicles:   'CHRONICLES',
+        settings:     'SETTINGS',
+        playAgain:    'PLAY AGAIN',
+        menu:         'MENU',
+        close:        'CLOSE',
+        retry:        'RETRY (무료)',
+        retryAd:      '📺 더 높은 BEST를 위해 재도전',
+        claimNow:     'CLAIM NOW',
+        claim:        'CLAIM',
+        claimAndMenu: 'CLAIM 하고 메뉴로',
+        startJourney: 'START YOUR JOURNEY →',
+        beginChapter: 'BEGIN CHAPTER ›',
+        nextChapter:  'NEXT CHAPTER ›',
+        viewGallery:  'VIEW GALLERY',
+        playChapter:  'PLAY CHAPTER',
+        continueChapter: 'CONTINUE CHAPTER ›',
+        nextTheme:    'NEXT THEME',
+        continueAd:   '📺 이어하기 (광고)',
+        endRun:       '이번 판 종료 ▸',
+        doubleReward: '📺 보상 2배 (광고)',
+        dailyChallenge: 'DAILY CHALLENGE',
+        gallery:      'GALLERY',
+        unlock:       'UNLOCK',
+      },
+      hint: {
+        keyboard:     '↑↓ 이동 · Enter 선택',
+        keyboardSound:'↑↓ 이동 · ←→ 사운드 · Enter 선택',
+      },
+      label: {
+        soundSet:     'SOUND SET',
+        event:        'EVENT',
+        thisRun:      'THIS RUN',
+        todayBest:    'TODAY BEST',
+        retriesRemaining: 'RETRIES REMAINING',
+        higherBestTip:   '더 높은 BEST = 더 큰 CLAIM',
+        todayRanking: "TODAY'S RANKING",
+        step:         'STEP',
+        chapter:      'CHAPTER',
+        allStepsCollected: 'ALL STEPS COLLECTED',
+        earned:       'EARNED',
+        clearAllBut:  '상위 3단계를 제외하고 보드를 비우면 이어서 플레이',
+        dailyDone:    '오늘의 도전이 끝났습니다.',
+        nextDaily:    '다음 Daily까지',
+        newBlockFound:'첫 번째 블록을 발견했습니다! 갤러리를 확인하세요 ⭐',
+        themeComplete:'THEME COMPLETE!',
+        gameOver:     'GAME OVER',
+        settings:     'SETTINGS',
+        gallery:      'GALLERY',
+      },
+      toast: {
+        clearGoal:    '🏆 목표 달성 — CLEAR!',
+        storyDevMode: 'STORY MODE — 준비 중 (DEV)',
+        newBlockGallery: '새 블록 발견! 갤러리를 확인하세요 ⭐',
+        devThemeUnlocked: 'DEV: {{id}} 해금됨',
+        notEnoughStars: '별이 부족합니다 (⭐{{cost}} 필요)',
+        themeUnlocked: '🔓 테마 해금! −⭐{{cost}}',
+        claimed:      '⭐ +{{n}} CLAIMED',
+      },
+    },
+
+    themes: {
+      'primordial-earth': {
+        label:       'PRIMORDIAL EARTH',
+        description: '우주 먼지에서 생명의 새벽까지',
+        chapter: {
+          number:  1,
+          title:   'Primordial Earth',
+          tagline: '138억 년 전, 먼지와 가스가 중력에 이끌려 모이기 시작했다.',
+          completeMessage: '생명의 씨앗이 뿌리를 내렸다. 살아남은 포유류의 후손 중 하나가 돌을 집어 들기까지, 그리 오래 걸리지 않았다.',
+          bridgeTitle:     'NEXT: HUMAN CIVILIZATION',
+          bridgeTeaser:    '돌 하나를 깎으며 시작된 여정이 마침내 별을 향한다.',
+        },
+        stepDescriptions: [
+          '성간 먼지와 분자 구름 — 138억 년 전, 빅뱅의 잔해가 우주를 떠돌았다.',
+          '원시 태양계 원반 — 먼지와 가스가 소용돌이치며 태양계의 씨앗이 되었다.',
+          '마그마 오션 지구 — 갓 태어난 지구는 표면 전체가 용암 바다였다.',
+          '달 형성 충돌 — 테이아가 지구에 충돌해 파편이 모여 달이 탄생했다.',
+          '원시 바다의 탄생 — 증기가 식으며 지구 최초의 바다가 출렁이기 시작했다.',
+          '최초의 생명 — 스트로마톨라이트, 얕은 바다에서 생명이 첫 발자국을 남겼다.',
+          '산소 대폭발 — 미생물들이 산소를 뿜어내며 지구 대기를 바꾸어 놓았다.',
+          '캄브리아 대폭발 — 5억 4천만 년 전, 복잡한 생명체들이 폭발적으로 등장했다.',
+          '공룡의 시대 — 거대한 생명체들이 지구를 누비던 쥐라기의 절정.',
+          '소행성 충돌 — 충돌의 충격파가 공룡 시대의 막을 내렸다.',
+          '포유류의 시대 — 살아남은 자들이 새벽빛 아래 새로운 세계를 열었다.',
+        ],
+      },
+      'human-civilization': {
+        label:       'HUMAN CIVILIZATION',
+        description: '석기 도구에서 별을 향한 도전까지',
+        chapter: {
+          number:  2,
+          title:   'Human Civilization',
+          tagline: '돌 하나를 깎던 손이 마침내 달에 발자국을 남겼다.',
+          completeMessage: '인류는 지구를 넘어 우주로 나아갔다. 이제 시선은 태양계 너머를 향한다.',
+          bridgeTitle:     'NEXT: SOLAR SYSTEM',
+          bridgeTeaser:    '탐사선이 태양계 끝을 향해 날아간다. 우리는 그 눈으로 우주를 본다.',
+        },
+        stepDescriptions: [
+          '석기 시대 — 인류는 돌을 깎아 도구를 만들고 동굴 벽에 이야기를 새겼다.',
+          '농업 혁명 — 씨앗을 땅에 심는 순간, 인류는 정착 문명의 길에 들어섰다.',
+          '고대 문명 — 나일 강과 메소포타미아에서 피라미드와 도시가 하늘을 향해 솟았다.',
+          '그리스·로마 — 이성과 법으로 세계를 이해하려 한 철학과 과학의 시대.',
+          '대항해 시대 — 범선이 수평선을 넘어 미지의 대륙을 향해 나아갔다.',
+          '과학 혁명 — 사과 하나가 떨어지는 순간, 우주를 지배하는 법칙이 드러났다.',
+          '산업 혁명 — 증기의 힘이 인간의 노동을 대체하며 세상을 뒤바꾸었다.',
+          '전기 시대 — 에디슨의 전구 하나가 밤을 낮으로 만들어 버렸다.',
+          '원자력 시대 — 원자의 힘을 손에 쥔 인류는 가장 위험한 선택 앞에 섰다.',
+          '디지털 혁명 — 회로 위를 흐르는 전자들이 인류를 하나로 연결했다.',
+          '달 착륙 — 1969년 7월, 인류의 발자국이 달 표면에 새겨졌다.',
+        ],
+      },
+      'solar-system': {
+        label:       'SOLAR SYSTEM',
+        description: '우리의 우주 이웃을 탐험하다',
+        chapter: {
+          number:  3,
+          title:   'Solar System',
+          tagline: '탐사선이 태양계 끝을 향해 날아간다. 우리는 그 눈으로 우주를 본다.',
+          completeMessage: '태양계의 끝에서 지구를 돌아보면, 창백한 푸른 점 하나가 보인다.',
+        },
+        stepDescriptions: [
+          '수성 — 태양에 가장 가까운 행성, 극단의 온도차가 존재하는 세계.',
+          '금성 — 두꺼운 대기가 열을 가두어 태양계에서 가장 뜨거운 행성이 되었다.',
+          '지구 — 생명이 숨쉬는 유일한 행성, 우주에서 바라본 푸른 구슬.',
+          '화성 — 붉은 사막과 올림푸스 화산, 인류 다음 발자국이 닿을 땅.',
+          '목성 — 대적점이라 불리는 300년 된 폭풍이 지구보다 크게 소용돌이친다.',
+          '토성 — 얼음과 암석으로 이루어진 장엄한 고리가 행성을 감싸고 있다.',
+          '천왕성 — 옆으로 누워 공전하는 얼음 행성, 창백한 청록빛의 세계.',
+          '해왕성 — 태양계 끝의 차가운 거인, 시속 2100km의 폭풍이 몰아친다.',
+          '명왕성 — 하트 모양 빙원을 품은 왜소행성, 뉴호라이즌스가 처음 그 모습을 보여주었다.',
+          '태양 — 모든 생명의 근원, 1초에 수소 6억 톤을 헬륨으로 바꾸며 빛난다.',
+          '태양계 전체 — 보이저 1호의 시선으로 바라본 우리의 작은 우주 마을.',
+        ],
+      },
+    },
+  };
+
+  // ── 영어 팩 ────────────────────────────────────────────────────────
+  PACKS['en'] = {
+    ui: {
+      gameTitle:    'EARTH & BEYOND',
+      gameSubtitle: 'Merge tiles to travel from Primordial Earth to the edge of the Universe',
+      btn: {
+        chronicles:   'CHRONICLES',
+        settings:     'SETTINGS',
+        playAgain:    'PLAY AGAIN',
+        menu:         'MENU',
+        close:        'CLOSE',
+        retry:        'RETRY (FREE)',
+        retryAd:      '📺 RETRY FOR HIGHER BEST',
+        claimNow:     'CLAIM NOW',
+        claim:        'CLAIM',
+        claimAndMenu: 'CLAIM & go to menu',
+        startJourney: 'START YOUR JOURNEY →',
+        beginChapter: 'BEGIN CHAPTER ›',
+        nextChapter:  'NEXT CHAPTER ›',
+        viewGallery:  'VIEW GALLERY',
+        playChapter:  'PLAY CHAPTER',
+        continueChapter: 'CONTINUE CHAPTER ›',
+        nextTheme:    'NEXT THEME',
+        continueAd:   '📺 CONTINUE (AD)',
+        endRun:       'END RUN ▸',
+        doubleReward: '📺 DOUBLE REWARD (AD)',
+        dailyChallenge: 'DAILY CHALLENGE',
+        gallery:      'GALLERY',
+        unlock:       'UNLOCK',
+      },
+      hint: {
+        keyboard:     '↑↓ Move · Enter Select',
+        keyboardSound:'↑↓ Move · ←→ Sound Set · Enter Select',
+      },
+      label: {
+        soundSet:     'SOUND SET',
+        event:        'EVENT',
+        thisRun:      'THIS RUN',
+        todayBest:    'TODAY BEST',
+        retriesRemaining: 'RETRIES REMAINING',
+        higherBestTip:   'higher BEST = bigger CLAIM',
+        todayRanking: "TODAY'S RANKING",
+        step:         'STEP',
+        chapter:      'CHAPTER',
+        allStepsCollected: 'ALL STEPS COLLECTED',
+        earned:       'EARNED',
+        clearAllBut:  'Clear all but the top 3 tiers and keep going',
+        dailyDone:    'Today\'s challenge is over.',
+        nextDaily:    'Next Daily in',
+        newBlockFound:'First block discovered! Check the gallery ⭐',
+        themeComplete:'THEME COMPLETE!',
+        gameOver:     'GAME OVER',
+        settings:     'SETTINGS',
+        gallery:      'GALLERY',
+      },
+      toast: {
+        clearGoal:    '🏆 {{size}} REACHED — CLEAR!',
+        storyDevMode: 'STORY MODE — coming soon (DEV)',
+        newBlockGallery: 'New block found! Check the gallery ⭐',
+        devThemeUnlocked: 'DEV: {{id}} unlocked',
+        notEnoughStars: 'Not enough stars (need ⭐{{cost}})',
+        themeUnlocked: '🔓 Theme unlocked! −⭐{{cost}}',
+        claimed:      '⭐ +{{n}} CLAIMED',
+      },
+    },
+
+    themes: {
+      'primordial-earth': {
+        label:       'PRIMORDIAL EARTH',
+        description: 'From cosmic dust to the dawn of life',
+        chapter: {
+          number:  1,
+          title:   'Primordial Earth',
+          tagline: '13.8 billion years ago, dust and gas began to gather under gravity.',
+          completeMessage: 'The seeds of life have taken root. The age of mammals begins.',
+          bridgeTitle:     'NEXT: HUMAN CIVILIZATION',
+          bridgeTeaser:    'A journey that began with a single stone chip now reaches for the stars.',
+        },
+        stepDescriptions: [
+          'Interstellar Dust — 13.8 billion years ago, the remnants of the Big Bang drifted through space.',
+          'Protoplanetary Disk — Dust and gas swirled, becoming the seed of our solar system.',
+          'Magma Ocean Earth — The newborn Earth was a world of molten lava across its entire surface.',
+          'Moon-Forming Impact — Theia collided with Earth; debris coalesced into the Moon.',
+          'Birth of the Oceans — As steam cooled, Earth\'s first oceans began to ripple.',
+          'First Life — Stromatolites: life left its first footprints in the shallow seas.',
+          'Great Oxidation — Microbes pumped oxygen into the atmosphere, transforming the world.',
+          'Cambrian Explosion — 540 million years ago, complex life burst onto the scene.',
+          'Age of Dinosaurs — Giant creatures roamed the Jurassic world at its peak.',
+          'Asteroid Impact — The shockwave of impact brought the age of dinosaurs to an end.',
+          'Age of Mammals — The survivors stepped into the dawn of a new world.',
+        ],
+      },
+      'human-civilization': {
+        label:       'HUMAN CIVILIZATION',
+        description: 'From stone tools to reaching the stars',
+        chapter: {
+          number:  2,
+          title:   'Human Civilization',
+          tagline: 'The hand that chipped a stone eventually left a footprint on the Moon.',
+          completeMessage: 'Humanity stepped beyond Earth and into space. The journey continues.',
+          bridgeTitle:     'NEXT: SOLAR SYSTEM',
+          bridgeTeaser:    'A probe flies toward the edge of the solar system. We see the universe through its eyes.',
+        },
+        stepDescriptions: [
+          'Stone Age — Humans shaped stone into tools and carved stories on cave walls.',
+          'Agricultural Revolution — Planting a seed, humanity stepped onto the path of settled civilization.',
+          'Ancient Civilizations — Pyramids and cities rose skyward from the Nile and Mesopotamia.',
+          'Greece & Rome — An age of philosophy and science seeking to understand the world through reason and law.',
+          'Age of Exploration — Sailing ships crossed the horizon toward unknown continents.',
+          'Scientific Revolution — When an apple fell, the laws governing the universe were revealed.',
+          'Industrial Revolution — The power of steam replaced human labor and transformed the world.',
+          'Electric Age — A single bulb from Edison turned night into day.',
+          'Atomic Age — Holding the power of the atom, humanity faced its most dangerous choice.',
+          'Digital Revolution — Electrons flowing across circuits connected humanity as one.',
+          'Moon Landing — July 1969: humanity\'s footprint was etched into the lunar surface.',
+        ],
+      },
+      'solar-system': {
+        label:       'SOLAR SYSTEM',
+        description: 'Exploring our cosmic neighbourhood',
+        chapter: {
+          number:  3,
+          title:   'Solar System',
+          tagline: 'A probe flies toward the edge of the solar system. We see the universe through its eyes.',
+          completeMessage: 'Looking back from the edge of the solar system, you see a pale blue dot.',
+        },
+        stepDescriptions: [
+          'Mercury — The planet closest to the Sun, a world of extreme temperature swings.',
+          'Venus — A thick atmosphere traps heat, making it the hottest planet in the solar system.',
+          'Earth — The only planet where life breathes; a blue marble viewed from space.',
+          'Mars — Red deserts and Olympus Mons — the land where humanity\'s next footprint will fall.',
+          'Jupiter — The Great Red Spot, a storm 300 years old, swirls larger than Earth.',
+          'Saturn — Majestic rings of ice and rock encircle the planet.',
+          'Uranus — An ice giant orbiting on its side, a world of pale cyan.',
+          'Neptune — Cold giant at the solar system\'s edge, storms raging at 2,100 km/h.',
+          'Pluto — A dwarf planet with a heart-shaped ice plain, first revealed by New Horizons.',
+          'The Sun — Source of all life, fusing 600 million tons of hydrogen per second.',
+          'The Solar System — Our small cosmic village, as seen through the eyes of Voyager 1.',
+        ],
+      },
+    },
+  };
+
+  // ── i18n 엔진 ──────────────────────────────────────────────────────
+  var _lang = 'ko';
+
+  function setLang(lang) {
+    if (PACKS[lang]) { _lang = lang; }
+    else { console.warn('[i18n] Unknown lang:', lang); }
+  }
+
+  function getLang() { return _lang; }
+
+  // 점 경로로 팩에서 값 조회. 배열 인덱스는 1-based (stepDescriptions.1 ~ .11)
+  function t(key, vars) {
+    var parts = key.split('.');
+    var node = PACKS[_lang];
+    for (var i = 0; i < parts.length; i++) {
+      if (node == null) break;
+      // 배열: stepDescriptions.N → 1-based → 0-based
+      if (Array.isArray(node)) {
+        node = node[parseInt(parts[i], 10) - 1];
+      } else {
+        node = node[parts[i]];
+      }
+    }
+    if (typeof node !== 'string') {
+      // 폴백: 영어팩
+      if (_lang !== 'en') {
+        var en = t.call({ _overrideLang: 'en' }, key, vars);
+        if (en !== key) return en;
+      }
+      return key;   // 최종 폴백: 키 자체
+    }
+    // 변수 치환 {{varName}}
+    if (vars) {
+      node = node.replace(/\{\{(\w+)\}\}/g, function (_, k) {
+        return vars[k] !== undefined ? vars[k] : '{{' + k + '}}';
+      });
+    }
+    return node;
+  }
+
+  // 테마 전체 메타 반환 (collection-themes.js 연동용)
+  function themeText(themeId) {
+    var pack = PACKS[_lang] || PACKS['ko'];
+    return (pack.themes && pack.themes[themeId]) || null;
+  }
+
+  // 현재 등록된 언어 목록
+  function availableLangs() { return Object.keys(PACKS); }
+
+  root.SG.i18n = { setLang: setLang, getLang: getLang, t: t, themeText: themeText, availableLangs: availableLangs };
+
+})(typeof window !== 'undefined' ? window : global);

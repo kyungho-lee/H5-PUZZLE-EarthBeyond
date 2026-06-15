@@ -135,6 +135,8 @@
         this._stepBgFadeStart = performance.now();
         this._stepBgFade = 0;
       };
+      // 404 등 로드 실패 시 조용히 스킵 — _stepBgPath는 유지해 재시도 방지
+      img.onerror = () => { /* no-op: asset not ready yet */ };
       img.src = path;
     }
 
