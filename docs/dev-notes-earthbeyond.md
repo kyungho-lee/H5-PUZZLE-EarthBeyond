@@ -5,8 +5,40 @@
 
 | 버전 | 날짜 | 요약 |
 |------|------|------|
+| v0.3 | 2026-06-15 | Chronicles MVP Phase 1 완성 — Chapter Intro, Step Toast, Progress Bar, Chapter Complete + Epoch Stamp |
 | v0.2 | 2026-06-15 | Chronicles 스토리 모드 MVP 착수 — chapter/stepDescriptions 데이터, Daily 테마 랜덤화 |
 | v0.1 | 2026-06-15 | 초기 스캐폴드 — NeonDrift 코어 이식, 브랜딩, Era 1~3 테마 정의, WebP 에셋 일괄 크롭 |
+
+---
+
+## v0.3 — Chronicles MVP Phase 1 완성 (2026-06-15)
+
+### 구현 내용 (모두 `index.html` UI 레이어만 — 코어 무변경)
+
+**Chapter Intro 모달 (`#ol-chapter-intro`)**
+- 챕터 첫 진입 시 1회만 표시 (`earthbeyond_intro_seen_<themeId>` localStorage 플래그)
+- `startCollection()` 진입 300ms 후 `showChapterIntroIfNeeded()` 호출
+- boardBg 이미지 배경, tagline 텍스트 표시 후 "PLAY" 버튼으로 닫힘
+
+**Step 획득 토스트 (`#chronicles-toast`)**
+- `showUnlockPopup()` 루프 완료 직후 마지막 획득 step에 대해 `chroniclesShowStepToast()` 호출
+- 썸네일(step WebP) + `stepDescriptions[step-1]` 해설 1줄 표시
+- 3.5초 후 자동 사라짐, 게임플레이 방해 없음
+
+**Progress Bar (`#chronicles-progress`)**
+- 보드 상단 고정. `updateCollectionHud()` 호출마다 `chroniclesUpdateProgress()` 갱신
+- acquiredSteps/11 비율로 fill width 업데이트
+
+**Chapter Complete 모달 (`#ol-chapter-complete`) + Epoch Stamp**
+- `collectionThemeComplete()` 종료 400ms 후 `showChapterCompleteModal()` 호출
+- step-11 WebP(또는 boardBg) 전면 배경, "CHAPTER N COMPLETE" + completeMessage
+- Epoch Stamp: `completedThemes.length / totalThemes` 카운트 표시
+- `chroniclesNextChapter()` → `closeModalNav()` + `startNextTheme()`
+
+### 설계 원칙 준수
+- `collection.js` / `neon-drift.js` 변경 없음
+- 기존 `showUnlockPopup`, `showCompletionPopup`, `collectionThemeComplete` 플로우 유지
+- Chronicles UI는 기존 플로우 "위에" 추가 (대체 아님)
 
 ---
 

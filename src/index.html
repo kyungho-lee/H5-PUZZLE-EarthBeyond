@@ -355,6 +355,122 @@
     .lb-row .lb-id { flex:1; font-family:'Share Tech Mono',monospace; color:var(--text); }
     .lb-row .lb-score { color:#ffd23f; }
     .lb-row.lb-empty { color:var(--textdim); justify-content:center; border:none; }
+
+    /* ── Chronicles: Chapter Intro 모달 ────────────────────────────── */
+    #ol-chapter-intro .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #chapter-intro-bg {
+      width: 100%; height: 180px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #chapter-intro-body {
+      padding: 20px 20px 16px;
+    }
+    #chapter-intro-num {
+      font-size: 0.65rem; color: var(--accent); letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    #chapter-intro-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 700;
+      color: var(--text); letter-spacing: 1px; margin-bottom: 10px;
+    }
+    #chapter-intro-tagline {
+      font-size: 0.78rem; color: var(--textdim); line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* ── Chronicles: Progress Bar ───────────────────────────────────── */
+    #chronicles-progress {
+      display: none;
+      padding: 4px 12px 0;
+      background: transparent;
+    }
+    #chronicles-progress.visible { display: block; }
+    #chronicles-prog-label {
+      font-size: 0.58rem; color: var(--textdim); letter-spacing: 1px;
+      margin-bottom: 3px; text-align: right;
+    }
+    #chronicles-prog-wrap {
+      height: 3px; background: rgba(255,255,255,0.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    #chronicles-prog-bar {
+      height: 100%; background: var(--accent);
+      border-radius: 2px; transition: width 0.4s ease;
+      box-shadow: 0 0 6px rgba(58,123,213,0.6);
+    }
+
+    /* ── Chronicles: Chapter Complete 모달 ─────────────────────────── */
+    #ol-chapter-complete .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #chapter-complete-bg {
+      width: 100%; height: 200px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #chapter-complete-body { padding: 20px 20px 16px; }
+    #chapter-complete-era {
+      font-size: 0.65rem; color: var(--accent); letter-spacing: 3px; margin-bottom: 6px;
+    }
+    #chapter-complete-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700;
+      color: var(--text); margin-bottom: 8px;
+    }
+    #chapter-complete-msg {
+      font-size: 0.78rem; color: var(--textdim); line-height: 1.6; margin-bottom: 16px;
+    }
+    /* Epoch Stamp */
+    #epoch-stamp-wrap {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,210,63,0.07); border: 1px solid rgba(255,210,63,0.2);
+      border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;
+    }
+    #epoch-stamp-icon {
+      font-size: 1.8rem; line-height: 1;
+      animation: stamp-pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+    }
+    #epoch-stamp-text {
+      font-size: 0.72rem; color: #ffd23f; letter-spacing: 1px;
+    }
+    #epoch-stamp-count { font-size: 0.62rem; color: var(--textdim); margin-top: 2px; }
+    @keyframes stamp-pop {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      70%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* ── Chronicles: Step 해설 토스트 ──────────────────────────────── */
+    #chronicles-toast {
+      display: none; position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+      width: 88%; max-width: 320px;
+      background: rgba(10,14,30,0.95); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      z-index: 50; pointer-events: none;
+      animation: ctoast-in 0.25s ease;
+    }
+    #chronicles-toast.visible { display: flex; gap: 10px; align-items: flex-start; }
+    #ctoast-thumb {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: 4px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #ctoast-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    #ctoast-text { flex: 1; min-width: 0; }
+    #ctoast-step {
+      font-size: 0.6rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 3px;
+    }
+    #ctoast-desc {
+      font-size: 0.72rem; color: var(--text); line-height: 1.5;
+    }
+    @keyframes ctoast-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -391,10 +507,24 @@
     </div>
   </div>
 
+  <!-- Chronicles: Progress Bar (캔버스 위) -->
+  <div id="chronicles-progress">
+    <div id="chronicles-prog-label">CHAPTER 1 · 0 / 11</div>
+    <div id="chronicles-prog-wrap"><div id="chronicles-prog-bar" style="width:0%"></div></div>
+  </div>
+
   <!-- 캔버스 -->
   <div id="canvas-wrap">
     <canvas id="gameCanvas"></canvas>
     <div id="game-toast"></div>
+    <!-- Chronicles: Step 해설 토스트 -->
+    <div id="chronicles-toast">
+      <div id="ctoast-thumb"><img id="ctoast-img" src="" alt=""></div>
+      <div id="ctoast-text">
+        <div id="ctoast-step">STEP 01</div>
+        <div id="ctoast-desc"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 방향 컨트롤: ↑ 위, 아래 줄에 ← ↓ → 나란히 (2줄, 세로 최적화) -->
@@ -478,6 +608,41 @@
     </div>
     <div class="ol-label" id="unlock-theme-label">NEON CITY — STEP 1</div>
     <button class="btn-primary modal-btn" onclick="closeUnlockPopup()">CONTINUE</button>
+  </div>
+</div>
+
+<!-- ── Chronicles: Chapter Intro 모달 ────────────────────────────── -->
+<div id="ol-chapter-intro" class="overlay hidden">
+  <div class="ol-panel">
+    <img id="chapter-intro-bg" src="" alt="">
+    <div id="chapter-intro-body">
+      <div id="chapter-intro-num">CHAPTER 1</div>
+      <div id="chapter-intro-title">PRIMORDIAL EARTH</div>
+      <div id="chapter-intro-tagline"></div>
+      <button class="btn-primary modal-btn" id="btn-chapter-start" onclick="closeChapterIntro()">BEGIN CHAPTER ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chronicles: Chapter Complete 모달 ─────────────────────────── -->
+<div id="ol-chapter-complete" class="overlay hidden">
+  <div class="ol-panel">
+    <img id="chapter-complete-bg" src="" alt="">
+    <div id="chapter-complete-body">
+      <div id="chapter-complete-era">CHAPTER COMPLETE</div>
+      <div id="chapter-complete-title"></div>
+      <div id="chapter-complete-msg"></div>
+      <div id="epoch-stamp-wrap">
+        <div id="epoch-stamp-icon">🏆</div>
+        <div>
+          <div id="epoch-stamp-text">EPOCH STAMP EARNED</div>
+          <div id="epoch-stamp-count">0 / 3 collected</div>
+        </div>
+      </div>
+      <button class="btn-primary modal-btn" id="btn-chapter-next" onclick="chroniclesNextChapter()">NEXT CHAPTER ›</button>
+      <button class="btn-secondary modal-btn" onclick="openGallery()">VIEW GALLERY</button>
+      <button class="btn-secondary modal-btn" onclick="collectionToMenu()">MENU</button>
+    </div>
   </div>
 </div>
 
@@ -1131,6 +1296,13 @@ async function collectionCheckMerges(mergedSizes) {
     await showUnlockPopup(item.step, activeThemeId, item.size);
   }
 
+  // Chronicles: 마지막 획득 step 서사 토스트
+  if (rec.newSteps.length > 0) {
+    const _lastStep = rec.newSteps[rec.newSteps.length - 1];
+    const _toastTheme = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; });
+    chroniclesShowStepToast(_toastTheme, _lastStep.step);
+  }
+
   if (rec.isComplete) {
     // 1024 완성 연출 팝업
     await showCompletionPopup(activeThemeId);
@@ -1273,6 +1445,9 @@ async function collectionThemeComplete(themeId) {
 
   document.getElementById('ol-theme-complete').classList.remove('hidden');
   openModalNav('ol-theme-complete');
+
+  // Chronicles: 챕터 완료 Epoch Stamp 모달 (ol-theme-complete 닫힌 후 표시)
+  setTimeout(function () { showChapterCompleteModal(themeId); }, 400);
 }
 
 // 테마 완성 x2: 리워드 광고 시청 시 완성 보상만큼 추가 적립 (총 x2)
@@ -1375,6 +1550,8 @@ function startCollection() {
   if (SG.Collection.hasNew(activeThemeId, localStorage, activeThemeObj)) {
     setTimeout(function () { showGameToast('New block found! Check the gallery ⭐'); }, 500);
   }
+  // Chronicles: 첫 진입 시 Chapter Intro 모달 표시
+  setTimeout(function () { showChapterIntroIfNeeded(activeThemeId); }, 300);
 }
 
 function updateCollectionHud() {
@@ -1388,6 +1565,117 @@ function updateCollectionHud() {
   setStats('STEP', acquired + '/' + total, 'THIS RUN', '+⭐' + dailyStarsShown);
   updateWalletChip();
   updateGalleryDot();   // 헤더 설정 아이콘 NEW 레드닷
+  chroniclesUpdateProgress(theme, acquired, total);
+}
+
+// ── Chronicles: 스토리 모드 UI ──────────────────────────────────────
+
+// Progress Bar 업데이트
+function chroniclesUpdateProgress(theme, acquired, total) {
+  const wrap = document.getElementById('chronicles-progress');
+  if (!wrap) return;
+  if (!theme || !theme.chapter) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+  const pct = total > 0 ? Math.round((acquired / total) * 100) : 0;
+  document.getElementById('chronicles-prog-label').textContent =
+    'CHAPTER ' + theme.chapter.number + ' · ' + acquired + ' / ' + total;
+  document.getElementById('chronicles-prog-bar').style.width = pct + '%';
+}
+
+// Chapter Intro 모달 — 첫 진입 1회만
+function showChapterIntroIfNeeded(themeId) {
+  const key = 'earthbeyond_intro_seen_' + themeId;
+  try { if (localStorage.getItem(key)) return; } catch (_) {}
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+  if (!theme || !theme.chapter) return;
+
+  const bgEl = document.getElementById('chapter-intro-bg');
+  if (theme.boardBg) { bgEl.src = theme.boardBg; bgEl.style.display = 'block'; }
+  else { bgEl.style.display = 'none'; }
+
+  document.getElementById('chapter-intro-num').textContent = 'CHAPTER ' + theme.chapter.number;
+  document.getElementById('chapter-intro-title').textContent = theme.chapter.title.toUpperCase();
+  document.getElementById('chapter-intro-tagline').textContent = theme.chapter.tagline;
+
+  document.getElementById('ol-chapter-intro').classList.remove('hidden');
+  openModalNav('ol-chapter-intro');
+}
+
+function closeChapterIntro() {
+  const key = 'earthbeyond_intro_seen_' + activeThemeId;
+  try { localStorage.setItem(key, '1'); } catch (_) {}
+  document.getElementById('ol-chapter-intro').classList.add('hidden');
+  closeModalNav();
+  gameRunning = true;
+}
+
+// Step 해설 토스트 표시
+let _ctoastTimer = null;
+function chroniclesShowStepToast(theme, step) {
+  if (!theme || !theme.stepDescriptions) return;
+  const desc = theme.stepDescriptions[step - 1];
+  if (!desc) return;
+  const imgPath = theme.svgPaths && theme.svgPaths[step - 1];
+
+  const el = document.getElementById('chronicles-toast');
+  const imgEl = document.getElementById('ctoast-img');
+  if (imgPath) { imgEl.src = imgPath; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+  document.getElementById('ctoast-step').textContent = 'STEP ' + String(step).padStart(2, '0');
+  document.getElementById('ctoast-desc').textContent = desc;
+
+  el.classList.add('visible');
+  if (_ctoastTimer) clearTimeout(_ctoastTimer);
+  _ctoastTimer = setTimeout(function () {
+    el.classList.remove('visible');
+    _ctoastTimer = null;
+  }, 3500);
+}
+
+// Chapter Complete 모달
+function showChapterCompleteModal(themeId) {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+  if (!theme || !theme.chapter) return;
+
+  const bgEl = document.getElementById('chapter-complete-bg');
+  const step11 = theme.svgPaths && theme.svgPaths[10];
+  if (step11) { bgEl.src = step11; bgEl.style.display = 'block'; }
+  else if (theme.boardBg) { bgEl.src = theme.boardBg; bgEl.style.display = 'block'; }
+  else { bgEl.style.display = 'none'; }
+
+  document.getElementById('chapter-complete-era').textContent =
+    'CHAPTER ' + theme.chapter.number + ' COMPLETE';
+  document.getElementById('chapter-complete-title').textContent = theme.chapter.title.toUpperCase();
+  document.getElementById('chapter-complete-msg').textContent =
+    theme.chapter.completeMessage || '';
+
+  // Epoch Stamp 카운트
+  const meta = SG.Collection.loadMeta(localStorage);
+  const completedCount = (meta.completedThemes && meta.completedThemes.length) || 0;
+  const totalThemes = SG.CollectionThemes.length;
+  document.getElementById('epoch-stamp-count').textContent =
+    completedCount + ' / ' + totalThemes + ' collected';
+
+  // 다음 챕터 버튼
+  const nextId = SG.CollectionThemes.find(function (t) {
+    return t.unlockCondition === themeId;
+  });
+  const nextBtn = document.getElementById('btn-chapter-next');
+  if (nextId) {
+    nextBtn.textContent = 'NEXT: ' + nextId.chapter.title.toUpperCase() + ' ›';
+    nextBtn.style.display = '';
+  } else {
+    nextBtn.style.display = 'none';
+  }
+
+  document.getElementById('ol-chapter-complete').classList.remove('hidden');
+  openModalNav('ol-chapter-complete');
+}
+
+function chroniclesNextChapter() {
+  document.getElementById('ol-chapter-complete').classList.add('hidden');
+  closeModalNav();
+  startNextTheme();
 }
 
 // 이번 판 x2 스타를 이미 받았는지 (게임오버 1회당 1번만)
