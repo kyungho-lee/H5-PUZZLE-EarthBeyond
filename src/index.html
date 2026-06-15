@@ -893,7 +893,15 @@ function startDailyRun() {
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
   closeModalNav();
-  renderer.setCollectionTheme(null);
+  const _collMeta = SG.Collection.loadMeta(window.localStorage);
+  const _unlockedThemes = (SG.CollectionThemes || []).filter(function (t) {
+    return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
+  });
+  const _dailyThemeRng = dailySeededRng(date + ':theme');
+  const _dailyTheme = _unlockedThemes.length > 0
+    ? _unlockedThemes[Math.floor(_dailyThemeRng() * _unlockedThemes.length)]
+    : null;
+  renderer.setCollectionTheme(_dailyTheme || null);
   renderer.setMode('daily');
   renderer.drawGrid(grid);
   updateDailyHud();

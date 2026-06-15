@@ -25,20 +25,39 @@
   root.SG.CollectionThemes = [
 
     // ── Era 1: PRIMORDIAL EARTH ──────────────────────────────────────
-    // 빅뱅 잔해 → 지구 탄생 → 생명 → 공룡 → 포유류 전야
     {
       id: 'primordial-earth',
       label: 'PRIMORDIAL EARTH',
       description: 'From cosmic dust to the dawn of life',
       era: 1,
-      unlockCondition: null,          // 첫 시대 — 처음부터 해금
+      unlockCondition: null,
       showStepBadge: true,
-      svgPaths: makePaths('primordial-earth', 'svg'),
-      // 정식 에셋 완성 후: makePaths('primordial-earth', 'webp')
+      svgPaths: makePaths('primordial-earth', 'webp'),
+      boardBg: 'themes/primordial-earth/board-bg.webp',
+      // slotBg1: 'themes/primordial-earth/slot-bg01.webp',
+      // slotBg2: 'themes/primordial-earth/slot-bg02.webp',
+      chapter: {
+        number: 1,
+        title: 'Primordial Earth',
+        tagline: '138억 년 전, 먼지와 가스가 중력에 이끌려 모이기 시작했다.',
+        completeMessage: '생명의 씨앗이 뿌리를 내렸다. 포유류의 시대가 열린다.',
+      },
+      stepDescriptions: [
+        '성간 먼지와 분자 구름 — 138억 년 전, 빅뱅의 잔해가 우주를 떠돌았다.',
+        '원시 태양계 원반 — 먼지와 가스가 소용돌이치며 태양계의 씨앗이 되었다.',
+        '마그마 오션 지구 — 갓 태어난 지구는 표면 전체가 용암 바다였다.',
+        '달 형성 충돌 — 테이아가 지구에 충돌해 파편이 모여 달이 탄생했다.',
+        '원시 바다의 탄생 — 증기가 식으며 지구 최초의 바다가 출렁이기 시작했다.',
+        '최초의 생명 — 스트로마톨라이트, 얕은 바다에서 생명이 첫 발자국을 남겼다.',
+        '산소 대폭발 — 미생물들이 산소를 뿜어내며 지구 대기를 바꾸어 놓았다.',
+        '캄브리아 대폭발 — 5억 4천만 년 전, 복잡한 생명체들이 폭발적으로 등장했다.',
+        '공룡의 시대 — 거대한 생명체들이 지구를 누비던 쥐라기의 절정.',
+        '소행성 충돌 — 충돌의 충격파가 공룡 시대의 막을 내렸다.',
+        '포유류의 시대 — 살아남은 자들이 새벽빛 아래 새로운 세계를 열었다.',
+      ],
     },
 
     // ── Era 2: HUMAN CIVILIZATION ───────────────────────────────────
-    // 석기 → 고대문명 → 과학혁명 → 산업혁명 → 아폴로
     {
       id: 'human-civilization',
       label: 'HUMAN CIVILIZATION',
@@ -46,12 +65,32 @@
       era: 2,
       unlockCondition: 'primordial-earth',
       showStepBadge: true,
-      svgPaths: makePaths('human-civilization', 'svg'),
+      svgPaths: makePaths('human-civilization', 'webp'),
+      boardBg: 'themes/human-civilization/board-bg.webp',
+      // slotBg1: 'themes/human-civilization/slot-bg01.webp',
+      // slotBg2: 'themes/human-civilization/slot-bg02.webp',
+      chapter: {
+        number: 2,
+        title: 'Human Civilization',
+        tagline: '돌 하나를 깎던 손이 마침내 달에 발자국을 남겼다.',
+        completeMessage: '인류는 지구를 넘어 우주로 나아갔다. 탐험은 계속된다.',
+      },
+      stepDescriptions: [
+        '석기 시대 — 인류는 돌을 깎아 도구를 만들고 동굴 벽에 이야기를 새겼다.',
+        '농업 혁명 — 씨앗을 땅에 심는 순간, 인류는 정착 문명의 길에 들어섰다.',
+        '고대 문명 — 나일 강과 메소포타미아에서 피라미드와 도시가 하늘을 향해 솟았다.',
+        '그리스·로마 — 이성과 법으로 세계를 이해하려 한 철학과 과학의 시대.',
+        '대항해 시대 — 범선이 수평선을 넘어 미지의 대륙을 향해 나아갔다.',
+        '과학 혁명 — 사과 하나가 떨어지는 순간, 우주를 지배하는 법칙이 드러났다.',
+        '산업 혁명 — 증기의 힘이 인간의 노동을 대체하며 세상을 뒤바꾸었다.',
+        '전기 시대 — 에디슨의 전구 하나가 밤을 낮으로 만들어 버렸다.',
+        '원자력 시대 — 원자의 힘을 손에 쥔 인류는 가장 위험한 선택 앞에 섰다.',
+        '디지털 혁명 — 회로 위를 흐르는 전자들이 인류를 하나로 연결했다.',
+        '달 착륙 — 1969년 7월, 인류의 발자국이 달 표면에 새겨졌다.',
+      ],
     },
 
     // ── Era 3: SOLAR SYSTEM ─────────────────────────────────────────
-    // 달 → 화성 → 목성(카시니) → 토성 → 명왕성 → 태양 → 성간공간
-    // 실사 모티브: NASA Voyager / Cassini / New Horizons / SOHO
     {
       id: 'solar-system',
       label: 'SOLAR SYSTEM',
@@ -59,50 +98,31 @@
       era: 3,
       unlockCondition: 'human-civilization',
       showStepBadge: true,
-      svgPaths: makePaths('solar-system', 'svg'),
-      // 정식 에셋: NASA 탐사선 실사 모티브 WebP
+      svgPaths: makePaths('solar-system', 'webp'),
+      boardBg: 'themes/solar-system/board-bg.webp',
+      // slotBg1: 'themes/solar-system/slot-bg01.webp',
+      // slotBg2: 'themes/solar-system/slot-bg02.webp',
+      chapter: {
+        number: 3,
+        title: 'Solar System',
+        tagline: '탐사선이 태양계 끝을 향해 날아간다. 우리는 그 눈으로 우주를 본다.',
+        completeMessage: '태양계의 끝에서 지구를 돌아보면, 창백한 푸른 점 하나가 보인다.',
+      },
+      stepDescriptions: [
+        '수성 — 태양에 가장 가까운 행성, 극단의 온도차가 존재하는 세계.',
+        '금성 — 두꺼운 대기가 열을 가두어 태양계에서 가장 뜨거운 행성이 되었다.',
+        '지구 — 생명이 숨쉬는 유일한 행성, 우주에서 바라본 푸른 구슬.',
+        '화성 — 붉은 사막과 올림푸스 화산, 인류 다음 발자국이 닿을 땅.',
+        '목성 — 대적점이라 불리는 300년 된 폭풍이 지구보다 크게 소용돌이친다.',
+        '토성 — 얼음과 암석으로 이루어진 장엄한 고리가 행성을 감싸고 있다.',
+        '천왕성 — 옆으로 누워 공전하는 얼음 행성, 창백한 청록빛의 세계.',
+        '해왕성 — 태양계 끝의 차가운 거인, 시속 2100km의 폭풍이 몰아친다.',
+        '명왕성 — 하트 모양 빙원을 품은 왜소행성, 뉴호라이즌스가 처음 그 모습을 보여주었다.',
+        '태양 — 모든 생명의 근원, 1초에 수소 6억 톤을 헬륨으로 바꾸며 빛난다.',
+        '태양계 전체 — 보이저 1호의 시선으로 바라본 우리의 작은 우주 마을.',
+      ],
     },
 
   ];
-
-  // 에셋 제작 참고 — 각 시대 11단계 장면 목록
-  // Era 1 — Primordial Earth
-  //   01: 성간 먼지 & 분자운       / Stardust & Molecular Cloud
-  //   02: 원시 태양계 원반          / Protoplanetary Disk
-  //   03: 용암 지구 (마그마 오션)   / Magma Ocean Earth
-  //   04: 달 형성 (테이아 충돌)     / Moon-forming Impact
-  //   05: 원시 해양 탄생            / First Oceans
-  //   06: 최초 생명 (스트로마톨라이트) / Stromatolites
-  //   07: 산소 대폭발 / 눈덩이 지구  / Great Oxidation Event
-  //   08: 캄브리아 대폭발           / Cambrian Explosion
-  //   09: 공룡의 시대 (쥐라기)      / Age of Dinosaurs
-  //   10: 소행성 충돌 대멸종        / K-Pg Extinction
-  //   11: 포유류의 시대 ✨           / Rise of Mammals
-  //
-  // Era 2 — Human Civilization
-  //   01: 석기 & 동굴벽화           / Stone Age Cave Art
-  //   02: 농업 혁명                 / Agricultural Revolution
-  //   03: 고대 문명 (이집트/메소포타미아) / Ancient Civilizations
-  //   04: 그리스/로마 철학·과학     / Classical Antiquity
-  //   05: 대항해 시대               / Age of Exploration
-  //   06: 과학 혁명 (뉴턴/갈릴레오) / Scientific Revolution
-  //   07: 산업 혁명                 / Industrial Revolution
-  //   08: 전기 & 통신 시대          / Electrical Age
-  //   09: 원자력 & 세계대전         / Atomic Age
-  //   10: 디지털 혁명               / Digital Revolution
-  //   11: 아폴로 — 달 착륙 ✨        / Apollo Moon Landing
-  //
-  // Era 3 — Solar System
-  //   01: 달 표면 (아폴로 발자국)   / Moon Surface
-  //   02: 화성 표면 (로버)          / Mars Surface — Perseverance
-  //   03: 목성 대적점               / Jupiter Great Red Spot — Juno
-  //   04: 토성 고리                 / Saturn's Rings — Cassini
-  //   05: 타이탄 (메탄 바다)        / Titan's Methane Lakes
-  //   06: 유로파 (얼음 표면)        / Europa Ice Shell
-  //   07: 명왕성 하트 지형          / Pluto Heart — New Horizons
-  //   08: 태양 코로나               / Solar Corona — SOHO
-  //   09: Pale Blue Dot             / Earth from Voyager 1
-  //   10: 성간 공간 진입            / Interstellar Space — Voyager 1
-  //   11: 오르트 구름 경계 ✨        / Oort Cloud — Edge of Solar System
 
 })(typeof window !== 'undefined' ? window : global);
