@@ -1326,7 +1326,7 @@ function _refreshMenuDots() {
 // 메인 메뉴에서 Endless 버튼 클릭
 function menuEndlessClick() {
   if (isEndlessUnlocked()) {
-    startEndless();
+    openGalleryForEndless();
   } else {
     var ko = SG.i18n && SG.i18n.getLang() === 'ko';
     var msg = ko
@@ -1533,6 +1533,21 @@ function openChroniclesEntry() {
 }
 
 // 갤러리 PLAY CHAPTER 버튼 → activeTheme으로 startCollection
+function startEndlessFromGallery() {
+  // 현재 활성 탭에서 테마 ID 추출
+  const activeTab = document.querySelector('.gallery-tab.active');
+  let skinTheme = null;
+  if (activeTab) {
+    skinTheme = SG.CollectionThemes.find(function (t) {
+      return activeTab.textContent.indexOf(t.label) === 0;
+    }) || null;
+  }
+  document.getElementById('ol-gallery').classList.add('hidden');
+  closeModalNav();
+  _galleryMode = 'collection';
+  startEndless(skinTheme);
+}
+
 function startCollectionFromGallery() {
   const activeMeta = SG.Collection.loadMeta(localStorage);
   const activeTab = document.querySelector('.gallery-tab.active');
@@ -2188,7 +2203,7 @@ function isEndlessUnlocked() {
   return meta.completedThemes && meta.completedThemes.length > 0;
 }
 
-function startEndless() {
+function startEndless(skinTheme) {
   if (!isEndlessUnlocked()) {
     var ko = SG.i18n && SG.i18n.getLang() === 'ko';
     showGameToast(ko
@@ -2211,17 +2226,23 @@ function startEndless() {
   _runSettled = false;
 
   rng = makeRng();
-  grid = SG.ND.createInitialGrid(4, rng, { always1: true });
   dailyOpts = {
     n: 4, mergeRule: 'sizeOnly', daily: true,
     spawnFourProb: 0.12,
-    collapseSize: 1024,   // 1024 → collapse → 보드 리셋 후 계속
-    targets: [],          // 스타는 score 기반으로 게임오버 시 일괄 환산
+    collapseSize: 1024,
+    targets: [],
+    always1: true,
   };
+  grid = SG.ND.emptyGrid(4);
+  for (let i = 0; i < 2; i++) {
+    const s = SG.ND.spawnTile(grid, rng, dailyOpts);
+    if (s) grid[s.at[0]][s.at[1]] = { color: s.color, size: 1 };
+  }
 
   renderer.setMode('daily', 4);
   renderer.clearStepBg();
-  renderer.setCollectionTheme(null);
+  // 갤러리에서 선택한 테마 스킨 적용 (없으면 스킨 없음)
+  renderer.setCollectionTheme(skinTheme || null);
   document.getElementById('chronicles-narration').classList.remove('visible');
   updateEndlessHud();
   renderer.drawGrid(grid);
@@ -2833,6 +2854,7 @@ function startNextTheme() {
 // ── Gallery ────────────────────────────────────────────────────────
 // 갤러리를 열기 전에 표시 중이던 오버레이를 기억해 닫을 때 복원
 let _galleryReturnOverlay = null;
+let _galleryMode = 'collection';  // 'collection' | 'endless'
 
 // 설정 메뉴에서 갤러리 열기 (콜렉션 모드 주 진입점)
 function openGalleryFromSettings() {
@@ -2847,7 +2869,14 @@ function updateGalleryDot() {
   dot.classList.toggle('hidden', !show);
 }
 
+function openGalleryForEndless() {
+  _galleryMode = 'endless';
+  openGallery();
+}
+
 function openGallery(themeId) {
+  if (_galleryMode !== 'endless') _galleryMode = 'collection';
+
   // 현재 열려 있는 오버레이(설정/game-over 등)를 일시 숨김 후 기억
   const candidates = ['ol-start', 'ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over'];
   _galleryReturnOverlay = null;
@@ -2861,24 +2890,31 @@ function openGallery(themeId) {
   }
 
   const meta = SG.Collection.loadMeta(localStorage);
-  // 메뉴에서 진입(collectionMode=false)하면 저장된 activeThemeId 우선 사용.
-  // 게임 중 진입하면 현재 activeThemeId(전역) 사용.
   const viewThemeId = themeId || (collectionMode ? activeThemeId : null) || meta.activeThemeId || 'primordial-earth';
   renderGalleryTabs(meta, viewThemeId);
   renderGalleryCells(viewThemeId);
-  // PLAY 버튼: 게임 중이면 숨김, 메뉴에서 진입했으면 표시.
-  // 버튼은 항상 현재 진행 중인 테마(meta.activeThemeId) 기준으로 표시.
+
   const playBtn = document.getElementById('btn-gallery-play');
   if (playBtn) {
-    const fromMenu = !collectionMode;
-    playBtn.style.display = fromMenu ? '' : 'none';
-    if (fromMenu) {
-      const playThemeId = meta.activeThemeId || 'primordial-earth';
-      const playTheme = SG.CollectionThemes.find(function (t) { return t.id === playThemeId; });
-      const st = SG.Collection.loadTheme(playThemeId, localStorage, playTheme || null);
-      const hasProgress = st.acquiredSteps && st.acquiredSteps.length > 0;
-      const chapterLabel = playTheme && playTheme.chapter ? playTheme.chapter.title.toUpperCase() : playThemeId.toUpperCase();
-      playBtn.textContent = (hasProgress ? 'CONTINUE: ' : 'BEGIN: ') + chapterLabel + ' ›';
+    if (_galleryMode === 'endless') {
+      // Endless 모드: 항상 표시, 선택된 탭의 테마로 시작
+      playBtn.style.display = '';
+      playBtn.onclick = startEndlessFromGallery;
+      const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+      playBtn.textContent = ko ? 'ENDLESS 시작 ∞' : 'START ENDLESS ∞';
+    } else {
+      // Chronicles 모드: 게임 중이면 숨김, 메뉴에서 진입 시 표시
+      playBtn.onclick = startCollectionFromGallery;
+      const fromMenu = !collectionMode;
+      playBtn.style.display = fromMenu ? '' : 'none';
+      if (fromMenu) {
+        const playThemeId = meta.activeThemeId || 'primordial-earth';
+        const playTheme = SG.CollectionThemes.find(function (t) { return t.id === playThemeId; });
+        const st = SG.Collection.loadTheme(playThemeId, localStorage, playTheme || null);
+        const hasProgress = st.acquiredSteps && st.acquiredSteps.length > 0;
+        const chapterLabel = playTheme && playTheme.chapter ? playTheme.chapter.title.toUpperCase() : playThemeId.toUpperCase();
+        playBtn.textContent = (hasProgress ? 'CONTINUE: ' : 'BEGIN: ') + chapterLabel + ' ›';
+      }
     }
   }
   document.getElementById('ol-gallery').classList.remove('hidden');
