@@ -153,6 +153,76 @@
     #ol-gallery { z-index: 20; }
     #ol-gallery-detail { z-index: 30; }
 
+    /* ── START 히어로 화면 ───────────────────────────────────────── */
+    #ol-start {
+      background: #050810;
+      backdrop-filter: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0;
+    }
+    /* 3분할 배경 콜라주 */
+    #start-hero {
+      position: absolute; inset: 0;
+      display: flex;
+    }
+    .start-hero-slice {
+      flex: 1;
+      background-size: cover;
+      background-position: center top;
+    }
+    /* 하단 페이드-인 그라디언트 (패널과 자연스럽게 블렌딩) */
+    #start-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(5,8,16,.10) 0%,
+        rgba(5,8,16,.18) 45%,
+        rgba(5,8,16,.82) 72%,
+        rgba(5,8,16,.97) 100%
+      );
+    }
+    /* 타이틀 블록 — 히어로 이미지 위에 띄움 */
+    #start-title-block {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 0 20px 12px;
+    }
+    #start-title-block .hero-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(2rem, 7vw, 3.2rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 5px;
+      text-shadow: 0 0 32px rgba(58,123,213,.9), 0 2px 8px rgba(0,0,0,.8);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    #start-title-block .hero-sub {
+      font-size: clamp(.62rem, 2.2vw, .78rem);
+      color: rgba(255,255,255,.6);
+      letter-spacing: 2px;
+    }
+    /* 버튼 패널 — 화면 하단 고정 */
+    #start-panel {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 360px;
+      padding: 18px 24px 28px;
+      display: flex; flex-direction: column; gap: 9px;
+      align-self: center;
+    }
+    /* 히어로 화면 버튼: 배경 반투명 처리로 이미지와 자연스럽게 블렌딩 */
+    #start-panel .btn-primary {
+      background: var(--accent);
+      box-shadow: 0 0 24px rgba(58,123,213,.5);
+    }
+    #start-panel .btn-secondary {
+      background: rgba(10,14,30,.72);
+      backdrop-filter: blur(6px);
+      border-color: rgba(255,255,255,.18);
+    }
+
     .ol-panel {
       background: var(--panel);
       border: 1px solid var(--border);
@@ -672,13 +742,24 @@
 
 </div>
 
-<!-- ── START 오버레이 ─────────────────────────────────────────────── -->
+<!-- ── START 히어로 화면 ──────────────────────────────────────────── -->
 <div id="ol-start" class="overlay">
-  <div class="ol-panel">
-    <div class="ol-title">EARTH &amp; BEYOND</div>
-    <p id="start-subtitle" style="color:var(--textdim);font-size:.8rem;margin-bottom:24px;line-height:1.6" data-i18n="ui.gameSubtitle">
-      Merge tiles to travel from Primordial Earth to the edge of the Universe
-    </p>
+
+  <!-- 3분할 배경 콜라주 -->
+  <div id="start-hero">
+    <div class="start-hero-slice" style="background-image:url('themes/primordial-earth/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('themes/human-civilization/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('themes/solar-system/bg-step-11.webp')"></div>
+  </div>
+
+  <!-- 타이틀 -->
+  <div id="start-title-block">
+    <div class="hero-title">EARTH &amp; BEYOND</div>
+    <div class="hero-sub" data-i18n="ui.gameSubtitle">Merge tiles to travel from Primordial Earth to the edge of the Universe</div>
+  </div>
+
+  <!-- 버튼 패널 -->
+  <div id="start-panel">
     <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()" data-i18n="ui.btn.chronicles">CHRONICLES</button>
     <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="menuEndlessClick()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
       <span id="endless-menu-label">ENDLESS ∞</span>
@@ -690,16 +771,16 @@
       <span id="menu-daily-dot" class="reddot hidden"></span>
     </button>
     <button class="btn-secondary modal-btn" id="btn-gallery-menu" data-action="gallery" onclick="openGalleryFromMenu()" style="position:relative">
-      GALLERY
-      <span id="menu-gallery-dot" class="reddot hidden"></span>
+      GALLERY <span id="menu-gallery-dot" class="reddot hidden"></span>
     </button>
     <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()" data-i18n="ui.btn.settings">SETTINGS</button>
-    <!-- dev 전용: hidden -->
+    <!-- dev 전용 -->
     <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
     <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
-    <div class="modal-hint">↑↓ Move · Enter Select</div>
-    <div id="app-version" style="margin-top:14px;color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
+    <div class="modal-hint" style="margin-top:4px">↑↓ Move · Enter Select</div>
+    <div id="app-version" style="color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
   </div>
+
 </div>
 
 <!-- ── Daily Challenge 팝업 (메인 메뉴에서 진입 시) ──────────────── -->
@@ -1065,13 +1146,14 @@ const APP_VERSION = 'v0.1';
 const ND = SG.ND;
 let score = 0;
 let bestScore = parseInt(localStorage.getItem(STORAGE_KEY_BEST) || '0', 10);
-let gameRunning = false;
+var gameRunning = false;
 
-let renderer = null;
+var renderer = null;
 let rng = null;
-let grid = null;
+var grid = null;
 let level = 0;
 let isAnimating = false;
+let isPlatformPaused = false;
 let maxChain = 0;
 
 // ── Daily mode state ──────────────────────────────────────────────
@@ -1083,6 +1165,7 @@ let dailyStarsShown = 0;   // stars displayed in HUD (lags via fly-in animation)
 let dailyTypeCfg = null;   // today's type config
 let dailyOpts = null;      // applyMove opts for daily
 let mainOpts = null;       // applyMove opts for main game (START Dev)
+let dailyTheme = null;     // 현재 Daily 세션에 선택된 테마 (null = 숫자 모드)
 
 function utcDateStr() {
   const d = new Date();
@@ -1210,7 +1293,7 @@ function showGameToast(msg, ms) {
 // ── 한 번의 밀기 ──────────────────────────────────────────────────
 function doMove(dir) {
   flashDirBtn(dir);
-  if (!gameRunning || isAnimating) return;
+  if (!gameRunning || isAnimating || isPlatformPaused) return;
   flashBoardEdge(dir);
   const opts = dailyMode ? dailyOpts : mainOpts;
   const before = ND.cloneGrid(grid);
@@ -1253,6 +1336,8 @@ function doMove(dir) {
         if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
         return;
       }
+      // 현재 보드 최고 타일로 배경 갱신
+      if (result.merges.length) updateDailyBoardBg();
       if (result.collapse) { dailyCollapse(result.collapse); return; }
       if (ND.checkGameOver(grid, 'sizeOnly')) { dailyGameOver(); }
       return;
@@ -1661,6 +1746,25 @@ function buildDailyOpts(typeCfg) {
 
 let _devDailyAllThemes = false;  // dev Daily: 모든 테마 랜덤 소개
 
+// Daily 보드 배경 = 현재 grid의 최고 타일 size에 해당하는 step 배경으로 갱신.
+// 머지로 새 최고 타일이 나올 때마다 호출.
+function updateDailyBoardBg() {
+  if (!dailyTheme || !renderer || !grid) { if (renderer) renderer.clearStepBg(); return; }
+  const sizes = SG.Collection.getThemeSizes(dailyTheme);
+  // 현재 보드의 최대 size
+  let maxSz = 0;
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < grid[r].length; c++)
+      if (grid[r][c] && grid[r][c].size > maxSz) maxSz = grid[r][c].size;
+  const step = sizes.indexOf(maxSz) + 1;   // 0→없음, 1-based
+  const bgPath = step > 0
+    ? ((dailyTheme.stepBgs && dailyTheme.stepBgs[step - 1]) ||
+       (dailyTheme.svgPaths && dailyTheme.svgPaths[step - 1]) || null)
+    : null;
+  if (bgPath) renderer.setStepBg(bgPath);
+  else renderer.clearStepBg();
+}
+
 function startDailyRun() {
   const date = utcDateStr();
   const dow = utcDayOfWeek();
@@ -1683,37 +1787,27 @@ function startDailyRun() {
 
   // 테마 선택: dev Daily는 전체 테마 랜덤, 일반 Daily는 해금 테마 랜덤
   const _allThemes = SG.CollectionThemes || [];
-  let _dailyTheme = null;
+  dailyTheme = null;
   if (_devDailyAllThemes && _allThemes.length > 0) {
-    // 전 테마 랜덤 — 해금 여부 무관 (미해금 테마 소개 효과)
-    _dailyTheme = _allThemes[Math.floor(makeRng()() * _allThemes.length)];
+    dailyTheme = _allThemes[Math.floor(makeRng()() * _allThemes.length)];
   } else {
     const _collMeta = SG.Collection.loadMeta(window.localStorage);
     const _unlocked = _allThemes.filter(function (t) {
       return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
     });
     const _themeRng = dailySeededRng(date + ':theme');
-    if (_unlocked.length > 0) _dailyTheme = _unlocked[Math.floor(_themeRng() * _unlocked.length)];
+    if (_unlocked.length > 0) dailyTheme = _unlocked[Math.floor(_themeRng() * _unlocked.length)];
   }
 
-  // Daily: Chronicles 진행 UI 숨김, 테마 + 현재 최고 step 배경 적용
-  renderer.setCollectionTheme(_dailyTheme || null);
-  if (_dailyTheme) {
-    const _thState = SG.Collection.loadTheme(_dailyTheme.id, window.localStorage, _dailyTheme);
-    const _acq = _thState.acquiredSteps || [];
-    const _bestStep = _acq.length > 0 ? Math.max.apply(null, _acq) : 0;
-    const _bgPath = _bestStep > 0
-      ? ((_dailyTheme.stepBgs && _dailyTheme.stepBgs[_bestStep - 1]) ||
-         (_dailyTheme.svgPaths && _dailyTheme.svgPaths[_bestStep - 1]) || null)
-      : null;
-    if (_bgPath) renderer.setStepBg(_bgPath);
-    else renderer.clearStepBg();
-  } else {
-    renderer.clearStepBg();
-  }
+  // Daily: Chronicles 진행 UI 숨김, 테마 적용
+  renderer.setCollectionTheme(dailyTheme || null);
   document.getElementById('chronicles-progress').classList.remove('visible');
   document.getElementById('chronicles-narration').classList.remove('visible');
   renderer.setMode('daily');
+  // 테마가 있으면 이미지 타일 렌더링 — colorBySize(숫자) 모드 해제
+  if (dailyTheme) renderer.colorBySize = false;
+  // 보드 배경 = 현재 보드의 최고 타일 step 배경으로 초기화
+  updateDailyBoardBg();
   renderer.drawGrid(grid);
   updateDailyHud();
   applyBgmForMode('daily');
@@ -1735,7 +1829,7 @@ const ENDLESS_BEST_KEY = 'earthbeyond_endless_best';
 
 // ── Collection mode state ─────────────────────────────────────────
 let collectionMode = false;
-let activeThemeId = 'primordial-earth';
+var activeThemeId = 'primordial-earth';
 let collectionCollapseCount = 0;
 let collectionContinueCount = 0;   // 이번 콜렉션 세션의 CONTINUE 사용 횟수 (비용 곡선용)
 const CONTINUE_COSTS = [5, 10, 20, 40];   // 회수당 스타 비용 (이후는 마지막 값 유지)
@@ -1745,15 +1839,24 @@ const INTERSTITIAL_COOLDOWN_MS = 60000;
 // 리워드 광고 공통 래퍼 — 일일 쿼터 소비 후 실제 광고 요청.
 // 쿼터 소진 시 토스트 표시 후 { granted: false } 반환 (실제 광고 미노출).
 // 광고 실패 시 쿼터 자동 반환.
+async function showInterstitial() {
+  try { SG.CG.hideBanner(); } catch (_) {}
+  try { await SG.CG.requestMidgameAd(); } catch (_) {}
+  try { SG.CG.showBanner(); } catch (_) {}
+}
+
 async function requestRewardedAdWithQuota(placement) {
   if (!SG.Daily.useRewardedAd(localStorage)) {
     showGameToast('Daily ad limit reached (' + SG.Daily.REWARDED_DAILY_LIMIT + '/' + SG.Daily.REWARDED_DAILY_LIMIT + '). Come back tomorrow!', 2500);
     return { granted: false };
   }
   try {
+    try { SG.CG.hideBanner(); } catch (_) {}
     const res = await SG.CG.requestRewardedAd(placement);
+    try { SG.CG.showBanner(); } catch (_) {}
     return res || { granted: true };
   } catch (_) {
+    try { SG.CG.showBanner(); } catch (_e) {}
     SG.Daily.refundRewardedAd(localStorage);
     return { granted: false };
   }
@@ -1851,7 +1954,7 @@ async function _collapseShared(collapseInfo) {
   const now = Date.now();
   const canShowAd = (now - lastInterstitialAt) >= INTERSTITIAL_COOLDOWN_MS;
   if (canShowAd) {
-    try { await SG.CG.requestMidgameAd(); lastInterstitialAt = now; } catch (_) {}
+    await showInterstitial(); lastInterstitialAt = now;
   }
 
   grid = SG.ND.emptyGrid(4);
@@ -2351,7 +2454,7 @@ async function endlessGameOver() {
   } catch (_) {}
   try {
     if (SG.PG && SG.PG.isAvailable && SG.PG.isAvailable()) {
-      await SG.PG.leaderboard.submit(endlessScore);
+      await SG.PG.leaderboard.submit(endlessScore, SG.PG.LB_ENDLESS);
     }
   } catch (_) {}
 
@@ -2361,7 +2464,7 @@ async function endlessGameOver() {
   const capReached = rawStars > earnedStars;
   if (earnedStars > 0) { pgSyncStorage(); updateWalletChip(); }
 
-  try { await SG.CG.requestMidgameAd(); } catch (_) {}
+  await showInterstitial();
 
   endlessStarsDoubled = false;
   const dblBtn = document.getElementById('btn-endless-double');
@@ -2741,7 +2844,7 @@ async function collectionGameOver() {
   _runSettled = false;   // 이번 판이 아직 지갑에 정산되지 않음
 
   // 게임오버 시 전체광고 노출 → 그 다음 팝업
-  try { await SG.CG.requestMidgameAd(); } catch (_) {}
+  await showInterstitial();
 
   const _activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   const state = SG.Collection.loadTheme(activeThemeId, localStorage, _activeThemeObj);
@@ -3349,7 +3452,7 @@ function dailyToMenu() {
   dailyMode = false;
   _devDailyAllThemes = false;  // dev Daily 플래그 리셋
   try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
-  try { SG.CG.requestMidgameAd(); } catch (_) {}
+  showInterstitial();
   renderer.setMode('main');
   showStart();
   refreshDailyMenu();
@@ -3372,7 +3475,7 @@ function msToNextUtcMidnight() {
 async function restartGame() {
   closeModalNav();
   document.getElementById('ol-gameover').classList.add('hidden');
-  try { await SG.CG.requestMidgameAd(); } catch (_) {}
+  await showInterstitial();
   await startGame();
 }
 
@@ -3894,8 +3997,13 @@ SG.PG._onAudioStateChanged = function (isEnabled) {
   try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(!isEnabled); } catch (_) {}
 };
 SG.PG._onPauseStateChanged = function (isPaused) {
-  if (isPaused) isAnimating = true;     // freeze input while paused
-  else isAnimating = false;
+  isPlatformPaused = isPaused;
+  if (isPaused) {
+    try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(true); } catch (_) {}
+  } else {
+    var audioOk = SG.PG._audioEnabled !== false;
+    try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(!audioOk); } catch (_) {}
+  }
 };
 
 // ── Test/debug helpers (accessed by Playwright visual-check) ─────
@@ -4021,8 +4129,11 @@ function devResetAll() {
 // SDK / Firebase reject promise sometimes escapes try/catch (e.g. CORS on file://).
 // Swallow silently so the game stays playable without a real backend.
 window.addEventListener('unhandledrejection', function (e) {
-  var msg = (e.reason && (e.reason.message || String(e.reason))) || '';
-  if (msg.indexOf('bridge') !== -1 || msg.indexOf('firebase') !== -1 ||
+  var r = e.reason;
+  var msg = (r && (r.message || String(r))) || '';
+  if ((r && r.code === 'sdkDisabled') ||
+      msg.indexOf('sdkDisabled') !== -1 ||
+      msg.indexOf('bridge') !== -1 || msg.indexOf('firebase') !== -1 ||
       msg.indexOf('playgama') !== -1 || msg.indexOf('CORS') !== -1 ||
       msg.indexOf('Failed to fetch') !== -1) {
     e.preventDefault();

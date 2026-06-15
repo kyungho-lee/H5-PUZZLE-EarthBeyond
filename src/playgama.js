@@ -12,7 +12,8 @@
    │  file://    →  SDK 로드 생략 (no-op)                           │
    └─────────────────────────────────────────────────────────────────┘
 
-   리더보드 ID: NeonDrift-LB (Daily Leaderboard) — 토큰 cmqd5z0xw0503lc0hz6onlzt1
+   리더보드: kevin-PEB (daily_leaderboard), kevin-PEB2 (Endless-Leaderboard)
+   Public token: cmqf9ib9y009rlr0hzzxkr4hw
 */
 (function (global) {
   'use strict';
@@ -105,8 +106,17 @@
 
       try {
         _bridge.platform.on('audioStateChanged', function (isEnabled) {
+          SG.PG._audioEnabled = isEnabled;
           if (typeof SG.PG._onAudioStateChanged === 'function') SG.PG._onAudioStateChanged(isEnabled);
         });
+        // Initial audio state check (wiki: "mute immediately if false")
+        var _initAudio = _bridge.platform.isAudioEnabled;
+        if (typeof _initAudio === 'boolean') {
+          SG.PG._audioEnabled = _initAudio;
+          if (!_initAudio && typeof SG.PG._onAudioStateChanged === 'function') {
+            SG.PG._onAudioStateChanged(false);
+          }
+        }
       } catch (e) {}
 
       try {
@@ -260,23 +270,26 @@
   function platformId()       { return (_ready && _bridge) ? _bridge.platform.id : 'unknown'; }
   function platformLanguage() { return (_ready && _bridge) ? (_bridge.platform.language || 'en') : 'en'; }
 
-  // ── TODO: Playgama 게임 등록 후 리더보드 ID로 교체 ───────────────
-  var _HOF_LB_ID = 'cmqd5z0xw0503lc0hz6onlzt1';  // NeonDrift-LB · Daily Leaderboard
+  // ── Leaderboard IDs (Earth & Beyond) ────────────────────────────
+  var _LB_DAILY   = 'kevin-PEB';   // daily_leaderboard
+  var _LB_ENDLESS = 'kevin-PEB2';  // Endless-Leaderboard
 
   function lbGetType() {
     if (!_ready || !_bridge || !_bridge.leaderboards) return 'not_available';
     return _bridge.leaderboards.type || 'not_available';
   }
-  function lbSubmit(score) {
+  function lbSubmit(score, lbId) {
     if (!_ready || !_bridge || !_bridge.leaderboards) return Promise.resolve();
     if (lbGetType() === 'not_available') return Promise.resolve();
-    return Promise.resolve(_bridge.leaderboards.setScore(_HOF_LB_ID, score))
+    var id = lbId || _LB_DAILY;
+    return Promise.resolve(_bridge.leaderboards.setScore(id, score))
       .catch(function (e) { console.warn('[SG.PG.lb] setScore failed:', e); });
   }
-  function lbGetEntries() {
+  function lbGetEntries(lbId) {
     if (!_ready || !_bridge || !_bridge.leaderboards) return Promise.resolve(null);
     if (lbGetType() !== 'in_game') return Promise.resolve(null);
-    return Promise.resolve(_bridge.leaderboards.getEntries(_HOF_LB_ID))
+    var id = lbId || _LB_DAILY;
+    return Promise.resolve(_bridge.leaderboards.getEntries(id))
       .catch(function (e) { console.warn('[SG.PG.lb] getEntries failed:', e); return null; });
   }
 
@@ -287,11 +300,14 @@
     storageSet,
     platformId,
     platformLanguage,
+    LB_DAILY:   _LB_DAILY,
+    LB_ENDLESS: _LB_ENDLESS,
     leaderboard: {
       getType:    lbGetType,
       submit:     lbSubmit,
       getEntries: lbGetEntries,
     },
+    _audioEnabled: true,
     _onAudioStateChanged: null,
     _onPauseStateChanged: null,
   };
