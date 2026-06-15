@@ -1016,10 +1016,14 @@ function openChroniclesEntry() {
 
 // Settings에서 Daily EVENT 진입
 function openDailyFromSettings() {
+  // ol-start를 먼저 숨겨서 closeSettings의 nav 복원이 발동하지 않도록
+  document.getElementById('ol-start').classList.add('hidden');
   closeSettings();
   const date = utcDateStr();
   dailyState = SG.Daily.loadDaily(date, window.localStorage);
   if (dailyState.retriesUsed >= SG.Daily.MAX_RETRIES) {
+    document.getElementById('ol-start').classList.remove('hidden');
+    openModalNav('ol-start');
     refreshDailyMenu();
     return;
   }
