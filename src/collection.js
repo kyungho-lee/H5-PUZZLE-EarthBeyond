@@ -68,12 +68,12 @@
     var saved = _read(store, META_KEY);
     if (!saved) {
       return {
-        activeThemeId: 'neon-digits',
-        unlockedThemes: ['neon-digits'],
+        activeThemeId: 'primordial-earth',
+        unlockedThemes: ['primordial-earth'],
         completedThemes: [],
       };
     }
-    if (!saved.unlockedThemes) saved.unlockedThemes = [saved.activeThemeId || 'neon-digits'];
+    if (!saved.unlockedThemes) saved.unlockedThemes = [saved.activeThemeId || 'primordial-earth'];
     if (!saved.completedThemes) saved.completedThemes = [];
     return saved;
   }

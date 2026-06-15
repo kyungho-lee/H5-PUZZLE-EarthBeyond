@@ -1497,6 +1497,13 @@ function collectionGradedTiers(progress) {
 function startCollection() {
   const meta = SG.Collection.loadMeta(localStorage);
   activeThemeId = meta.activeThemeId || 'primordial-earth';
+  // localStorage에 구버전(neon-digits 등) ID가 남아 있으면 첫 번째 유효 테마로 복구
+  if (!SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; })) {
+    activeThemeId = SG.CollectionThemes[0].id;
+    meta.activeThemeId = activeThemeId;
+    if (meta.unlockedThemes.indexOf(activeThemeId) === -1) meta.unlockedThemes.push(activeThemeId);
+    SG.Collection.saveMeta(localStorage, meta);
+  }
   const activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   // step-01(size 1) 자동 획득 — 팝업 없이 조용히, NEW 마크만 (갤러리 확인 시 스타)
   SG.Collection.grantStartStep(activeThemeId, localStorage, activeThemeObj);
