@@ -612,15 +612,19 @@
       Merge tiles to travel from Primordial Earth to the edge of the Universe
     </p>
     <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()">CHRONICLES</button>
-    <button class="btn-secondary modal-btn" id="btn-daily" data-action="daily" onclick="openDailyMenu()" style="position:relative">
-      DAILY CHALLENGE
+    <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="menuEndlessClick()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <span id="endless-menu-label">ENDLESS ∞</span>
+      <span id="endless-menu-sub" style="font-size:.6rem;letter-spacing:1px;opacity:.65"></span>
+    </button>
+    <button class="btn-secondary modal-btn" id="btn-daily" data-action="daily" onclick="openDailyMenu()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <span id="daily-menu-label">DAILY CHALLENGE</span>
+      <span id="daily-menu-sub" style="font-size:.6rem;letter-spacing:1px;opacity:.65"></span>
       <span id="menu-daily-dot" class="reddot hidden"></span>
     </button>
     <button class="btn-secondary modal-btn" id="btn-gallery-menu" data-action="gallery" onclick="openGalleryFromMenu()" style="position:relative">
       GALLERY
       <span id="menu-gallery-dot" class="reddot hidden"></span>
     </button>
-    <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="startEndless()" style="display:none">ENDLESS ∞</button>
     <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()">SETTINGS</button>
     <!-- dev 전용: hidden -->
     <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
@@ -1202,33 +1206,81 @@ function showStart() {
   endlessMode = false;
   collectionMode = false;
   dailyMode = false;
-  // ENDLESS 버튼: 모든 챕터 클리어 시에만 표시
-  const endlessBtn = document.getElementById('btn-endless-menu');
-  if (endlessBtn) endlessBtn.style.display = isEndlessUnlocked() ? '' : 'none';
   updateWalletChip();
   updateGalleryDot();
   _refreshMenuDots();
   openModalNav('ol-start');
 }
 
-// 메인 메뉴 레드닷 갱신 (Daily 미정산 / Gallery NEW)
+// 메인 메뉴 버튼 상태 전체 갱신 (레드닷 + 서브텍스트 + Endless 잠김)
 function _refreshMenuDots() {
-  // Daily 레드닷: 오늘 best 중 미정산 별이 있을 때
-  const ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
-  const hasUnclaimed = SG.Daily.claimableBest(ds) > 0;
-  const dailyDot = document.getElementById('menu-daily-dot');
+  // ── ENDLESS 버튼 ───────────────────────────────────────────────
+  const endlessUnlocked = isEndlessUnlocked();
+  const endlessBtn = document.getElementById('btn-endless-menu');
+  const endlessLabel = document.getElementById('endless-menu-label');
+  const endlessSub   = document.getElementById('endless-menu-sub');
+  if (endlessBtn) {
+    endlessBtn.style.display = '';   // 항상 표시
+    if (endlessUnlocked) {
+      if (endlessLabel) endlessLabel.textContent = 'ENDLESS ∞';
+      if (endlessSub) {
+        var best = 0;
+        try { best = parseInt(localStorage.getItem('earthbeyond_endless_best') || '0', 10) || 0; } catch (_) {}
+        endlessSub.textContent = best > 0 ? 'BEST  ' + best : '';
+      }
+      endlessBtn.style.opacity = '';
+    } else {
+      if (endlessLabel) endlessLabel.textContent = '🔒  ENDLESS ∞';
+      // Chronicles 남은 챕터 수 표시
+      var meta0 = SG.Collection.loadMeta(localStorage);
+      var total0 = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
+      var done0  = (meta0.completedThemes && meta0.completedThemes.length) || 0;
+      if (endlessSub) endlessSub.textContent = 'CHRONICLES  ' + done0 + ' / ' + total0 + '  COMPLETE';
+      endlessBtn.style.opacity = '0.55';
+    }
+  }
+
+  // ── DAILY CHALLENGE 버튼 ───────────────────────────────────────
+  var ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
+  var exhausted = ds.retriesUsed >= SG.Daily.MAX_RETRIES;
+  var dailyLabel = document.getElementById('daily-menu-label');
+  var dailySub   = document.getElementById('daily-menu-sub');
+  if (dailyLabel) dailyLabel.textContent = 'DAILY CHALLENGE';
+  if (dailySub) {
+    if (exhausted) {
+      dailySub.textContent = '다음 열림  ' + msToNextUtcMidnight();
+    } else {
+      var left = SG.Daily.retriesLeft(ds);
+      dailySub.textContent = left + ' / ' + SG.Daily.MAX_RETRIES + '  시도 남음';
+    }
+  }
+  var dailyDot = document.getElementById('menu-daily-dot');
+  var hasUnclaimed = SG.Daily.claimableBest(ds) > 0;
   if (dailyDot) dailyDot.classList.toggle('hidden', !hasUnclaimed);
 
-  // Gallery 레드닷: 모든 테마 중 NEW(미수령) 블록 있을 때
-  let hasNew = false;
-  const meta = SG.Collection.loadMeta(localStorage);
+  // ── GALLERY 레드닷 ─────────────────────────────────────────────
+  var hasNew = false;
+  var meta1 = SG.Collection.loadMeta(localStorage);
   (SG.CollectionThemes || []).forEach(function (t) {
-    if (meta.unlockedThemes.indexOf(t.id) !== -1) {
+    if (meta1.unlockedThemes.indexOf(t.id) !== -1) {
       if (SG.Collection.hasNew(t.id, localStorage, t)) hasNew = true;
     }
   });
-  const galDot = document.getElementById('menu-gallery-dot');
+  var galDot = document.getElementById('menu-gallery-dot');
   if (galDot) galDot.classList.toggle('hidden', !hasNew);
+}
+
+// 메인 메뉴에서 Endless 버튼 클릭
+function menuEndlessClick() {
+  if (isEndlessUnlocked()) {
+    startEndless();
+  } else {
+    // 잠김 안내 토스트
+    var meta = SG.Collection.loadMeta(localStorage);
+    var done  = (meta.completedThemes && meta.completedThemes.length) || 0;
+    var total = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
+    showGameToast('Chronicles를 모두 완료하면 열립니다  (' + done + '/' + total + ')', 2400);
+  }
 }
 
 // 메인 메뉴 DAILY CHALLENGE 버튼 → Daily 상태 팝업
@@ -3664,12 +3716,8 @@ function pgSyncStorage() {
 
   // 첫 접속이면 Daily 튜토리얼, 재접속이면 메뉴 표시
   if (!isFirstVisit()) {
-    // ENDLESS 버튼 표시 여부 초기화
-    const _ebtn = document.getElementById('btn-endless-menu');
-    if (_ebtn) _ebtn.style.display = isEndlessUnlocked() ? '' : 'none';
     openModalNav('ol-start');
     refreshDailyMenu();
-    _refreshMenuDots();
   } else { _checkOnboarding(); }
   setInterval(function () { if (!document.getElementById('ol-start').classList.contains('hidden')) refreshDailyMenu(); }, 1000);
 
