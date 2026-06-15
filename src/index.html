@@ -151,6 +151,7 @@
     .hidden { display: none !important; }
     /* 갤러리·상세보기는 다른 오버레이 위에 표시 */
     #ol-gallery { z-index: 20; }
+    #ol-gallery-detail { z-index: 30; }
 
     .ol-panel {
       background: var(--panel);
@@ -776,7 +777,8 @@
   <div class="ol-panel" style="padding:0;overflow:hidden;max-width:340px;width:92vw">
     <img id="gd-img" src="" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">
     <div style="padding:16px 18px 18px">
-      <div id="gd-step" style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px">STEP 01</div>
+      <div id="gd-theme" style="font-size:.58rem;color:var(--textdim);letter-spacing:2px;margin-bottom:2px;text-transform:uppercase"></div>
+      <div id="gd-step" style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:6px">STEP 01</div>
       <div id="gd-title" style="font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:8px"></div>
       <div id="gd-desc" style="font-size:.78rem;color:var(--textdim);line-height:1.6;margin-bottom:16px"></div>
       <button class="btn-primary modal-btn" onclick="closeGalleryDetail()" data-i18n="ui.btn.close">CLOSE</button>
@@ -3052,10 +3054,12 @@ function openGalleryDetail(themeId, step, size, showStarBadge) {
   } else {
     imgEl.style.display = 'none';
   }
-  // 스텝 레이블
+  // 테마명 + 스텝 레이블
+  const themeEl = document.getElementById('gd-theme');
+  if (themeEl) themeEl.textContent = (theme && theme.label) || '';
   document.getElementById('gd-step').textContent =
     'STEP ' + String(step).padStart(2, '0') + (showStarBadge ? '  ⭐ +1' : '');
-  // 타이틀: stepDescriptions 첫 줄 (— 앞부분) 또는 fallback
+  // 타이틀 + 나레이션: stepDescriptions[step-1] "제목 — 본문" 포맷
   const descs = theme && theme.stepDescriptions;
   const fullDesc = (descs && descs[step - 1]) || '';
   const dashIdx = fullDesc.indexOf(' — ');
