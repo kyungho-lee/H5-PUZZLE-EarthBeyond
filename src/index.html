@@ -581,6 +581,10 @@
     </div>
     <button class="btn-ad ad-gold modal-btn" id="btn-daily-claim" onclick="claimDailyAndExit()">CLAIM ⭐0</button>
     <button class="btn-secondary modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()">📺 RETRY (AD) — go for higher best</button>
+    <!-- 첫 접속 온보딩 CTA — JS에서 isFirstVisit()일 때만 표시 -->
+    <button class="btn-primary modal-btn" id="btn-daily-onboard" onclick="onboardToChronicles()" style="display:none">
+      START YOUR JOURNEY →
+    </button>
     <div class="modal-hint">↑↓ Move · Enter Select</div>
   </div>
 </div>
@@ -942,12 +946,63 @@ function loop(ts) {
 
 // ── 시작 / 재시작 / 메뉴 ──────────────────────────────────────────
 // START 화면 표시 + 키보드 네비게이션 활성화.
+// ── 온보딩 (첫 접속) ─────────────────────────────────────────────
+const ONBOARD_KEY = 'earthbeyond_onboarded';
+function isFirstVisit() {
+  try { return !localStorage.getItem(ONBOARD_KEY); } catch (_) { return false; }
+}
+function markOnboarded() {
+  try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (_) {}
+}
+
 function showStart() {
+  // 첫 접속: Daily를 튜토리얼처럼 바로 시작
+  if (isFirstVisit()) {
+    markOnboarded();
+    const date = utcDateStr();
+    dailyState = SG.Daily.loadDaily(date, window.localStorage);
+    // Daily 게임오버 패널에 온보딩 CTA 표시 예약
+    _pendingOnboard = true;
+    startDailyRun();
+    return;
+  }
   document.getElementById('ol-start').classList.remove('hidden');
   gameRunning = false;
-  updateWalletChip();   // 시작 화면에서도 누적 재화 노출
+  updateWalletChip();
   updateGalleryDot();
   openModalNav('ol-start');
+}
+
+let _pendingOnboard = false;   // Daily 게임오버 시 Chronicles CTA 표시 여부
+
+// 게임오버 패널에서 온보딩 CTA를 조건부 표시
+function _applyOnboardCta() {
+  const btn = document.getElementById('btn-daily-onboard');
+  const claimBtn = document.getElementById('btn-daily-claim');
+  const retryBtn = document.getElementById('btn-daily-retry');
+  if (!btn) return;
+  if (_pendingOnboard) {
+    btn.style.display = '';
+    // CLAIM을 secondary로 낮추고 CTA가 primary
+    if (claimBtn) { claimBtn.className = 'btn-secondary modal-btn'; }
+    if (retryBtn) retryBtn.style.display = 'none';
+  } else {
+    btn.style.display = 'none';
+    if (claimBtn) { claimBtn.className = 'btn-ad ad-gold modal-btn'; }
+    if (retryBtn) retryBtn.style.display = '';
+  }
+}
+
+// "START YOUR JOURNEY →" 클릭: 스타 정산 + Chronicles 진입
+function onboardToChronicles() {
+  _pendingOnboard = false;
+  if (dailyState) SG.Daily.claimBestToWallet(dailyState, window.localStorage);
+  pgSyncStorage();
+  closeModalNav();
+  document.getElementById('ol-daily-over').classList.add('hidden');
+  dailyMode = false;
+  renderer.setMode('main');
+  openChroniclesEntry();
 }
 
 // ── 본게임(START Dev) 옵션 — 8x8 · colorAndSize · 2색상 50:50 · graded ──
@@ -1157,6 +1212,7 @@ async function dailyGameOver() {
 
   renderDailyLeaderboard();   // dummy until QA-passed Playgama token is added
   updateWalletChip();
+  _applyOnboardCta();   // 첫 접속이면 Chronicles CTA 표시, 아니면 일반 패널
   document.getElementById('ol-daily-over').classList.remove('hidden');
   openModalNav('ol-daily-over');
 }
