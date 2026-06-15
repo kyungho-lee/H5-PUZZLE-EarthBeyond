@@ -1065,15 +1065,12 @@ function startDailyRun() {
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
   closeModalNav();
-  const _collMeta = SG.Collection.loadMeta(window.localStorage);
-  const _unlockedThemes = (SG.CollectionThemes || []).filter(function (t) {
-    return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
-  });
-  const _dailyThemeRng = dailySeededRng(date + ':theme');
-  const _dailyTheme = _unlockedThemes.length > 0
-    ? _unlockedThemes[Math.floor(_dailyThemeRng() * _unlockedThemes.length)]
-    : null;
-  renderer.setCollectionTheme(_dailyTheme || null);
+  // Daily: 테마 배경·Chronicles UI 없이 순수 격자만
+  renderer.setCollectionTheme(null);
+  renderer.clearStepBg();
+  document.getElementById('chronicles-progress').classList.remove('visible');
+  const _toast = document.getElementById('chronicles-toast');
+  if (_toast) _toast.classList.remove('visible');
   renderer.setMode('daily');
   renderer.drawGrid(grid);
   updateDailyHud();
