@@ -73,7 +73,7 @@
 
     // Crystal Pad — sine × 3 chorus (±7¢) + 2옥타브 shimmer + 긴 decay
     pad: {
-      id: 'pad', label: 'PAD', desc: 'Crystal pad · 신비로운 공간감',
+      id: 'pad', label: 'PAD', desc: 'Crystal pad',
       gain: 0.14,
       attack: 0.04,   // 부드러운 어택
       decay: 0.55,    // 긴 여운
@@ -90,7 +90,7 @@
 
     // Ethereal Bell — sine + FM 변조(OscillatorNode 2개) + 긴 decay
     bell: {
-      id: 'bell', label: 'BELL', desc: 'Ethereal bell · 맑은 차임벨',
+      id: 'bell', label: 'BELL', desc: 'Ethereal bell',
       gain: 0.15,
       attack: 0.001,  // 즉각적인 공격
       decay: 0.80,    // 매우 긴 여운
@@ -106,7 +106,7 @@
 
     // Space Choir — sine × 4 (미세 디튠) + warm lowpass
     choir: {
-      id: 'choir', label: 'CHOIR', desc: 'Space choir · 성악풍 두께감',
+      id: 'choir', label: 'CHOIR', desc: 'Space choir',
       gain: 0.13,
       attack: 0.06,   // 가장 부드러운 어택 (보컬 느낌)
       decay: 0.60,

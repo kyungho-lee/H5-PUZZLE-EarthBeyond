@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -269,8 +269,7 @@
     }
     #btn-settings:hover { color:var(--accent); border-color:var(--accent); }
 
-    /* ── 사운드셋 칩 ─────────────────────────────────────────────── */
-    #soundset-list { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+    /* ── 사운드셋 드롭다운 ───────────────────────────────────────── */
     .soundset-chip {
       display:flex; justify-content:space-between; align-items:center;
       padding:11px 14px; border:1px solid var(--border); border-radius:10px;
@@ -285,6 +284,47 @@
     .soundset-chip.focused, .modal-btn.focused {
       outline:2px solid var(--accent); outline-offset:2px;
     }
+    /* 드롭다운 트리거 버튼 */
+    #soundset-trigger {
+      display:flex; justify-content:space-between; align-items:center;
+      width:100%; padding:10px 14px; margin-bottom:6px;
+      border:1px solid var(--border); border-radius:10px;
+      background:var(--panel); color:var(--text); cursor:pointer;
+      font-family:inherit; font-size:.85rem; letter-spacing:1px;
+      transition:border-color .12s;
+    }
+    #soundset-trigger:hover, #soundset-trigger.open {
+      border-color:var(--accent);
+    }
+    #soundset-trigger .sdt-arrow { font-size:.7rem; color:var(--textdim); transition:transform .15s; }
+    #soundset-trigger.open .sdt-arrow { transform:rotate(180deg); }
+    /* 드롭다운 패널 */
+    #soundset-dropdown {
+      display:none; flex-direction:column;
+      border:1px solid var(--border); border-radius:10px;
+      overflow:hidden; margin-bottom:14px;
+    }
+    #soundset-dropdown.open { display:flex; }
+    .sdd-item {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 14px; background:var(--panel);
+      border:none; border-bottom:1px solid var(--border);
+      color:var(--text); cursor:pointer; font-family:inherit;
+      font-size:.82rem; letter-spacing:1px; text-align:left;
+      transition:background .1s;
+    }
+    .sdd-item:last-child { border-bottom:none; }
+    .sdd-item:hover { background:rgba(255,255,255,.05); }
+    .sdd-item .sdd-check {
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid var(--border); flex-shrink:0;
+      transition:border-color .12s, background .12s;
+    }
+    .sdd-item[aria-selected="true"] .sdd-check {
+      border-color:var(--accent); background:var(--accent);
+    }
+    .sdd-item[aria-selected="true"] { color:var(--accent); }
+    .sdd-item .sdd-desc { color:var(--textdim); font-size:.68rem; margin-left:auto; }
     .modal-hint { color:var(--textdim); font-size:.7rem; margin-top:14px; letter-spacing:1px; }
 
     /* ── BGM 칩 ─────────────────────────────────────────────────── */
@@ -327,6 +367,7 @@
     .lb-flag { font-size:.9rem; margin-right:4px; line-height:1; }
     .lb-row.lb-me { background:rgba(58,123,213,.12); border-radius:3px; }
     .lb-row.lb-me .lb-rank { color:var(--accent); font-weight:700; }
+    .lb-sep { text-align:center; color:var(--textdim); font-size:.65rem; letter-spacing:3px; padding:2px 0; }
 
     /* ── Collection 오버레이 ────────────────────────────────────────── */
     #ol-unlock .unlock-thumb {
@@ -943,7 +984,11 @@
 
     <!-- SOUND SET -->
     <div class="ol-label" style="margin-bottom:8px" data-i18n="ui.label.soundSet">SOUND SET</div>
-    <div id="soundset-list"><!-- chips injected by JS --></div>
+    <button id="soundset-trigger" onclick="toggleSoundsetDropdown()">
+      <span id="soundset-trigger-label">—</span>
+      <span class="sdt-arrow">▼</span>
+    </button>
+    <div id="soundset-dropdown"><!-- items injected by JS --></div>
     <button id="chip-haptic" class="soundset-chip modal-btn" data-action="haptic" onclick="toggleHaptic()">
       <span>HAPTIC</span><span class="sc-desc" id="haptic-state">ON</span>
     </button>
@@ -979,15 +1024,6 @@
       </div>
     </div>
 
-    <!-- Daily EVENT -->
-    <div class="ol-label" style="margin-top:14px;margin-bottom:6px;font-size:.65rem;letter-spacing:2px;color:var(--textdim)" data-i18n="ui.label.event">EVENT</div>
-    <button class="btn-secondary modal-btn" id="btn-settings-daily" data-action="daily" onclick="openDailyFromSettings()" style="position:relative" data-i18n="ui.btn.dailyChallenge">
-      DAILY CHALLENGE <span id="settings-daily-dot" class="reddot hidden"></span>
-    </button>
-    <div id="settings-daily-done" style="display:none;font-size:.72rem;color:var(--textdim);text-align:center;line-height:1.6;padding:6px 4px">
-      <span data-i18n="ui.label.dailyDone">오늘의 도전이 끝났습니다.</span><br>
-      <span id="settings-daily-next" style="color:var(--accent)"></span>
-    </div>
     <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative" data-i18n="ui.btn.gallery">
       GALLERY <span id="settings-gallery-dot" class="reddot hidden"></span>
     </button>
@@ -1660,14 +1696,27 @@ function startDailyRun() {
     if (_unlocked.length > 0) _dailyTheme = _unlocked[Math.floor(_themeRng() * _unlocked.length)];
   }
 
-  // Daily: Chronicles 진행 UI 숨김, 배경만 테마 적용 (step 배경 없음)
+  // Daily: Chronicles 진행 UI 숨김, 테마 + 현재 최고 step 배경 적용
   renderer.setCollectionTheme(_dailyTheme || null);
-  renderer.clearStepBg();
+  if (_dailyTheme) {
+    const _thState = SG.Collection.loadTheme(_dailyTheme.id, window.localStorage, _dailyTheme);
+    const _acq = _thState.acquiredSteps || [];
+    const _bestStep = _acq.length > 0 ? Math.max.apply(null, _acq) : 0;
+    const _bgPath = _bestStep > 0
+      ? ((_dailyTheme.stepBgs && _dailyTheme.stepBgs[_bestStep - 1]) ||
+         (_dailyTheme.svgPaths && _dailyTheme.svgPaths[_bestStep - 1]) || null)
+      : null;
+    if (_bgPath) renderer.setStepBg(_bgPath);
+    else renderer.clearStepBg();
+  } else {
+    renderer.clearStepBg();
+  }
   document.getElementById('chronicles-progress').classList.remove('visible');
   document.getElementById('chronicles-narration').classList.remove('visible');
   renderer.setMode('daily');
   renderer.drawGrid(grid);
   updateDailyHud();
+  applyBgmForMode('daily');
   try { SG.CG.gameplayStart(); } catch (_) {}
 }
 
@@ -1754,7 +1803,8 @@ async function dailyGameOver() {
   SG.Daily.setBestRun(dailyState, dailyRunStars, window.localStorage);
   pgSyncStorage();
   try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(dailyState.stars); } catch (_) {}
-  try { if (SG.FB.isConnected()) await SG.FB.submitScore(dailyState.stars, { mode: 'daily', bestRun: dailyState.bestRun }); } catch (_) {}
+  // 리더보드 점수 = bestRun (단일 최고 판 별). stars는 누적 합산이라 부적절.
+  try { if (SG.FB.isConnected()) await SG.FB.submitScore(dailyState.bestRun || 0, { mode: 'daily' }); } catch (_) {}
 
   document.getElementById('daily-run-stars').textContent = '⭐' + dailyRunStars;
   document.getElementById('daily-total-stars').textContent = '⭐' + (dailyState.bestRun || 0);
@@ -2184,6 +2234,7 @@ function startCollection() {
   document.getElementById('chronicles-narration').classList.remove('visible');
   renderer.drawGrid(grid);
   updateCollectionHud();
+  applyBgmForMode(activeThemeId);
   try { SG.CG.gameplayStart(); } catch (_) {}
   // dev 드롭다운 현재값 동기화
   const _devSel = document.getElementById('dev-theme-select');
@@ -2258,6 +2309,7 @@ function startEndless(skinTheme) {
   updateEndlessHud();
   renderer.drawGrid(grid);
   gameRunning = true;
+  applyBgmForMode('endless');
   try { SG.CG.gameplayStart(); } catch (_) {}
 }
 
@@ -2416,6 +2468,7 @@ function endlessToMenu() {
   dailyMode = false;
   document.getElementById('ol-endless-over').classList.add('hidden');
   closeModalNav();
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
   renderer.setMode('main');
   showStart();
 }
@@ -2851,6 +2904,7 @@ async function collectionContinueWithAd() {
   // 누적 스타(dailyRunStars/Shown)는 그대로 — 이어가는 판
   gameRunning = true;
   updateCollectionHud();
+  applyBgmForMode(activeThemeId);
   try { SG.CG.gameplayStart(); } catch (_) {}
 }
 
@@ -2895,7 +2949,7 @@ function collectionToMenu() {
   });
   collectionMode = false;
   dailyMode = false;
-
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
   if (renderer) { renderer.setCollectionTheme(null); renderer.setMode('main'); }
   showStart();
 }
@@ -3244,19 +3298,37 @@ async function renderDailyLeaderboard() {
   const myId = SG.FB ? SG.FB.getPlayerId() : '';
   const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
 
-  box.innerHTML = rows.slice(0, 10).map(function (r, i) {
-    const cc   = r.country || '';
-    const fl   = cc ? flag(cc) : '🌐';
-    const id   = (r.playerId || 'player').slice(-6);
-    const sc   = (r.score != null ? r.score : 0);
-    const isMe = r.playerId === myId;
+  const top10 = rows.slice(0, 10);
+  const myTopIdx = top10.findIndex(function (r) { return r.playerId === myId; });
+
+  function rowHtml(r, rank, isMe) {
+    const cc = r.country || '';
+    const fl = cc ? flag(cc) : '🌐';
+    const id = (r.playerId || 'player').slice(-6);
+    const sc = (r.score != null ? r.score : 0);
     return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
-      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-flag">' + fl + '</span>' +
       '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
       '<span class="lb-score">⭐' + sc + '</span>' +
       '</div>';
+  }
+
+  let html = top10.map(function (r, i) {
+    return rowHtml(r, i + 1, r.playerId === myId);
   }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
+
+  // 내가 top-10 밖이면 구분선 + 내 항목을 맨 아래 추가
+  if (myTopIdx === -1 && myId) {
+    const myScore = (dailyState && dailyState.bestRun) || 0;
+    const myCountry = SG.FB && SG.FB.detectCountry ? SG.FB.detectCountry() : '';
+    // 내 순위: top10 중 내 점수보다 높은 항목 수 + 1 (실제 Firestore 전체 순위 근사값)
+    const myRank = rows.filter(function (r) { return (r.score || 0) > myScore; }).length + 1;
+    const myRow  = { playerId: myId, score: myScore, country: myCountry };
+    html += '<div class="lb-sep">···</div>' + rowHtml(myRow, myRank, true);
+  }
+
+  box.innerHTML = html;
 }
 
 async function dailyRetry() {
@@ -3276,6 +3348,7 @@ function dailyToMenu() {
   document.getElementById('ol-daily-over').classList.add('hidden');
   dailyMode = false;
   _devDailyAllThemes = false;  // dev Daily 플래그 리셋
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
   try { SG.CG.requestMidgameAd(); } catch (_) {}
   renderer.setMode('main');
   showStart();
@@ -3410,28 +3483,51 @@ function modalNavKey(e) {
   return false;
 }
 
-// ── 설정 패널 (사운드셋 선택) ─────────────────────────────────────
+// ── 설정 패널 (사운드셋 드롭다운) ────────────────────────────────
 function buildSoundsetChips() {
-  const list = document.getElementById('soundset-list');
-  list.innerHTML = '';
+  const dropdown = document.getElementById('soundset-dropdown');
+  dropdown.innerHTML = '';
   const packs = (SG.Sound && SG.Sound.packs) ? SG.Sound.packs : [];
   const current = SG.Sound ? SG.Sound.pack : null;
   packs.forEach(function (p) {
-    const chip = document.createElement('button');
-    chip.className = 'soundset-chip';
-    chip.dataset.pack = p.id;
-    chip.setAttribute('aria-selected', String(p.id === current));
-    chip.innerHTML = '<span>' + p.label + '</span><span class="sc-desc">' + p.desc + '</span>';
-    chip.onclick = function () { selectSoundset(p.id); };
-    list.appendChild(chip);
+    const btn = document.createElement('button');
+    btn.className = 'sdd-item';
+    btn.dataset.pack = p.id;
+    btn.setAttribute('aria-selected', String(p.id === current));
+    btn.innerHTML =
+      '<span class="sdd-check"></span>' +
+      '<span>' + p.label + '</span>' +
+      '<span class="sdd-desc">' + p.desc + '</span>';
+    btn.onclick = function () { selectSoundset(p.id); };
+    dropdown.appendChild(btn);
   });
+  _syncSoundsetTrigger();
+}
+function _syncSoundsetTrigger() {
+  const packs = (SG.Sound && SG.Sound.packs) ? SG.Sound.packs : [];
+  const current = SG.Sound ? SG.Sound.pack : null;
+  const active = packs.find(function (p) { return p.id === current; });
+  const label = document.getElementById('soundset-trigger-label');
+  if (label) label.textContent = active ? active.label : '—';
+}
+function toggleSoundsetDropdown() {
+  const trigger  = document.getElementById('soundset-trigger');
+  const dropdown = document.getElementById('soundset-dropdown');
+  const isOpen = dropdown.classList.contains('open');
+  dropdown.classList.toggle('open', !isOpen);
+  trigger.classList.toggle('open', !isOpen);
+  haptic(6);
 }
 function selectSoundset(id) {
   if (!SG.Sound) return;
   SG.Sound.setPack(id);
-  document.querySelectorAll('.soundset-chip[data-pack]').forEach(function (c) {
+  document.querySelectorAll('.sdd-item[data-pack]').forEach(function (c) {
     c.setAttribute('aria-selected', String(c.dataset.pack === id));
   });
+  _syncSoundsetTrigger();
+  // 선택 후 드롭다운 닫기
+  document.getElementById('soundset-dropdown').classList.remove('open');
+  document.getElementById('soundset-trigger').classList.remove('open');
   try { SG.Sound.playMerge([{ blockType: 1, size: 4 }]); } catch (_) {}
   haptic(10);
 }
@@ -3691,12 +3787,6 @@ function applyLang() {
 // JS가 동적으로 생성하거나 i18n 팩에 없는 특수 문자열 패치
 function _applyLangDynamic(lang) {
   var ko = lang === 'ko';
-  // Settings Daily done 메시지
-  var doneEl = document.getElementById('settings-daily-done');
-  if (doneEl) {
-    var span = doneEl.querySelector('span[data-i18n]');
-    if (span) span.textContent = ko ? '오늘의 도전이 끝났습니다.' : "Today's challenge is over.";
-  }
   // Daily 메뉴 팝업 내 "내일" 메시지
   var dmMsg = document.querySelector('[data-i18n="ui.label.dailyDoneMsg"]');
   if (dmMsg) dmMsg.textContent = ko ? '내일 새로운 Daily Challenge가 열립니다' : 'A new Daily Challenge opens tomorrow.';
@@ -3733,10 +3823,13 @@ function openSettings() {
   buildBgmUI();
   refreshHapticChip();
   _refreshLangChips();
-  // Show MENU button only when not already on the START screen (i.e. game is running).
+  // MENU 버튼: 게임/Daily/Endless/Collection 중일 때만 표시.
+  // START 화면이거나 Daily game-over 패널이 열려 있으면 숨김 (이미 MENU 버튼 있음).
   const onStartScreen = !document.getElementById('ol-start').classList.contains('hidden');
+  const onDailyOver   = !document.getElementById('ol-daily-over').classList.contains('hidden');
+  const onEndlessOver = !document.getElementById('ol-endless-over').classList.contains('hidden');
   const menuBtn = document.getElementById('btn-settings-menu');
-  if (menuBtn) menuBtn.style.display = onStartScreen ? 'none' : '';
+  if (menuBtn) menuBtn.style.display = (onStartScreen || onDailyOver || onEndlessOver) ? 'none' : '';
   // 콜렉션 모드일 때만 갤러리 버튼 노출 + NEW 레드닷.
   const galBtn = document.getElementById('btn-settings-gallery');
   if (galBtn) {
@@ -3746,36 +3839,15 @@ function openSettings() {
     const hasNew = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage, _settingsTheme);
     if (dot) dot.classList.toggle('hidden', !hasNew);
   }
-  // Daily EVENT 상태 갱신
-  (function () {
-    const _ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
-    const exhausted = _ds.retriesUsed >= SG.Daily.MAX_RETRIES;
-    const isDev = localStorage.getItem('sg_dev') === '1' ||
-                  new URLSearchParams(location.search).has('dev');
-    const btn = document.getElementById('btn-settings-daily');
-    const doneEl = document.getElementById('settings-daily-done');
-    const dot = document.getElementById('settings-daily-dot');
-    if (btn) {
-      // dev는 항상 활성, 일반은 소진 시 비활성
-      btn.disabled = exhausted && !isDev;
-      btn.style.opacity = (exhausted && !isDev) ? '0.4' : '';
-    }
-    if (doneEl) {
-      doneEl.style.display = (exhausted && !isDev) ? '' : 'none';
-      if (exhausted && !isDev) {
-        const nextEl = document.getElementById('settings-daily-next');
-        if (nextEl) nextEl.textContent = _t('ui.label.nextDaily') + ' ' + msToNextUtcMidnight();
-      }
-    }
-    if (dot) {
-      const hasUnclaimed = SG.Daily.claimableBest(_ds) > 0;
-      dot.classList.toggle('hidden', !hasUnclaimed || exhausted);
-    }
-  })();
   document.getElementById('ol-settings').classList.remove('hidden');
   openModalNav('ol-settings');
 }
 function closeSettings() {
+  // 드롭다운이 열려 있으면 닫기
+  const _dd = document.getElementById('soundset-dropdown');
+  const _dt = document.getElementById('soundset-trigger');
+  if (_dd) _dd.classList.remove('open');
+  if (_dt) _dt.classList.remove('open');
   closeModalNav();
   document.getElementById('ol-settings').classList.add('hidden');
   // Settings can open over the START screen → restore its keyboard nav.
@@ -3784,14 +3856,27 @@ function closeSettings() {
   }
 }
 function settingsToMenu() {
-  closeModalNav();
   document.getElementById('ol-settings').classList.add('hidden');
-  // Stop any running game/daily/practice and return to START screen.
-  gameRunning = false;
-  dailyMode = false;
-
-  if (renderer) renderer.setMode('main');
-  showStart();
+  // 실행 중인 모드에 맞는 정산 함수로 위임 (각 함수가 closeModalNav + showStart 처리).
+  if (dailyMode) {
+    gameRunning = false;
+    dailyToMenu();
+  } else if (endlessMode) {
+    endlessToMenu();
+  } else if (collectionMode) {
+    gameRunning = false;
+    collectionMode = false;
+    _devDailyAllThemes = false;
+    closeModalNav();
+    if (renderer) renderer.setMode('main');
+    showStart();
+    _refreshMenuDots();
+  } else {
+    gameRunning = false;
+    closeModalNav();
+    if (renderer) renderer.setMode('main');
+    showStart();
+  }
 }
 let _sx = 0, _sy = 0;
 canvas.addEventListener('touchstart', function (e) {
