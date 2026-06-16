@@ -2118,6 +2118,8 @@ async function showInterstitial() {
   try { SG.CG.hideBanner(); } catch (_) {}
   try { await SG.CG.requestMidgameAd(); } catch (_) {}
   try { SG.CG.showBanner(); } catch (_) {}
+  // 광고 완료 후 플랫폼이 pauseStateChanged(false)를 보내지 않는 경우 대비
+  isPlatformPaused = false;
 }
 
 async function requestRewardedAdWithQuota(placement) {
@@ -2134,6 +2136,9 @@ async function requestRewardedAdWithQuota(placement) {
     try { SG.CG.showBanner(); } catch (_e) {}
     SG.Daily.refundRewardedAd(localStorage);
     return { granted: false };
+  } finally {
+    // 광고 완료 후 플랫폼이 pauseStateChanged(false)를 보내지 않는 경우 대비
+    isPlatformPaused = false;
   }
 }
 
