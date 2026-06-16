@@ -68,7 +68,12 @@
   // SG.FB stub — firebase.js 제거 대체.
   global.SG.FB = {
     isConnected:      function () { return false; },
+    init:             function () { return Promise.resolve(); },
     submitScore:      function () { return Promise.resolve(); },
     fetchLeaderboard: function () { return Promise.resolve([]); },
+    getPlayerId:      function () { return null; },
+    countryFlag:      function () { return ''; },
+    detectCountry:    function () { return Promise.resolve(null); },
+    _demoRows:        function () { return []; },
   };
 })(window);
