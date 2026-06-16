@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow09" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="deepglow09" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg09" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#0a1808"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="groundGrad09" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#183010"/>
+      <stop offset="100%" stop-color="#0a1808"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg09)"/>
+
+  <!-- Dim stars / night sky -->
+  <g opacity="0.3">
+    <circle cx="20" cy="18" r="1" fill="#c8c6e0"/>
+    <circle cx="58" cy="10" r="0.8" fill="#aaa8c8"/>
+    <circle cx="108" cy="15" r="1" fill="#c8c6e0"/>
+    <circle cx="165" cy="8" r="0.8" fill="#aaa8c8"/>
+    <circle cx="210" cy="22" r="1" fill="#c8c6e0"/>
+    <circle cx="225" cy="48" r="0.8" fill="#aaa8c8"/>
+    <circle cx="12" cy="60" r="1" fill="#c8c6e0"/>
+    <circle cx="240" cy="72" r="0.8" fill="#aaa8c8"/>
+  </g>
+
+  <!-- Moon (large) -->
+  <circle cx="195" cy="38" r="20" fill="#d0c8a8" opacity="0.5" filter="url(#glow09)"/>
+  <circle cx="190" cy="34" r="20" fill="#0a1808" opacity="0.55"/>
+  <!-- Moon crescent glow -->
+  <circle cx="195" cy="38" r="20" fill="none" stroke="#d0c8a8" stroke-width="1"
+          opacity="0.3" filter="url(#glow09)"/>
+
+  <!-- Ground / fern jungle -->
+  <rect x="0" y="168" width="240" height="72" fill="url(#groundGrad09)"/>
+
+  <!-- Fern silhouettes -->
+  <g fill="#1a4010" opacity="0.7">
+    <!-- Left fern -->
+    <path d="M15 168 Q5 150 25 140 Q12 148 30 132 Q18 142 38 128 Q22 138 35 168Z"/>
+    <!-- Right fern -->
+    <path d="M225 168 Q235 150 215 140 Q228 148 210 132 Q222 142 202 128 Q218 138 205 168Z"/>
+    <!-- Center ferns -->
+    <path d="M50 168 Q40 152 58 142 Q44 150 62 135 Q48 145 55 168Z"/>
+    <path d="M188 168 Q200 152 182 142 Q196 150 178 135 Q192 145 185 168Z"/>
+  </g>
+
+  <!-- === T-Rex silhouette === -->
+  <g transform="translate(72, 165)" fill="#88ff20" filter="url(#glow09)">
+    <!-- body -->
+    <ellipse cx="20" cy="-28" rx="28" ry="18" fill="#88ff20"/>
+    <!-- neck -->
+    <path d="M36,-28 Q44,-38 48,-50 Q52,-56 50,-62 Q56,-58 52,-44 Q56,-34 48,-26Z" fill="#88ff20"/>
+    <!-- head -->
+    <ellipse cx="55" cy="-60" rx="16" ry="10" fill="#88ff20"/>
+    <!-- jaw -->
+    <path d="M44,-57 Q55,-50 68,-57 L62,-64 Q55,-70 44,-64Z" fill="#70e010"/>
+    <!-- eye -->
+    <circle cx="60" cy="-64" r="2.5" fill="#ccff80"/>
+    <!-- teeth hint -->
+    <path d="M48,-57 L50,-53 M54,-55 L56,-51 M60,-55 L62,-51" stroke="#ccff80" stroke-width="1" fill="none" opacity="0.7"/>
+    <!-- tail -->
+    <path d="M-8,-24 Q-22,-20 -38,-28 Q-30,-18 -14,-22Z" fill="#88ff20"/>
+    <!-- front tiny arm -->
+    <path d="M34,-34 Q38,-28 36,-22" stroke="#88ff20" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <line x1="36" y1="-22" x2="40" y2="-20" stroke="#88ff20" stroke-width="2.5"/>
+    <line x1="36" y1="-22" x2="34" y2="-18" stroke="#88ff20" stroke-width="2.5"/>
+    <!-- legs -->
+    <path d="M8,-10 L2,20 L10,20 L14,0 Z" fill="#88ff20"/>
+    <path d="M24,-10 L22,20 L30,20 L30,0 Z" fill="#88ff20"/>
+    <!-- feet -->
+    <path d="M2,20 L-4,24 M10,20 L8,24 M10,20 L14,24" stroke="#88ff20" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M22,20 L18,24 M30,20 L28,24 M30,20 L34,24" stroke="#88ff20" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Small dino in background (sauropod silhouette) -->
+  <g transform="translate(155, 168)" fill="#44a010" opacity="0.5">
+    <ellipse cx="0" cy="-12" rx="22" ry="10"/>
+    <!-- long neck -->
+    <path d="M14,-12 Q20,-22 22,-38 Q24,-48 20,-54 Q22,-48 26,-36 Q28,-24 22,-12Z"/>
+    <!-- head -->
+    <ellipse cx="22" cy="-54" rx="7" ry="4"/>
+    <!-- tail -->
+    <path d="M-14,-10 Q-28,-8 -38,-14 Q-32,-6 -16,-10Z"/>
+    <!-- legs -->
+    <rect x="-8" y="-2" width="6" height="14" rx="2"/>
+    <rect x="4" y="-2" width="6" height="14" rx="2"/>
+  </g>
+
+  <!-- Ground glow -->
+  <ellipse cx="92" cy="170" rx="45" ry="6" fill="#88ff20" filter="url(#deepglow09)" opacity="0.12"/>
+
+  <!-- Step number watermark -->
+  <text x="120" y="72" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#88ff20" text-anchor="middle" opacity="0.10" filter="url(#deepglow09)">09</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#88ff20"
+        text-anchor="middle" letter-spacing="1" opacity="0.9">DINOSAURS</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Temple columns -->
+  <g filter="url(#glow)" fill="#00c8ff" opacity="0.9">
+    <!-- Entablature (top beam) -->
+    <rect x="48" y="72" width="144" height="12" rx="1"/>
+    <!-- Pediment triangle -->
+    <polygon points="120,52 48,72 192,72" fill="#00c8ff" opacity="0.7"/>
+
+    <!-- Column 1 -->
+    <rect x="56" y="84" width="16" height="90" rx="3"/>
+    <!-- Capital top -->
+    <rect x="52" y="82" width="24" height="6" rx="1"/>
+    <!-- Base -->
+    <rect x="52" y="174" width="24" height="6" rx="1"/>
+
+    <!-- Column 2 -->
+    <rect x="89" y="84" width="16" height="90" rx="3"/>
+    <rect x="85" y="82" width="24" height="6" rx="1"/>
+    <rect x="85" y="174" width="24" height="6" rx="1"/>
+
+    <!-- Column 3 -->
+    <rect x="135" y="84" width="16" height="90" rx="3"/>
+    <rect x="131" y="82" width="24" height="6" rx="1"/>
+    <rect x="131" y="174" width="24" height="6" rx="1"/>
+
+    <!-- Column 4 -->
+    <rect x="168" y="84" width="16" height="90" rx="3"/>
+    <rect x="164" y="82" width="24" height="6" rx="1"/>
+    <rect x="164" y="174" width="24" height="6" rx="1"/>
+
+    <!-- Stylobate (base platform) -->
+    <rect x="44" y="180" width="152" height="8" rx="1"/>
+    <rect x="40" y="188" width="160" height="6" rx="1"/>
+  </g>
+
+  <!-- Subtle fluted lines on columns -->
+  <g stroke="#0a0e1a" stroke-width="1" opacity="0.3">
+    <line x1="62" y1="84" x2="62" y2="174"/>
+    <line x1="66" y1="84" x2="66" y2="174"/>
+    <line x1="95" y1="84" x2="95" y2="174"/>
+    <line x1="99" y1="84" x2="99" y2="174"/>
+    <line x1="141" y1="84" x2="141" y2="174"/>
+    <line x1="145" y1="84" x2="145" y2="174"/>
+    <line x1="174" y1="84" x2="174" y2="174"/>
+    <line x1="178" y1="84" x2="178" y2="174"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#00c8ff" letter-spacing="2">CLASSICAL ERA</text>
+</svg>

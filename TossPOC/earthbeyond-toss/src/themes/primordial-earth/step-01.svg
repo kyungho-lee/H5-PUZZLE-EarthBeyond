@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow01" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow01" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg01" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#161a2e"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg01)"/>
+
+  <!-- Scattered dust particles -->
+  <g filter="url(#glow01)" opacity="0.7">
+    <circle cx="42" cy="55" r="1.5" fill="#aaa8c8"/>
+    <circle cx="78" cy="38" r="1" fill="#c8c6e0"/>
+    <circle cx="120" cy="28" r="2" fill="#aaa8c8"/>
+    <circle cx="165" cy="45" r="1.5" fill="#b8b6d8"/>
+    <circle cx="195" cy="62" r="1" fill="#aaa8c8"/>
+    <circle cx="210" cy="90" r="1.5" fill="#c0bed8"/>
+    <circle cx="30" cy="95" r="1" fill="#aaa8c8"/>
+    <circle cx="58" cy="130" r="2" fill="#b0aec8"/>
+    <circle cx="185" cy="115" r="1.5" fill="#aaa8c8"/>
+    <circle cx="205" cy="148" r="1" fill="#c8c6e0"/>
+    <circle cx="22" cy="160" r="2" fill="#aaa8c8"/>
+    <circle cx="48" cy="185" r="1.5" fill="#b8b6d8"/>
+    <circle cx="90" cy="198" r="1" fill="#aaa8c8"/>
+    <circle cx="150" cy="195" r="2" fill="#c0bed8"/>
+    <circle cx="192" cy="188" r="1.5" fill="#aaa8c8"/>
+    <circle cx="218" cy="170" r="1" fill="#b0aec8"/>
+  </g>
+
+  <!-- Mid dust cloud -->
+  <g filter="url(#softglow01)" opacity="0.4">
+    <circle cx="75" cy="88" r="18" fill="#aaa8c8"/>
+    <circle cx="155" cy="75" r="14" fill="#b8b6d8"/>
+    <circle cx="110" cy="145" r="20" fill="#9896b8"/>
+    <circle cx="168" cy="155" r="12" fill="#aaa8c8"/>
+  </g>
+
+  <!-- Dense central dust particles -->
+  <g filter="url(#glow01)">
+    <circle cx="95" cy="98" r="2.5" fill="#c8c6e0"/>
+    <circle cx="112" cy="112" r="3" fill="#d0cee8"/>
+    <circle cx="130" cy="100" r="2" fill="#aaa8c8"/>
+    <circle cx="145" cy="118" r="2.5" fill="#c0bed8"/>
+    <circle cx="108" cy="128" r="2" fill="#b8b6d8"/>
+    <circle cx="126" cy="135" r="1.5" fill="#aaa8c8"/>
+    <circle cx="145" cy="100" r="1.5" fill="#d0cee8"/>
+    <circle cx="100" cy="115" r="1.5" fill="#b0aec8"/>
+    <circle cx="138" cy="142" r="2" fill="#aaa8c8"/>
+  </g>
+
+  <!-- Step number — main visual -->
+  <text x="120" y="82" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#aaa8c8" text-anchor="middle" opacity="0.18" filter="url(#softglow01)">01</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#aaa8c8"
+        text-anchor="middle" letter-spacing="3" opacity="0.85">STARDUST</text>
+</svg>

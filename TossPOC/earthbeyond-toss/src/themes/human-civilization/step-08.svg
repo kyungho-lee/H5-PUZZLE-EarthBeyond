@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bulbglow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="lightGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#fffff0"/>
+      <stop offset="60%" stop-color="#ffe020"/>
+      <stop offset="100%" stop-color="#cc8800" stop-opacity="0.8"/>
+    </radialGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Light rays -->
+  <g stroke="#ffe020" stroke-width="1" opacity="0.2" filter="url(#glow)">
+    <line x1="120" y1="95" x2="60" y2="50"/>
+    <line x1="120" y1="95" x2="180" y2="50"/>
+    <line x1="120" y1="95" x2="40" y2="90"/>
+    <line x1="120" y1="95" x2="200" y2="90"/>
+    <line x1="120" y1="95" x2="50" y2="130"/>
+    <line x1="120" y1="95" x2="190" y2="130"/>
+  </g>
+
+  <!-- Bulb glow halo -->
+  <circle cx="120" cy="100" r="42" fill="#ffe020" opacity="0.08" filter="url(#bulbglow)"/>
+
+  <!-- Light bulb shape -->
+  <g filter="url(#glow)" opacity="0.95">
+    <!-- Bulb glass dome -->
+    <path d="M90,105 Q88,68 120,60 Q152,68 150,105 Q150,128 138,138 L102,138 Q90,128 90,105 Z" fill="url(#lightGrad)"/>
+    <!-- Bulb base neck -->
+    <rect x="104" y="138" width="32" height="8" rx="2" fill="#cc8800"/>
+    <rect x="102" y="146" width="36" height="7" rx="2" fill="#aa7200"/>
+    <rect x="104" y="153" width="32" height="6" rx="2" fill="#cc8800"/>
+    <!-- Screw base -->
+    <rect x="106" y="158" width="28" height="5" rx="1" fill="#886000"/>
+    <line x1="106" y1="160" x2="134" y2="160" stroke="#0a0e1a" stroke-width="1" opacity="0.4"/>
+    <line x1="106" y1="163" x2="134" y2="163" stroke="#0a0e1a" stroke-width="1" opacity="0.4"/>
+    <!-- Filament -->
+    <path d="M108,130 Q114,110 120,105 Q126,110 132,130" stroke="#ffe060" stroke-width="2" fill="none" opacity="0.8"/>
+    <path d="M113,118 L113,128 L127,128 L127,118" stroke="#ffe060" stroke-width="1.5" fill="none" opacity="0.7"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#ffe020" letter-spacing="2">ELECTRIC AGE</text>
+</svg>

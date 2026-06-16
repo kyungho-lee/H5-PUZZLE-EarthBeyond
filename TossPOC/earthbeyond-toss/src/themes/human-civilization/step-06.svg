@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="240" height="240" fill="#0a0e1a"/>
+
+  <!-- Tree branch -->
+  <g filter="url(#glow)" stroke="#6a5030" stroke-width="5" fill="none" opacity="0.8">
+    <line x1="80" y1="60" x2="80" y2="40"/>
+    <line x1="80" y1="40" x2="60" y2="25"/>
+    <line x1="80" y1="40" x2="95" y2="28"/>
+    <line x1="80" y1="50" x2="55" y2="40"/>
+  </g>
+
+  <!-- Apple -->
+  <g filter="url(#softglow)" opacity="0.95">
+    <circle cx="120" cy="115" r="36" fill="#cc2020"/>
+    <circle cx="108" cy="108" r="10" fill="#ee4040" opacity="0.5"/>
+    <!-- Apple stem -->
+    <rect x="118" y="78" width="4" height="12" rx="2" fill="#5a3010"/>
+    <!-- Apple leaf -->
+    <ellipse cx="126" cy="80" rx="10" ry="6" fill="#22a840" transform="rotate(-20 126 80)"/>
+  </g>
+
+  <!-- Gravity arrow -->
+  <g filter="url(#glow)" opacity="0.9">
+    <line x1="120" y1="152" x2="120" y2="185" stroke="#ffe020" stroke-width="3"/>
+    <polygon points="120,192 113,178 127,178" fill="#ffe020"/>
+    <!-- Arrow label g -->
+    <text x="130" y="175" font-family="monospace" font-size="12" fill="#ffe020" font-style="italic">g</text>
+  </g>
+
+  <!-- Dotted arc trajectory -->
+  <g stroke="#ffe020" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.5">
+    <path d="M80,60 Q100,90 120,115"/>
+  </g>
+
+  <!-- Label -->
+  <text x="120" y="218" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#ffe020" letter-spacing="2">SCIENCE REV</text>
+</svg>

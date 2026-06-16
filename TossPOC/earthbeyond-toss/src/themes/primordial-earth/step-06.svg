@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <filter id="glow06" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="deepglow06" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="bg06" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0a1418"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <linearGradient id="waterGrad06" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a3a50"/>
+      <stop offset="100%" stop-color="#061828"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="240" height="240" fill="url(#bg06)"/>
+
+  <!-- Shallow water -->
+  <rect x="0" y="145" width="240" height="95" fill="url(#waterGrad06)" opacity="0.8"/>
+
+  <!-- Water surface ripples -->
+  <g stroke="#1a6890" stroke-width="1" fill="none" opacity="0.5">
+    <path d="M10 148 Q30 143 50 148 Q70 153 90 148"/>
+    <path d="M100 146 Q125 140 150 146 Q170 151 190 146 Q210 141 230 146"/>
+    <path d="M0 155 Q30 149 60 155 Q90 161 120 155 Q150 149 180 155 Q210 161 240 155"/>
+  </g>
+
+  <!-- Stromatolite layers — layered dome structures -->
+  <!-- Left stromatolite -->
+  <g transform="translate(55, 145)">
+    <ellipse cx="0" cy="0" rx="28" ry="8" fill="#1a5020" opacity="0.9"/>
+    <ellipse cx="0" cy="-10" rx="24" ry="7" fill="#224a1a"/>
+    <ellipse cx="0" cy="-19" rx="20" ry="6" fill="#2a5822" opacity="0.95"/>
+    <ellipse cx="0" cy="-27" rx="17" ry="5" fill="#1e4818"/>
+    <ellipse cx="0" cy="-34" rx="14" ry="5" fill="#2d6228" opacity="0.9"/>
+    <ellipse cx="0" cy="-41" rx="11" ry="4" fill="#226020"/>
+    <ellipse cx="0" cy="-47" rx="8" ry="3.5" fill="#44cc00" filter="url(#glow06)" opacity="0.85"/>
+    <ellipse cx="0" cy="-52" rx="5" ry="3" fill="#66ee20" filter="url(#glow06)" opacity="0.8"/>
+  </g>
+
+  <!-- Center stromatolite (tallest) -->
+  <g transform="translate(120, 145)">
+    <ellipse cx="0" cy="0" rx="32" ry="9" fill="#1a4c1a" opacity="0.9"/>
+    <ellipse cx="0" cy="-11" rx="27" ry="8" fill="#1e5620"/>
+    <ellipse cx="0" cy="-21" rx="23" ry="7" fill="#266024" opacity="0.95"/>
+    <ellipse cx="0" cy="-30" rx="19" ry="6" fill="#1c5020"/>
+    <ellipse cx="0" cy="-38" rx="16" ry="5.5" fill="#2e6a2a" opacity="0.9"/>
+    <ellipse cx="0" cy="-46" rx="13" ry="5" fill="#226222"/>
+    <ellipse cx="0" cy="-53" rx="10" ry="4" fill="#44cc00" filter="url(#glow06)" opacity="0.9"/>
+    <ellipse cx="0" cy="-60" rx="7" ry="3.5" fill="#55dd10" filter="url(#glow06)" opacity="0.85"/>
+    <ellipse cx="0" cy="-66" rx="4" ry="3" fill="#88ff40" filter="url(#deepglow06)" opacity="0.8"/>
+  </g>
+
+  <!-- Right stromatolite -->
+  <g transform="translate(188, 145)">
+    <ellipse cx="0" cy="0" rx="26" ry="7" fill="#1a4e18" opacity="0.9"/>
+    <ellipse cx="0" cy="-9" rx="22" ry="6" fill="#204c1a"/>
+    <ellipse cx="0" cy="-17" rx="18" ry="5.5" fill="#285c22" opacity="0.9"/>
+    <ellipse cx="0" cy="-25" rx="15" ry="5" fill="#1c4a18"/>
+    <ellipse cx="0" cy="-32" rx="12" ry="4.5" fill="#44cc00" filter="url(#glow06)" opacity="0.85"/>
+    <ellipse cx="0" cy="-39" rx="8" ry="3.5" fill="#55dd10" filter="url(#glow06)" opacity="0.8"/>
+    <ellipse cx="0" cy="-45" rx="5" ry="3" fill="#88ff40" filter="url(#deepglow06)" opacity="0.75"/>
+  </g>
+
+  <!-- Bioluminescent glow above tops -->
+  <ellipse cx="120" cy="82" rx="30" ry="8" fill="#44cc00" filter="url(#deepglow06)" opacity="0.15"/>
+  <ellipse cx="55" cy="96" rx="20" ry="6" fill="#44cc00" filter="url(#deepglow06)" opacity="0.12"/>
+  <ellipse cx="188" cy="99" rx="18" ry="5" fill="#44cc00" filter="url(#deepglow06)" opacity="0.12"/>
+
+  <!-- Tiny bubbles rising -->
+  <g fill="#44cc00" opacity="0.5" filter="url(#glow06)">
+    <circle cx="118" cy="72" r="1.5"/>
+    <circle cx="124" cy="60" r="1"/>
+    <circle cx="115" cy="52" r="1.5"/>
+    <circle cx="52" cy="86" r="1"/>
+    <circle cx="58" cy="75" r="1.5"/>
+    <circle cx="185" cy="90" r="1"/>
+    <circle cx="191" cy="78" r="1.5"/>
+  </g>
+
+  <!-- Step number watermark -->
+  <text x="120" y="48" font-family="monospace" font-size="42" font-weight="bold"
+        fill="#44cc00" text-anchor="middle" opacity="0.10" filter="url(#glow06)">06</text>
+
+  <!-- Scene label -->
+  <text x="120" y="222" font-family="monospace" font-size="13" fill="#44cc00"
+        text-anchor="middle" letter-spacing="2" opacity="0.9">LIFE BEGINS</text>
+</svg>
