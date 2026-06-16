@@ -14,14 +14,14 @@
     var e = ext || 'svg';
     var n = count || stepCount();
     return Array.from({ length: n }, function (_, i) {
-      return 'themes/' + id + '/step-' + String(i + 1).padStart(2, '0') + '.' + e;
+      return 'src/themes/' + id + '/step-' + String(i + 1).padStart(2, '0') + '.' + e;
     });
   }
   // Chronicles: 스텝별 배경 이미지 경로 (bg-step-01.webp ~ bg-step-11.webp)
   function makeBgPaths(id) {
     var n = stepCount();
     return Array.from({ length: n }, function (_, i) {
-      return 'themes/' + id + '/bg-step-' + String(i + 1).padStart(2, '0') + '.webp';
+      return 'src/themes/' + id + '/bg-step-' + String(i + 1).padStart(2, '0') + '.webp';
     });
   }
 

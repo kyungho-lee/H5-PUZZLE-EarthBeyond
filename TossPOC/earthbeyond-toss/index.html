@@ -851,9 +851,9 @@
 
   <!-- 3분할 배경 콜라주 -->
   <div id="start-hero">
-    <div class="start-hero-slice" style="background-image:url('themes/primordial-earth/bg-step-11.webp')"></div>
-    <div class="start-hero-slice" style="background-image:url('themes/human-civilization/bg-step-11.webp')"></div>
-    <div class="start-hero-slice" style="background-image:url('themes/solar-system/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('src/themes/primordial-earth/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('src/themes/human-civilization/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('src/themes/solar-system/bg-step-11.webp')"></div>
   </div>
 
   <!-- 타이틀 -->
@@ -1274,23 +1274,19 @@
 </div>
 
 <!-- ── 플랫폼 SDK ─────────────────────────────────────────────────── -->
-<script src="firebase-config.js"></script>
-<script src="notify.js"></script>
-<script src="crazygames.js"></script>
-<script src="playgama.js"></script>
-<script src="firebase.js"></script>
-<script src="sound.js?v=4"></script>
+<script src="src/notify.js"></script>
+<script src="src/sound.js?v=4"></script>
 
 <!-- ── 게임 모듈 (의존성 순서) ──────────────────────────────────── -->
-<script src="palette.js"></script>
-<script src="particles.js"></script>
-<script src="star-fly.js"></script>
-<script src="neon-drift.js"></script>
-<script src="grid-render.js"></script>
-<script src="daily.js"></script>
-<script src="collection.js"></script>
-<script src="i18n.js"></script>
-<script src="collection-themes.js"></script>
+<script src="src/palette.js"></script>
+<script src="src/particles.js"></script>
+<script src="src/star-fly.js"></script>
+<script src="src/neon-drift.js"></script>
+<script src="src/grid-render.js"></script>
+<script src="src/daily.js"></script>
+<script src="src/collection.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/collection-themes.js"></script>
 
 <!-- ── 게임 메인 스크립트 ────────────────────────────────────────── -->
 <script>
@@ -3634,7 +3630,7 @@ function galleryStarBurst(cell) {
 // SVG 파일을 텍스트로 로드 (SVG 인라인 삽입용)
 async function loadThemeSvg(themeId, step) {
   try {
-    const path = 'themes/' + themeId + '/step-' + String(step).padStart(2, '0') + '.svg';
+    const path = 'src/themes/' + themeId + '/step-' + String(step).padStart(2, '0') + '.svg';
     const r = await fetch(path);
     if (!r.ok) return null;
     return await r.text();
