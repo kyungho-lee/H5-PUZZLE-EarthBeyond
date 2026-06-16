@@ -2113,8 +2113,9 @@ async function requestRewardedAdWithQuota(placement) {
 function updateDailyHud() {
   const label = dailyTypeCfg ? dailyTypeCfg.label : '';
   document.getElementById('game-title').textContent = 'DAILY · ' + label;
+  const _played = dailyState ? SG.Daily.retriesLeft(dailyState) : 0;
   setStats('THIS RUN', '⭐' + dailyStarsShown,
-           'RETRY', 'R' + (dailyState ? SG.Daily.retriesLeft(dailyState) : 0));
+           'PLAYED', '#' + _played);
   updateWalletChip();
   updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
 }
