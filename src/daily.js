@@ -10,9 +10,8 @@
   'use strict';
 
   const N = 4;
-  // 리트라이 3회 (총 4판/일). best-run 증분 적립이라 무한 반복 수급은 없지만,
-  // 한 판의 긴장감 유지 + 광고 피로 완화를 위해 5→3으로 축소. (v0.8.2)
-  const MAX_RETRIES = 3;
+  // 리트라이 무제한 (연습 모드 개념). 스타 획득은 bestRun 증분만 1회 정산.
+  const MAX_RETRIES = Infinity;
 
   // Build the 4x4 starting board for a date+weekday. Pure (rng injected).
   function dailyBoard(dateStr, dayOfWeek, rng) {
@@ -76,12 +75,13 @@
     if (runStars > ds.bestRun) { ds.bestRun = runStars; _write(store, _key(ds.date), ds); }
     return ds.bestRun;
   }
-  function canRetry(ds) { return ds.retriesUsed < MAX_RETRIES; }
+  function canRetry(ds) { return true; }  // 무제한 리트라이
   function useRetry(ds, store) {
-    if (canRetry(ds)) { ds.retriesUsed++; _write(store, _key(ds.date), ds); }
+    ds.retriesUsed = (ds.retriesUsed || 0) + 1;
+    _write(store, _key(ds.date), ds);
     return ds.retriesUsed;
   }
-  function retriesLeft(ds) { return MAX_RETRIES - ds.retriesUsed; }
+  function retriesLeft(ds) { return ds.retriesUsed || 0; }  // "이미 플레이한 횟수"로 재정의
 
   // ── Wallet (별 2-tier) ─────────────────────────────────────────────
   var WALLET_KEY = 'earthbeyond_wallet';
@@ -171,13 +171,19 @@
     if (q.used > 0) { q.used--; saveAdQuota(store, q); }
   }
 
+  // 새 게임 세션 시작 시 쿼터 리셋 (날짜는 유지, used만 0으로)
+  function resetAdQuota(store) {
+    var today = new Date().toISOString().slice(0, 10);
+    saveAdQuota(store, { date: today, used: 0 });
+  }
+
   return {
     N, MAX_RETRIES,
     dailyBoard, loadDaily, addStars, setBestRun, canRetry, useRetry, retriesLeft,
     claimBestToWallet, claimableBest,
     loadWallet, saveWallet, earnStarsToWallet, spendStars, getWalletStars,
     WALLET_KEY, WALLET_DAILY_CAP,
-    useRewardedAd, rewardedAdsLeft, refundRewardedAd, REWARDED_DAILY_LIMIT,
+    useRewardedAd, rewardedAdsLeft, refundRewardedAd, resetAdQuota, REWARDED_DAILY_LIMIT,
     AD_KEY,
   };
 });

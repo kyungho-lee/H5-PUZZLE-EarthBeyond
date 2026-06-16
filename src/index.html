@@ -962,9 +962,9 @@
       <div id="daily-lb-rows"></div>
     </div>
 
-    <!-- [A] 리트라이 가능: RETRY 우선 → 지금 받기 보조 -->
+    <!-- [A] 리트라이 (무제한): RETRY → 지금 받기 보조 -->
     <div id="daily-panel-retry" style="display:none">
-      <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px"><span data-i18n="ui.label.retriesRemaining">RETRIES REMAINING</span> <span id="daily-retries">3/3</span> · <span data-i18n="ui.label.higherBestTip">higher BEST = bigger CLAIM</span></div>
+      <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px"><span id="daily-retries"></span><span data-i18n="ui.label.higherBestTip"> higher BEST = bigger CLAIM</span></div>
       <button class="btn-ad modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" style="background:var(--warn)" data-i18n="ui.btn.retryAd">📺 RETRY FOR HIGHER BEST</button>
       <button class="btn-secondary modal-btn" id="btn-daily-claim-now" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimNow">CLAIM NOW</span> ⭐<span id="daily-claim-now-amt">0</span></button>
     </div>
@@ -1307,6 +1307,7 @@ let dailyMode = false;
 let dailyState = null;     // SG.Daily DailyState
 let dailyRunStars = 0;     // stars in the current run (truth — drives game-over)
 let dailyStarsShown = 0;   // stars displayed in HUD (lags via fly-in animation)
+let dailyRunScore = 0;     // raw scoreGained sum in the current run (for leaderboard tiebreak)
 // practiceMode removed — Practice 모드 제거 (v0.4)
 let dailyTypeCfg = null;   // today's type config
 let dailyOpts = null;      // applyMove opts for daily
@@ -1449,6 +1450,7 @@ function doMove(dir) {
   grid = result.grid;
   if (dailyMode) {
     dailyRunStars += result.starsGained || 0;
+    dailyRunScore += result.scoreGained || 0;  // 리더보드 동점 분리용
     // Fly earned stars into the HUD counter (ticks dailyStarsShown as they land).
     // No completed targets → just sync the displayed count immediately.
     if (result.completed && result.completed.length) flyStarsToHud(result.completed);
@@ -1571,19 +1573,14 @@ function _refreshMenuDots() {
 
   // ── DAILY CHALLENGE 버튼 ───────────────────────────────────────
   var ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
-  var exhausted = ds.retriesUsed >= SG.Daily.MAX_RETRIES;
   var dailyLabel = document.getElementById('daily-menu-label');
   var dailySub   = document.getElementById('daily-menu-sub');
   if (dailyLabel) dailyLabel.textContent = _t('ui.btn.dailyChallenge');
   if (dailySub) {
-    if (exhausted) {
-      dailySub.textContent = (_ko ? '다음 열림  ' : 'Opens in  ') + msToNextUtcMidnight();
-    } else {
-      var left = SG.Daily.retriesLeft(ds);
-      dailySub.textContent = _ko
-        ? (left + ' / ' + SG.Daily.MAX_RETRIES + '  시도 남음')
-        : (left + ' / ' + SG.Daily.MAX_RETRIES + '  retries left');
-    }
+    var played = SG.Daily.retriesLeft(ds);  // retriesLeft = 플레이한 횟수
+    dailySub.textContent = played > 0
+      ? (_ko ? (played + '판 플레이함') : (played + ' played today'))
+      : (_ko ? '오늘 도전 가능' : 'Play today\'s challenge');
   }
   var dailyDot = document.getElementById('menu-daily-dot');
   var hasUnclaimed = SG.Daily.claimableBest(ds) > 0;
@@ -1620,7 +1617,6 @@ function openDailyMenu() {
   const ds = SG.Daily.loadDaily(date, localStorage);
   const isDev = localStorage.getItem('sg_dev') === '1' ||
                 new URLSearchParams(location.search).has('dev');
-  const exhausted = ds.retriesUsed >= SG.Daily.MAX_RETRIES && !isDev;
   const t = SG.ND.dailyType(utcDayOfWeek());
 
   document.getElementById('daily-menu-type').textContent = t.label;
@@ -1628,43 +1624,25 @@ function openDailyMenu() {
   const panelPlay = document.getElementById('daily-menu-panel-play');
   const panelDone = document.getElementById('daily-menu-panel-done');
 
-  if (exhausted) {
-    panelPlay.style.display = 'none';
-    panelDone.style.display = '';
-    var _ko = SG.i18n.getLang() === 'ko';
-    document.getElementById('daily-menu-status').textContent =
-      (_ko ? '오늘의 도전을 모두 완료했습니다.' : "Today's challenge is complete.") + '  ⭐' + (ds.bestRun || 0);
-    const nextEl = document.getElementById('daily-menu-next');
-    if (nextEl) nextEl.textContent = (_ko ? '다음 Daily까지 ' : 'Next Daily in ') + msToNextUtcMidnight();
-    // 타이머 갱신
-    if (_dailyMenuTimer) clearInterval(_dailyMenuTimer);
-    _dailyMenuTimer = setInterval(function () {
-      if (document.getElementById('ol-daily-menu').classList.contains('hidden')) {
-        clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; return;
-      }
-      const nextEl2 = document.getElementById('daily-menu-next');
-      if (nextEl2) nextEl2.textContent = '다음 Daily까지 ' + msToNextUtcMidnight();
-    }, 1000);
+  // 리트라이 무제한 — 항상 play 패널
+  panelPlay.style.display = '';
+  panelDone.style.display = 'none';
+  const played = SG.Daily.retriesLeft(ds);  // 이미 플레이한 횟수
+  const retriesEl = document.getElementById('daily-menu-retries');
+  var _ko3 = SG.i18n.getLang() === 'ko';
+  if (retriesEl) retriesEl.textContent = played > 0
+    ? (_ko3 ? (played + '판 플레이함') : (played + ' played today'))
+    : '';
+  const statusEl = document.getElementById('daily-menu-status');
+  var _ko2 = SG.i18n.getLang() === 'ko';
+  if (ds.bestRun > 0) {
+    statusEl.textContent = _ko2
+      ? ('오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!')
+      : ('Best today ⭐' + ds.bestRun + '  ·  Go for a higher score!');
   } else {
-    panelPlay.style.display = '';
-    panelDone.style.display = 'none';
-    const left = SG.Daily.retriesLeft(ds);
-    const retriesEl = document.getElementById('daily-menu-retries');
-    var _ko3 = SG.i18n.getLang() === 'ko';
-    if (retriesEl) retriesEl.textContent = _ko3
-      ? ('남은 시도 ' + left + ' / ' + SG.Daily.MAX_RETRIES)
-      : (left + ' / ' + SG.Daily.MAX_RETRIES + ' retries left');
-    const statusEl = document.getElementById('daily-menu-status');
-    var _ko2 = SG.i18n.getLang() === 'ko';
-    if (ds.bestRun > 0) {
-      statusEl.textContent = _ko2
-        ? ('오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!')
-        : ('Best today ⭐' + ds.bestRun + '  ·  Go for a higher score!');
-    } else {
-      statusEl.textContent = _ko2
-        ? '아직 플레이하지 않았습니다. 도전해보세요!'
-        : "You haven't played yet. Give it a try!";
-    }
+    statusEl.textContent = _ko2
+      ? '아직 플레이하지 않았습니다. 도전해보세요!'
+      : "You haven't played yet. Give it a try!";
   }
 
   document.getElementById('ol-start').classList.add('hidden');
@@ -1827,7 +1805,6 @@ let _pendingOnboard = false;   // Daily 게임오버 시 Chronicles CTA 표시 �
 // Daily 게임오버 패널 상태 갱신 — 3개 패널 중 1개만 표시
 // [C] 온보딩 > [A] 리트라이 가능 > [B] 리트라이 소진
 function _updateDailyOverPanel(claimable) {
-  const canRetry = _devDailyAllThemes || SG.Daily.canRetry(dailyState);
   const show = function (id) {
     ['daily-panel-retry', 'daily-panel-done', 'daily-panel-onboard'].forEach(function (pid) {
       document.getElementById(pid).style.display = (pid === id) ? '' : 'none';
@@ -1837,16 +1814,14 @@ function _updateDailyOverPanel(claimable) {
     show('daily-panel-onboard');
     const el = document.getElementById('daily-claim-onboard-amt');
     if (el) el.textContent = claimable;
-  } else if (canRetry) {
+  } else {
+    // 리트라이 무제한 — 항상 retry 패널 표시
     show('daily-panel-retry');
     const el = document.getElementById('daily-claim-now-amt');
     if (el) el.textContent = claimable;
     const retriesEl = document.getElementById('daily-retries');
-    if (retriesEl) retriesEl.textContent = SG.Daily.retriesLeft(dailyState) + '/' + SG.Daily.MAX_RETRIES;
-  } else {
-    show('daily-panel-done');
-    const el = document.getElementById('daily-claim-amt');
-    if (el) el.textContent = claimable;
+    // 이미 플레이한 횟수 표시 (retriesLeft = retriesUsed로 재정의됨)
+    if (retriesEl) retriesEl.textContent = SG.Daily.retriesLeft(dailyState) + ' played';
   }
 }
 
@@ -1979,13 +1954,6 @@ function _doStartCollectionFromGallery() {
 function openDailyFromSettings() {
   const date = utcDateStr();
   dailyState = SG.Daily.loadDaily(date, window.localStorage);
-  const isDev = localStorage.getItem('sg_dev') === '1' ||
-                new URLSearchParams(location.search).has('dev');
-  if (dailyState.retriesUsed >= SG.Daily.MAX_RETRIES && !isDev) {
-    // 이미 소진 — Settings를 열어 done 메시지 표시 (이미 Settings가 열려있으므로 갱신만)
-    openSettings();
-    return;
-  }
   // ol-start를 먼저 숨겨서 closeSettings의 nav 복원이 발동하지 않도록
   document.getElementById('ol-start').classList.add('hidden');
   closeSettings();
@@ -1995,7 +1963,6 @@ function openDailyFromSettings() {
 function openDaily() {
   const date = utcDateStr();
   dailyState = SG.Daily.loadDaily(date, window.localStorage);
-  if (dailyState.retriesUsed >= SG.Daily.MAX_RETRIES) { refreshDailyMenu(); return; }
   startDailyRun();
 }
 
@@ -2055,7 +2022,7 @@ function startDailyRun() {
     SG.Daily.useRetry(dailyState, window.localStorage);
   }
 
-  dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0;
+  dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0; dailyRunScore = 0;
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
   closeModalNav();
@@ -2182,12 +2149,14 @@ async function dailyGameOver() {
   gameRunning = false;
   try { SG.CG.gameplayStop(); } catch (_) {}
   SG.Daily.addStars(dailyState, dailyRunStars, window.localStorage);
-  // best 갱신만 (지갑 적립은 세션 종료 CLAIM 시점에 1회).
+  // best 갱신만 (지갑 적립은 세션 종료 CLAIM 시점에 1회). bestRun = ⭐별 수 (CLAIM 계산 기준).
   SG.Daily.setBestRun(dailyState, dailyRunStars, window.localStorage);
   pgSyncStorage();
-  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(dailyState.stars); } catch (_) {}
-  // 리더보드 점수 = bestRun (단일 최고 판 별). stars는 누적 합산이라 부적절.
-  try { if (SG.FB.isConnected()) await SG.FB.submitScore(dailyState.bestRun || 0, { mode: 'daily' }); } catch (_) {}
+  // 리더보드 점수 = 별 × 10000 + 게임점수 (별이 주 기준, 동점 시 게임점수로 구분).
+  // CLAIM 이후에도 더 높은 점수 달성 시 리더보드 갱신 가능.
+  const _lbScore = (dailyRunStars * 10000) + dailyRunScore;
+  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(_lbScore); } catch (_) {}
+  try { if (SG.FB.isConnected()) await SG.FB.submitScore(_lbScore, { mode: 'daily' }); } catch (_) {}
 
   document.getElementById('daily-run-stars').textContent = '⭐' + dailyRunStars;
   document.getElementById('daily-total-stars').textContent = '⭐' + (dailyState.bestRun || 0);
@@ -2602,6 +2571,7 @@ function startCollection() {
   collectionMode = true;
   collectionCollapseCount = 0;
   collectionContinueCount = 0;
+  SG.Daily.resetAdQuota(localStorage);  // 새 판마다 광고 3회 리셋
 
   dailyMode = true;
   dailyRunStars = 0;
@@ -2781,18 +2751,25 @@ async function renderEndlessLeaderboard() {
   let rows = [];
   let isDemo = true;
   try {
-    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
-      isDemo = false;
-      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'endless', limit: 10 });
-    } else {
-      rows = SG.FB ? SG.FB._demoRows() : [];
+    // 1) Playgama Bridge 리더보드 우선
+    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
+      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_ENDLESS);
+      if (pgEntries && pgEntries.length) {
+        rows = _normalizePgEntries(pgEntries);
+        isDemo = false;
+      }
     }
-  } catch (_) { rows = []; }
-
-  if (!rows || !rows.length) {
-    try { rows = SG.FB._demoRows ? SG.FB._demoRows() : []; } catch (_) { rows = []; }
-    isDemo = true;
-  }
+    // 2) Firebase 폴백
+    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'endless', limit: 10 });
+      if (rows && rows.length) isDemo = false;
+    }
+    // 3) 데모 더미
+    if (isDemo || !rows || !rows.length) {
+      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
+      isDemo = true;
+    }
+  } catch (_) { rows = []; isDemo = true; }
   if (badge) badge.style.display = isDemo ? '' : 'none';
 
   const myId = SG.FB ? SG.FB.getPlayerId() : '';
@@ -3148,11 +3125,20 @@ async function collectionGameOver() {
   if (continueBtn) {
     continueBtn.disabled = false;
     continueBtn.style.opacity = '';
-    // 라벨: 스타 잔액 충분하면 비용(⭐N), 부족하면 광고(AD)
+    continueBtn.style.display = '';  // 쿼터 소진으로 숨겼다가 새 과부하 시 복원
+    // 라벨: 스타 잔액 충분하면 비용(⭐N), 부족하면 광고(AD) / 쿼터 소진이면 비활성
     const cost = continueCost();
     const wallet = SG.Daily.getWalletStars(localStorage);
-    const tag = wallet >= cost ? ('⭐' + cost) : '📺 AD';
-    continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(' + tag + ')</span>';
+    const adsLeft = SG.Daily.rewardedAdsLeft(localStorage);
+    if (wallet >= cost) {
+      const tag = '⭐' + cost;
+      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(' + tag + ')</span>';
+    } else if (adsLeft > 0) {
+      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(📺 AD ' + adsLeft + '/' + SG.Daily.REWARDED_DAILY_LIMIT + ')</span>';
+    } else {
+      // 스타도 없고 광고 쿼터도 소진 → 버튼 숨기기
+      continueBtn.style.display = 'none';
+    }
   }
 
   // CONTINUE 가능하면 1단계(이어하기 권유), 아니면 바로 2단계(정산).
@@ -3257,12 +3243,21 @@ async function collectionContinueWithAd() {
     paid = SG.Daily.spendStars(cost, localStorage);
   } else {
     // 잔액 부족 → 광고 대체
+    if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+      // 쿼터 소진: 버튼 숨기고 종료 유도
+      if (btn) { btn.style.display = 'none'; }
+      showGameToast('No more ads available. End run or come back tomorrow!', 2800);
+      return;
+    }
     if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
     let granted = false;
-    try { const res = await requestRewardedAdWithQuota('collection_continue'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
+    try { const res = await requestRewardedAdWithQuota('collection_continue'); granted = res && res.granted !== false; } catch (_) { granted = false; }
     if (!granted) {
       if (btn) { btn.disabled = false; btn.style.opacity = ''; }
-      showGameToast('Ad failed to load. Please try again.', 2200);
+      // 쿼터가 소진된 경우(requestRewardedAdWithQuota 내부에서 이미 토스트 표시됨)
+      if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+        if (btn) { btn.style.display = 'none'; }
+      }
       return;
     }
     paid = true;
@@ -3660,8 +3655,20 @@ function renderThemeAssetToCell(theme, step, cell, fallbackHtml) {
   }
 }
 
-// Render the daily leaderboard rows (dummy when backend not connected).
-// fetchLeaderboard returns _demoLeaderboard() until Firebase/token is live.
+// Playgama lbGetEntries 응답을 공통 {playerId, score, country} 형태로 정규화
+function _normalizePgEntries(entries) {
+  if (!entries || !Array.isArray(entries)) return [];
+  return entries.map(function (e) {
+    return {
+      playerId: String(e.id || e.playerId || e.name || ''),
+      score:    Number(e.score || 0),
+      country:  e.extraData && e.extraData.country ? e.extraData.country : '',
+    };
+  });
+}
+
+// Render the daily leaderboard rows.
+// 우선순위: 1) Playgama in_game 리더보드 → 2) Firebase → 3) 데모 더미
 async function renderDailyLeaderboard() {
   const box   = document.getElementById('daily-lb-rows');
   const badge = document.getElementById('daily-lb-badge');
@@ -3669,10 +3676,21 @@ async function renderDailyLeaderboard() {
   let rows = [];
   let isDemo = true;
   try {
-    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
-      isDemo = false;
+    // 1) Playgama Bridge 리더보드 (in_game 타입일 때만 데이터 있음)
+    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
+      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_DAILY);
+      if (pgEntries && pgEntries.length) {
+        rows = _normalizePgEntries(pgEntries);
+        isDemo = false;
+      }
+    }
+    // 2) Firebase 폴백
+    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
       rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'daily', limit: 10 });
-    } else {
+      isDemo = false;
+    }
+    // 3) 데모 더미
+    if (isDemo) {
       rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
     }
   } catch (_) { rows = []; }
@@ -3684,16 +3702,19 @@ async function renderDailyLeaderboard() {
   const top10 = rows.slice(0, 10);
   const myTopIdx = top10.findIndex(function (r) { return r.playerId === myId; });
 
+  // 리더보드 점수 = stars*10000 + gameScore. 표시는 별 수(역산)만.
+  function _lbScoreToStars(raw) { return raw >= 10000 ? Math.floor(raw / 10000) : raw; }
+
   function rowHtml(r, rank, isMe) {
     const cc = r.country || '';
     const fl = cc ? flag(cc) : '🌐';
     const id = (r.playerId || 'player').slice(-6);
-    const sc = (r.score != null ? r.score : 0);
+    const stars = _lbScoreToStars(r.score != null ? r.score : 0);
     return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
       '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-flag">' + fl + '</span>' +
       '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
-      '<span class="lb-score">⭐' + sc + '</span>' +
+      '<span class="lb-score">⭐' + stars + '</span>' +
       '</div>';
   }
 
@@ -3703,11 +3724,10 @@ async function renderDailyLeaderboard() {
 
   // 내가 top-10 밖이면 구분선 + 내 항목을 맨 아래 추가
   if (myTopIdx === -1 && myId) {
-    const myScore = (dailyState && dailyState.bestRun) || 0;
+    const myLbScore = (dailyRunStars * 10000) + dailyRunScore;
     const myCountry = SG.FB && SG.FB.detectCountry ? SG.FB.detectCountry() : '';
-    // 내 순위: top10 중 내 점수보다 높은 항목 수 + 1 (실제 Firestore 전체 순위 근사값)
-    const myRank = rows.filter(function (r) { return (r.score || 0) > myScore; }).length + 1;
-    const myRow  = { playerId: myId, score: myScore, country: myCountry };
+    const myRank = rows.filter(function (r) { return (r.score || 0) > myLbScore; }).length + 1;
+    const myRow  = { playerId: myId, score: myLbScore, country: myCountry };
     html += '<div class="lb-sep">···</div>' + rowHtml(myRow, myRank, true);
   }
 
@@ -3715,11 +3735,10 @@ async function renderDailyLeaderboard() {
 }
 
 async function dailyRetry() {
-  if (!_devDailyAllThemes && !SG.Daily.canRetry(dailyState)) return;
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
-  let granted = true;
-  try { const res = await requestRewardedAdWithQuota('daily_retry'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
+  let granted = false;
+  try { const res = await requestRewardedAdWithQuota('daily_retry'); granted = res && res.granted !== false; } catch (_) { granted = false; }
   if (!granted) { document.getElementById('ol-daily-over').classList.remove('hidden'); openModalNav('ol-daily-over'); return; }
   startDailyRun();
 }
