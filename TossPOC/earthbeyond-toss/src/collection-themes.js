@@ -61,7 +61,7 @@
       unlockCondition: null,
       showStepBadge: true,
       svgPaths: makePaths('primordial-earth', 'webp'),
-      boardBg:  'themes/primordial-earth/board-bg.webp',
+      boardBg:  'src/themes/primordial-earth/board-bg.webp',
       stepBgs:  makeBgPaths('primordial-earth'),
     }),
 
@@ -72,7 +72,7 @@
       unlockCondition: 'primordial-earth',
       showStepBadge: true,
       svgPaths: makePaths('human-civilization', 'webp'),
-      boardBg:  'themes/human-civilization/board-bg.webp',
+      boardBg:  'src/themes/human-civilization/board-bg.webp',
       stepBgs:  makeBgPaths('human-civilization'),
     }),
 
@@ -83,7 +83,7 @@
       unlockCondition: 'human-civilization',
       showStepBadge: true,
       svgPaths: makePaths('solar-system', 'webp'),
-      boardBg:  'themes/solar-system/board-bg.webp',
+      boardBg:  'src/themes/solar-system/board-bg.webp',
       stepBgs:  makeBgPaths('solar-system'),
     }),
 

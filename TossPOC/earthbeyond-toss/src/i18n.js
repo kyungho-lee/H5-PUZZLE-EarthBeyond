@@ -308,7 +308,7 @@
   };
 
   // ── i18n 엔진 ──────────────────────────────────────────────────────
-  var _lang = 'en';
+  var _lang = 'ko';
 
   function setLang(lang) {
     if (PACKS[lang]) { _lang = lang; }

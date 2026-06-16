@@ -76,4 +76,10 @@
     detectCountry:    function () { return Promise.resolve(null); },
     _demoRows:        function () { return []; },
   };
+
+  // Capacitor APK 환경 감지 → data-platform="native" 설정
+  // Toss WebView와 APK를 CSS에서 구분하기 위한 플래그 (portrait lock 등)
+  if (typeof global.Capacitor !== 'undefined') {
+    document.documentElement.setAttribute('data-platform', 'native');
+  }
 })(window);

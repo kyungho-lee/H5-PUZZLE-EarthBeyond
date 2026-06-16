@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Earth &amp; Beyond</title>
   <!-- Inline favicon (earth tile) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23050810'/%3E%3Ccircle cx='16' cy='16' r='10' fill='%233a7bd5'/%3E%3Cellipse cx='14' cy='13' rx='4' ry='3' fill='%231a6b3c' opacity='.9'/%3E%3Ccircle cx='20' cy='18' r='2.5' fill='%2311998e' opacity='.8'/%3E%3C/svg%3E">
@@ -72,45 +72,60 @@
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center;
       width: 100%; height: 100%;
+      /* iOS notch / Android nav bar safe area */
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* ── 헤더: 제목(좌) · 스탯 + 액션버튼(우) ───────────────────── */
+    /* ── 헤더: 2행 레이아웃 (제목+설정 행 / 점수칩 행) ─────────── */
     #header {
       width: 100%; max-width: 520px;
-      display: flex; align-items: center; gap: 14px;
-      padding: 10px 16px;
+      display: flex; flex-direction: column;
+      padding: 8px 16px 0;
       border-bottom: 1px solid var(--border);
+    }
+    #header-top {
+      display: flex; align-items: center; gap: 14px;
+      padding-bottom: 6px;
     }
     #game-title {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 1.15rem; font-weight: 700;
+      font-size: 1.1rem; font-weight: 700;
       color: var(--accent);
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-right: auto;            /* 제목이 좌측, 나머지는 우측으로 밀림 */
+      margin-right: auto;
       white-space: nowrap;
     }
     #stats {
-      display: flex; gap: 14px;
-      font-size: 0.75rem; color: var(--textdim);
+      display: flex; gap: 8px; align-items: center;
+      padding: 4px 0 8px;
+      border-top: 1px solid rgba(255,255,255,.06);
     }
     #header-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
-    .stat-item { display: flex; flex-direction: column; align-items: flex-end; }
-    .stat-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 1px; }
-    .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 1rem; color: var(--text); }
-    /* 누적 재화(지갑 ⭐) 칩 — 헤더 우상단 고정, 모드 무관 항상 노출 */
+    .stat-item { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .stat-label { font-size: 0.58rem; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+    .stat-value { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--text); }
+    /* 지갑 칩 (기본: 가로 pill) */
     #wallet-chip {
       display: flex; align-items: center; gap: 4px;
       background: rgba(255,210,63,.10); border: 1px solid rgba(255,210,63,.45);
       border-radius: 999px; padding: 3px 10px; flex-shrink: 0;
-      font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      font-family: var(--font-heading); font-weight: 700;
       color: #ffd23f; font-size: 0.95rem; line-height: 1;
       box-shadow: 0 0 8px rgba(255,210,63,.15);
     }
+    #wallet-chip .stat-label { display: none; }  /* 데스크톱: STARS 레이블 숨김 */
+    .wc-count { display: flex; align-items: center; gap: 4px; }
     #wallet-chip .wc-star { font-size: 0.85rem; }
     /* 적립 시 잠깐 강조 */
     @keyframes walletbump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
     #wallet-chip.bump { animation: walletbump .35s ease; }
+    /* 점수 증가 시 짧은 강조 */
+    @keyframes scorebump { 0% { transform: scale(1); } 35% { transform: scale(1.25); color: #5bc8ff; } 100% { transform: scale(1); } }
+    #stat-score.bump { animation: scorebump .28s ease; }
 
     /* ── 캔버스 영역 ────────────────────────────────────────────── */
     #canvas-wrap {
@@ -420,6 +435,65 @@
       background:var(--accent); color:#04141a; border-color:var(--accent);
       box-shadow:0 0 22px rgba(0,245,200,.65);
     }
+
+    /* ── 모바일 터치: D-패드 숨김 · 스와이프 힌트 · 헤더 칩 ────── */
+    @media (hover: none) and (pointer: coarse) {
+      #controls { display: none; }
+      #canvas-wrap { max-width: 100%; }
+      #swipe-hint { display: flex; }
+
+      /* 헤더 전체 너비 */
+      #header { max-width: 100%; padding: 8px 12px 0; border-bottom: none; }
+
+      /* 점수 칩 행 */
+      #stats { width: 100%; gap: 6px; padding: 8px 0 10px; border-top: 1px solid rgba(255,255,255,.07); }
+
+      /* 각 stat-item → 균등 분할 카드 */
+      .stat-item {
+        flex: 1;
+        align-items: center; justify-content: center;
+        padding: 8px 4px; gap: 3px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      /* SCORE 카드 강조 (파란 계열) */
+      #stat-item-1 {
+        background: rgba(58,123,213,.08);
+        border-color: rgba(58,123,213,.35);
+      }
+      #stat-item-1 .stat-value { color: var(--accent); }
+
+      .stat-label { font-size: 0.55rem; letter-spacing: 0.8px; }
+      .stat-value { font-size: 1.25rem; }
+
+      /* wallet-chip → 세로 칩으로 변환 */
+      #wallet-chip {
+        flex: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        border-radius: 10px; padding: 8px 12px; gap: 2px;
+        background: rgba(255,210,63,.08);
+        border-color: rgba(255,210,63,.35);
+        font-size: 0; line-height: 1; box-shadow: none;
+      }
+      #wallet-chip .stat-label {
+        display: block;
+        font-size: 0.55rem; letter-spacing: 0.8px;
+        color: rgba(255,210,63,.65);
+      }
+      #wallet-chip .wc-count { font-size: 1.25rem; gap: 3px; }
+      #wallet-chip .wc-star { font-size: 0.9rem; }
+    }
+
+    /* 스와이프 힌트 (데스크톱에서 숨김, 모바일에서만 표시) */
+    #swipe-hint {
+      display: none;
+      align-items: center; justify-content: center;
+      gap: 10px; padding: 10px 0 4px;
+      color: var(--textdim); font-size: 0.72rem; letter-spacing: 1.5px;
+      user-select: none; pointer-events: none; text-transform: uppercase;
+    }
+    #swipe-hint .sh-arrow { font-size: 0.9rem; opacity: 0.6; }
 
     /* ── 헤더 버튼 (settings) ────────────────────────────────────── */
     #btn-settings {
@@ -763,16 +837,16 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Toss: portrait mode lock — mobile touch only, desktop browser unaffected */
+    /* Toss WebView: portrait lock (mobile touch only, not desktop, not native APK) */
     @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
-      body::before {
+      html:not([data-platform="native"]) body::before {
         content: '세로 모드로 회전해주세요';
         position: fixed; inset: 0; display: flex;
         align-items: center; justify-content: center;
         background: var(--bg, #050810); color: var(--text, #dde8f6);
         font-size: 1.2rem; z-index: 9999; font-family: sans-serif;
       }
-      body > * { visibility: hidden; }
+      html:not([data-platform="native"]) body > * { visibility: hidden; }
     }
   </style>
   <script src="/src/toss-bridge.js"></script>
@@ -793,9 +867,14 @@
 <!-- ── 앱 루트 ──────────────────────────────────────────────────── -->
 <div id="app">
 
-  <!-- 헤더: 제목 | 스탯 | 액션버튼 (한 줄, 겹침 없음) -->
+  <!-- 헤더: 2행 (제목+설정 / 점수·스타 칩) -->
   <div id="header">
-    <div id="game-title">EARTH &amp; BEYOND</div>
+    <div id="header-top">
+      <div id="game-title">EARTH &amp; BEYOND</div>
+      <div id="header-actions">
+        <button id="btn-settings" aria-label="settings" title="Settings" onclick="openSettings()" style="position:relative">⚙<span id="header-settings-dot" class="reddot hidden"></span></button>
+      </div>
+    </div>
     <div id="stats">
       <div class="stat-item" id="stat-item-1">
         <span class="stat-label" id="stat-label-1">SCORE</span>
@@ -805,10 +884,10 @@
         <span class="stat-label" id="stat-label-2">BEST</span>
         <span class="stat-value" id="stat-best">0</span>
       </div>
-    </div>
-    <div id="header-actions">
-      <div id="wallet-chip" title="Stars"><span class="wc-star">⭐</span><span id="wallet-balance">0</span></div>
-      <button id="btn-settings" aria-label="settings" title="Settings" onclick="openSettings()" style="position:relative">⚙<span id="header-settings-dot" class="reddot hidden"></span></button>
+      <div id="wallet-chip" title="Stars">
+        <span class="stat-label">STARS</span>
+        <span class="wc-count"><span class="wc-star">⭐</span><span id="wallet-balance">0</span></span>
+      </div>
     </div>
   </div>
 
@@ -834,7 +913,7 @@
     </div>
   </div>
 
-  <!-- 방향 컨트롤: ↑ 위, 아래 줄에 ← ↓ → 나란히 (2줄, 세로 최적화) -->
+  <!-- 방향 컨트롤: 키보드/마우스 전용 (모바일 터치에서 CSS로 숨김) -->
   <div id="controls">
     <button class="dirbtn" data-dir="up" aria-label="up">↑</button>
     <div class="dirrow">
@@ -842,6 +921,13 @@
       <button class="dirbtn" data-dir="down" aria-label="down">↓</button>
       <button class="dirbtn" data-dir="right" aria-label="right">→</button>
     </div>
+  </div>
+
+  <!-- 스와이프 힌트 (모바일 터치 전용, CSS로 표시) -->
+  <div id="swipe-hint" aria-hidden="true">
+    <span class="sh-arrow">←</span>
+    <span>스와이프해서 이동</span>
+    <span class="sh-arrow">→</span>
   </div>
 
 </div>
@@ -1188,6 +1274,7 @@
       <button class="btn-ad ad-gold modal-btn" id="btn-double-stars" onclick="collectionDoubleStars()">
         📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
       </button>
+      <button class="btn-primary modal-btn" onclick="collectionPlayAgain()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
     </div>
 
     <button class="btn-secondary modal-btn" onclick="openGallery()" data-i18n="ui.btn.gallery">GALLERY</button>
@@ -1356,7 +1443,14 @@ function makeRng() {
 // ── 캔버스 크기 ───────────────────────────────────────────────────
 function resizeCanvas() {
   const wrap = document.getElementById('canvas-wrap');
-  const size = Math.min(wrap.clientWidth - 16, wrap.clientHeight - 16, 480);
+  const isMobileTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  let size;
+  if (isMobileTouch) {
+    // 모바일: 화면 너비 기준 (8px 패딩 양쪽 = 16px 총 여백)
+    size = Math.min(window.innerWidth - 16, 480);
+  } else {
+    size = Math.min(wrap.clientWidth - 16, wrap.clientHeight - 16, 480);
+  }
   canvas.style.width = size + 'px';
   canvas.style.height = size + 'px';
   if (renderer) { renderer.resize(); if (grid) renderer.drawGrid(grid); }
@@ -1402,7 +1496,13 @@ function syncAdButtons(ids) {
 // 두 스탯 슬롯에 (라벨, 값) 설정. 모드별 핵심 지표 1~2개만.
 function setStats(label1, value1, label2, value2) {
   document.getElementById('stat-label-1').textContent = label1;
-  document.getElementById('stat-score').textContent = value1;
+  const scoreEl = document.getElementById('stat-score');
+  const prevNum = parseInt((scoreEl.textContent || '').replace(/,/g, '') || '0') || 0;
+  const newNum  = parseInt(('' + value1).replace(/,/g, '') || '0') || 0;
+  scoreEl.textContent = value1;
+  if (newNum > prevNum) {
+    scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump');
+  }
   const item2 = document.getElementById('stat-item-2');
   if (label2 == null) {
     item2.style.display = 'none';
@@ -1463,7 +1563,7 @@ function doMove(dir) {
     // Fly earned stars into the HUD counter (ticks dailyStarsShown as they land).
     // No completed targets → just sync the displayed count immediately.
     if (result.completed && result.completed.length) flyStarsToHud(result.completed);
-    else { dailyStarsShown = dailyRunStars; collectionMode ? updateCollectionHud() : updateDailyHud(); }
+    else { dailyStarsShown = dailyRunStars; if (!endlessMode) { collectionMode ? updateCollectionHud() : updateDailyHud(); } }
   } else {
     score += result.scoreGained;
     if (result.chain > maxChain) maxChain = result.chain;
@@ -3184,6 +3284,12 @@ function collectionShowSettle() {
   }
 }
 
+// PLAY AGAIN: 현재 판 스타 정산 후 같은 컬렉션 테마로 즉시 재시작.
+function collectionPlayAgain() {
+  settleRunStars();   // 미정산 상태면 지갑에 적립 (이미 정산됐으면 no-op)
+  startCollection();  // 상태 초기화 + 새 판 시작 (ol-collection-over 자동 숨김)
+}
+
 // 게임오버 x2 스타: 리워드 광고 시청 시 이번 판 획득 스타만큼 추가 적립 (1배 더)
 async function collectionDoubleStars() {
   const dblBtn = document.getElementById('btn-double-stars');
@@ -3978,7 +4084,7 @@ function _refreshSoundToggleUI() {
 }
 
 // ── BGM Settings ──────────────────────────────────────────────────
-var _bgmEnabled = false;
+var _bgmEnabled = true;
 var _bgmActiveTheme = null;
 var _bgmPreviewId = null;
 
@@ -3986,7 +4092,7 @@ function _loadBgmPrefs() {
   try {
     var s = localStorage.getItem('earthbeyond_bgm');
     if (s) { var p = JSON.parse(s); _bgmEnabled = !!p.enabled; _bgmActiveTheme = p.theme || 'solar'; }
-    else { _bgmEnabled = false; _bgmActiveTheme = 'solar'; }
+    else { _bgmEnabled = true; _bgmActiveTheme = 'solar'; }
     var vol = localStorage.getItem('earthbeyond_bgm_vol');
     if (vol !== null && SG.Sound) {
       var v = parseFloat(vol);
