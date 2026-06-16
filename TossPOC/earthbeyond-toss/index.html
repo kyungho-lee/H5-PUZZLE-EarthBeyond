@@ -1,0 +1,4606 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Earth &amp; Beyond</title>
+  <!-- Inline favicon (earth tile) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23050810'/%3E%3Ccircle cx='16' cy='16' r='10' fill='%233a7bd5'/%3E%3Cellipse cx='14' cy='13' rx='4' ry='3' fill='%231a6b3c' opacity='.9'/%3E%3Ccircle cx='20' cy='18' r='2.5' fill='%2311998e' opacity='.8'/%3E%3C/svg%3E">
+
+  <!-- Google Fonts removed for offline bundle compatibility -->
+  <style>
+    :root {
+      --font-heading: 'Rajdhani', 'Apple SD Gothic Neo', sans-serif;
+      --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+    }
+  </style>
+
+  <style>
+    /* ── 디자인 토큰 — Earth & Beyond (deep space + earth tones) ───── */
+    :root {
+      --bg:      #050810;
+      --panel:   #0a0e1a;
+      --border:  #1a2240;
+      --accent:  #3a7bd5;
+      --warn:    #e2683c;
+      --dim:     #2a3a5c;
+      --text:    #dde8f6;
+      --textdim: #5a7099;
+
+      --c0: #3a7bd5;
+      --c1: #11998e;
+      --c2: #f7971e;
+      --c3: #c0392b;
+      --c4: #8e44ad;
+      --c5: #1a6b3c;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* ── 배경 성운 패턴 (우주 느낌) ─────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(58,123,213,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58,123,213,.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* ── 코너 글로우 — 지구(파랑) / 우주(보라) ──────────────────── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 55% 45% at 0% 0%,   rgba(58,123,213,.10) 0%, transparent 70%),
+        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(142,68,173,.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── 메인 레이아웃 ──────────────────────────────────────────── */
+    #app {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; height: 100%;
+    }
+
+    /* ── 헤더: 제목(좌) · 스탯 + 액션버튼(우) ───────────────────── */
+    #header {
+      width: 100%; max-width: 520px;
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    #game-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-right: auto;            /* 제목이 좌측, 나머지는 우측으로 밀림 */
+      white-space: nowrap;
+    }
+    #stats {
+      display: flex; gap: 14px;
+      font-size: 0.75rem; color: var(--textdim);
+    }
+    #header-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+    .stat-item { display: flex; flex-direction: column; align-items: flex-end; }
+    .stat-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 1px; }
+    .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 1rem; color: var(--text); }
+    /* 누적 재화(지갑 ⭐) 칩 — 헤더 우상단 고정, 모드 무관 항상 노출 */
+    #wallet-chip {
+      display: flex; align-items: center; gap: 4px;
+      background: rgba(255,210,63,.10); border: 1px solid rgba(255,210,63,.45);
+      border-radius: 999px; padding: 3px 10px; flex-shrink: 0;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      color: #ffd23f; font-size: 0.95rem; line-height: 1;
+      box-shadow: 0 0 8px rgba(255,210,63,.15);
+    }
+    #wallet-chip .wc-star { font-size: 0.85rem; }
+    /* 적립 시 잠깐 강조 */
+    @keyframes walletbump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    #wallet-chip.bump { animation: walletbump .35s ease; }
+
+    /* ── 캔버스 영역 ────────────────────────────────────────────── */
+    #canvas-wrap {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; max-width: 520px;
+      padding: 8px;
+      position: relative;
+    }
+    /* 인라인 토스트 (콜렉션 첫 블록 획득/스타 보상 등 부드러운 안내) */
+    #game-toast {
+      position: fixed; left: 50%; top: 70px; transform: translateX(-50%) translateY(-8px);
+      background: rgba(10,14,22,.95); border: 1px solid var(--accent);
+      color: var(--accent); font-family: 'Share Tech Mono', monospace; font-size: .8rem;
+      letter-spacing: 1px; padding: 8px 14px; border-radius: 4px;
+      box-shadow: 0 0 16px rgba(0,229,255,.25);
+      opacity: 0; pointer-events: none; white-space: nowrap;
+      transition: opacity .35s ease, transform .35s ease; z-index: 60;
+    }
+    #game-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #gameCanvas {
+      display: block;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      image-rendering: pixelated;
+    }
+
+    /* ── 오버레이 공통 ──────────────────────────────────────────── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(6,8,16,.88);
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    /* 범용 숨김 (오버레이 내부 단계 전환 등). .overlay.hidden이 특정성 우위라 충돌 없음. */
+    .hidden { display: none !important; }
+    /* 갤러리·상세보기는 다른 오버레이 위에 표시 */
+    #ol-gallery { z-index: 20; }
+    #ol-gallery-detail { z-index: 30; }
+
+    /* ── START 히어로 화면 ───────────────────────────────────────── */
+    #ol-start {
+      background: #050810;
+      backdrop-filter: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0;
+    }
+    /* 3분할 배경 콜라주 */
+    #start-hero {
+      position: absolute; inset: 0;
+      display: flex;
+    }
+    .start-hero-slice {
+      flex: 1;
+      background-size: cover;
+      background-position: center top;
+    }
+    /* 하단 페이드-인 그라디언트 (패널과 자연스럽게 블렌딩) */
+    #start-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(5,8,16,.10) 0%,
+        rgba(5,8,16,.18) 45%,
+        rgba(5,8,16,.82) 72%,
+        rgba(5,8,16,.97) 100%
+      );
+    }
+    /* 타이틀 블록 — 히어로 이미지 위에 띄움 */
+    #start-title-block {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 0 20px 12px;
+    }
+    #start-title-block .hero-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(2rem, 7vw, 3.2rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 5px;
+      text-shadow: 0 0 32px rgba(58,123,213,.9), 0 2px 8px rgba(0,0,0,.8);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    #start-title-block .hero-sub {
+      font-size: clamp(.62rem, 2.2vw, .78rem);
+      color: rgba(255,255,255,.6);
+      letter-spacing: 2px;
+    }
+    /* 버튼 패널 — 화면 하단 고정 */
+    #start-panel {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 360px;
+      padding: 18px 24px 28px;
+      display: flex; flex-direction: column; gap: 9px;
+      align-self: center;
+    }
+    /* 히어로 화면 버튼: 배경 반투명 처리로 이미지와 자연스럽게 블렌딩 */
+    #start-panel .btn-primary {
+      background: var(--accent);
+      box-shadow: 0 0 24px rgba(58,123,213,.5);
+    }
+    #start-panel .btn-secondary {
+      background: rgba(10,14,30,.72);
+      backdrop-filter: blur(6px);
+      border-color: rgba(255,255,255,.18);
+    }
+
+    /* ── Daily 튜토리얼 슬라이드 ───────────────────────────────────── */
+    #ol-daily-tutorial {
+      z-index: 50;
+      background: rgba(5,8,16,.92);
+      backdrop-filter: blur(6px);
+    }
+    .dtut-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 28px 24px;
+      width: min(320px, 88vw);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .dtut-slides { position: relative; }
+    .dtut-slide {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      animation: dtut-in .22s ease;
+    }
+    .dtut-slide.active { display: flex; }
+    @keyframes dtut-in {
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .dtut-icon {
+      font-size: 2.6rem;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .dtut-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+    .dtut-desc {
+      font-size: .8rem;
+      color: var(--textdim);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+    .dtut-desc strong { color: var(--accent); }
+    .dtut-footer {
+      margin-top: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .dtut-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .dtut-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .2s;
+    }
+    .dtut-dot.active { background: var(--accent); }
+    .dtut-btn-next {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .dtut-btn-skip {
+      background: none;
+      border: none;
+      color: var(--textdim);
+      font-size: .72rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      padding: 4px 0;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .ol-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px 28px;
+      min-width: 280px; max-width: 360px;
+      max-height: 90dvh; overflow-y: auto;
+      text-align: center;
+    }
+    .ol-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.8rem; font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .ol-score {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 3rem; font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .ol-label {
+      font-size: 0.7rem; color: var(--textdim);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    /* ── 버튼 ───────────────────────────────────────────────────── */
+    .btn-primary {
+      display: block; width: 100%;
+      padding: 12px;
+      background: var(--accent); color: #060810;
+      border: none; border-radius: 4px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover  { opacity: .85; }
+    .btn-primary:active { opacity: .7;  }
+    /* 광고(리워드) 버튼: 어두운 배경 + 발광 테두리/텍스트 → 가독성 확보 */
+    .btn-ad {
+      display: block; width: 100%; padding: 12px;
+      background: rgba(6,8,16,.6);
+      border-radius: 4px; cursor: pointer;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 10px; transition: opacity .15s, box-shadow .15s;
+    }
+    .btn-ad:hover  { opacity: .9; }
+    .btn-ad:active { opacity: .75; }
+    .btn-ad.ad-green  { color: #39ff14; border: 1px solid #39ff14; box-shadow: 0 0 12px rgba(57,255,20,.25); }
+    .btn-ad.ad-gold   { color: #ffd23f; border: 1px solid #ffd23f; box-shadow: 0 0 12px rgba(255,210,63,.25); }
+    .btn-secondary {
+      display: block; width: 100%;
+      padding: 10px;
+      background: transparent; color: var(--textdim);
+      border: 1px solid var(--border); border-radius: 4px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-secondary:hover { border-color: var(--dim); color: var(--text); }
+
+    /* ── DEV BAR (?dev 파라미터) ────────────────────────────────── */
+    #dev-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9000;
+      background: rgba(13,15,24,.95);
+      border-top: 1px solid #ff4060;
+      padding: 6px 12px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      font-size: 0.65rem; color: var(--textdim);
+    }
+    #dev-bar button {
+      padding: 3px 8px;
+      background: #1e2235; color: var(--text);
+      border: 1px solid var(--border); border-radius: 3px;
+      font-family: inherit; font-size: inherit;
+      cursor: pointer;
+    }
+    #dev-bar button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── 방향 컨트롤: 2줄 (↑ / ← ↓ →), 세로 간격 최적화 ──────────── */
+    /* ↑ 는 가운데 정렬되어 ↓ 바로 위에 온다. 아래 줄은 ← ↓ → 나란히. */
+    #controls { display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; }
+    .dirrow { display:flex; gap:8px; }
+    .dirbtn {
+      width:56px; height:56px; font-size:1.4rem; color:var(--accent);
+      background:var(--panel); border:1px solid var(--border); border-radius:10px;
+      box-shadow:0 0 12px rgba(0,245,200,.15); cursor:pointer; touch-action:manipulation;
+      transition:background .08s, box-shadow .08s, color .08s, border-color .08s;
+    }
+    /* 눌렀을 때 밝은 버튼으로 (active 클래스는 JS가 키보드/터치/클릭 모두에 부여) */
+    .dirbtn.active, .dirbtn:active {
+      background:var(--accent); color:#04141a; border-color:var(--accent);
+      box-shadow:0 0 22px rgba(0,245,200,.65);
+    }
+
+    /* ── 헤더 버튼 (settings) ────────────────────────────────────── */
+    #btn-settings {
+      width:34px; height:34px;
+      background:transparent; border:1px solid var(--border); border-radius:8px;
+      font-size:1.05rem; cursor:pointer; line-height:1; padding:0;
+      color:var(--textdim);
+    }
+    #btn-settings:hover { color:var(--accent); border-color:var(--accent); }
+
+    /* ── 사운드셋 드롭다운 ───────────────────────────────────────── */
+    .soundset-chip {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:11px 14px; border:1px solid var(--border); border-radius:10px;
+      background:var(--panel); color:var(--text); cursor:pointer; font-family:inherit;
+      font-size:.85rem; letter-spacing:1px; transition:border-color .12s, box-shadow .12s;
+    }
+    .soundset-chip .sc-desc { color:var(--textdim); font-size:.72rem; letter-spacing:0; }
+    .soundset-chip[aria-selected="true"] {
+      border-color:var(--accent); color:var(--accent);
+      box-shadow:0 0 14px rgba(0,245,200,.25);
+    }
+    .soundset-chip.focused, .modal-btn.focused {
+      outline:2px solid var(--accent); outline-offset:2px;
+    }
+    /* 드롭다운 트리거 버튼 */
+    #soundset-trigger {
+      display:flex; justify-content:space-between; align-items:center;
+      width:100%; padding:10px 14px; margin-bottom:6px;
+      border:1px solid var(--border); border-radius:10px;
+      background:var(--panel); color:var(--text); cursor:pointer;
+      font-family:inherit; font-size:.85rem; letter-spacing:1px;
+      transition:border-color .12s;
+    }
+    #soundset-trigger:hover, #soundset-trigger.open {
+      border-color:var(--accent);
+    }
+    #soundset-trigger .sdt-arrow { font-size:.7rem; color:var(--textdim); transition:transform .15s; }
+    #soundset-trigger.open .sdt-arrow { transform:rotate(180deg); }
+    /* 드롭다운 패널 */
+    #soundset-dropdown {
+      display:none; flex-direction:column;
+      border:1px solid var(--border); border-radius:10px;
+      overflow:hidden; margin-bottom:14px;
+    }
+    #soundset-dropdown.open { display:flex; }
+    .sdd-item {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 14px; background:var(--panel);
+      border:none; border-bottom:1px solid var(--border);
+      color:var(--text); cursor:pointer; font-family:inherit;
+      font-size:.82rem; letter-spacing:1px; text-align:left;
+      transition:background .1s;
+    }
+    .sdd-item:last-child { border-bottom:none; }
+    .sdd-item:hover { background:rgba(255,255,255,.05); }
+    .sdd-item .sdd-check {
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid var(--border); flex-shrink:0;
+      transition:border-color .12s, background .12s;
+    }
+    .sdd-item[aria-selected="true"] .sdd-check {
+      border-color:var(--accent); background:var(--accent);
+    }
+    .sdd-item[aria-selected="true"] { color:var(--accent); }
+    .sdd-item .sdd-desc { color:var(--textdim); font-size:.68rem; margin-left:auto; }
+    .modal-hint { color:var(--textdim); font-size:.7rem; margin-top:14px; letter-spacing:1px; }
+
+    /* ── BGM 칩 ─────────────────────────────────────────────────── */
+    .bgm-tone-chip {
+      padding:7px 12px; border:1px solid var(--border); border-radius:8px;
+      background:var(--panel); color:var(--textdim); cursor:pointer; font-family:inherit;
+      font-size:.72rem; letter-spacing:1px; transition:border-color .12s, color .12s;
+    }
+    .bgm-tone-chip[aria-selected="true"] {
+      border-color:var(--accent); color:var(--accent);
+      box-shadow:0 0 10px rgba(58,123,213,.28);
+    }
+    .bgm-theme-chip {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 10px; border:1px solid var(--border); border-radius:9px;
+      background:var(--panel); color:var(--text); cursor:pointer; font-family:inherit;
+      font-size:.75rem; letter-spacing:1px; transition:border-color .12s;
+    }
+    .bgm-theme-chip[aria-selected="true"] {
+      border-color:var(--accent); color:var(--accent);
+      box-shadow:0 0 12px rgba(58,123,213,.25);
+    }
+    .bgm-theme-chip .btc-label { flex:1; text-align:left; }
+    .bgm-theme-chip .btc-prev {
+      background:none; border:1px solid var(--border); border-radius:6px;
+      color:var(--textdim); font-size:.72rem; padding:3px 8px; cursor:pointer;
+      transition:border-color .1s, color .1s; font-family:inherit;
+      white-space:nowrap;
+    }
+    .bgm-theme-chip .btc-prev:hover,
+    .bgm-theme-chip .btc-prev.playing { border-color:var(--accent); color:var(--accent); }
+    .bgm-theme-chip .btc-play {
+      background:none; border:1px solid var(--border); border-radius:6px;
+      color:var(--textdim); font-size:.75rem; padding:3px 9px; cursor:pointer;
+      transition:border-color .1s, color .1s; font-family:inherit;
+    }
+    .bgm-theme-chip .btc-play:hover { border-color:var(--accent); color:var(--accent); }
+    /* Daily / Endless leaderboard */
+    #daily-lb, #endless-lb { margin:14px 0 4px; text-align:left; }
+    .lb-flag { font-size:.9rem; margin-right:4px; line-height:1; }
+    .lb-row.lb-me { background:rgba(58,123,213,.12); border-radius:3px; }
+    .lb-row.lb-me .lb-rank { color:var(--accent); font-weight:700; }
+    .lb-sep { text-align:center; color:var(--textdim); font-size:.65rem; letter-spacing:3px; padding:2px 0; }
+
+    /* ── Collection 오버레이 ────────────────────────────────────────── */
+    #ol-unlock .unlock-thumb {
+      width: 160px; height: 160px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      margin: 0 auto 16px;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--panel);
+    }
+    #ol-unlock .unlock-thumb svg { width: 100%; height: 100%; }
+    #ol-unlock .chain-badge {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.4rem; font-weight: 700;
+      color: var(--accent); letter-spacing: 2px;
+    }
+    #ol-gallery .ol-panel { max-width: 480px; width: 94vw; }
+    #gallery-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .gallery-tab {
+      padding: 6px 14px;
+      background: transparent; border: 1px solid var(--border); border-radius: 4px;
+      color: var(--textdim); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 1px; cursor: pointer;
+      transition: border-color .12s, color .12s;
+    }
+    .gallery-tab.active { border-color: var(--accent); color: var(--accent); }
+    .gallery-tab.locked { opacity: 0.4; cursor: default; }
+    #gallery-progress { font-size: 0.72rem; color: var(--textdim); margin-bottom: 8px; text-align: left; }
+    #gallery-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+    #gallery-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+    #gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+    .gallery-cell {
+      aspect-ratio: 1; border: 1px solid var(--border); border-radius: 4px;
+      overflow: hidden; cursor: pointer; position: relative;
+      background: var(--panel); display: flex; align-items: center; justify-content: center;
+      transition: border-color .12s;
+    }
+    .gallery-cell.unlocked { border-color: var(--dim); }
+    .gallery-cell.unlocked:hover { border-color: var(--accent); }
+    .gallery-cell.unlocked.is-new { border-color: #ffd23f; box-shadow: 0 0 10px rgba(255,210,63,.4); }
+    .gallery-cell.locked { filter: brightness(0.15); cursor: pointer; }
+    .gallery-cell svg { width: 100%; height: 100%; }
+    .gallery-lock-icon { position: absolute; font-size: 1rem; color: var(--textdim); }
+    /* NEW 배지 + 미수령 스타 힌트 */
+    .gallery-new-badge {
+      position: absolute; top: 3px; right: 3px; z-index: 2;
+      background: #ffd23f; color: #1a1200; font-family: 'Share Tech Mono', monospace;
+      font-size: .5rem; font-weight: 700; letter-spacing: .5px;
+      padding: 1px 4px; border-radius: 3px; line-height: 1.2;
+      box-shadow: 0 0 6px rgba(255,210,63,.6);
+    }
+    @keyframes newpulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+    .gallery-new-badge { animation: newpulse 1.1s ease-in-out infinite; }
+    /* 레드닷 (NEW 알림) — 설정/갤러리 버튼에 부착 */
+    .reddot {
+      position: absolute; top: 2px; right: 2px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ff2d55; box-shadow: 0 0 6px rgba(255,45,85,.8);
+      animation: newpulse 1.1s ease-in-out infinite; pointer-events: none;
+    }
+    .reddot.hidden { display: none; }
+    .lb-title { color:var(--textdim); font-size:.7rem; letter-spacing:1px; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+    .lb-badge { background:#3a2a00; color:#ffd23f; font-size:.6rem; padding:1px 5px; border-radius:4px; letter-spacing:1px; }
+    .lb-row { display:flex; align-items:center; font-size:.8rem; padding:3px 0; border-bottom:1px solid rgba(255,255,255,.06); }
+    .lb-row .lb-rank { width:22px; color:var(--textdim); }
+    .lb-row .lb-id { flex:1; font-family:'Share Tech Mono',monospace; color:var(--text); }
+    .lb-row .lb-score { color:#ffd23f; }
+    .lb-row.lb-empty { color:var(--textdim); justify-content:center; border:none; }
+
+    /* ── Chronicles: Step-01 Reveal 모달 ───────────────────────────── */
+    #ol-step-reveal .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #step-reveal-img {
+      width: 100%; height: 180px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #step-reveal-body { padding: 18px 20px 16px; }
+    #step-reveal-badge {
+      font-size: .6rem; color: #ffd23f; letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    #step-reveal-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700;
+      color: var(--text); letter-spacing: 1px; margin-bottom: 10px;
+    }
+    #step-reveal-desc {
+      font-size: .78rem; color: var(--textdim); line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* ── Chronicles: Chapter Intro 모달 ────────────────────────────── */
+    #ol-chapter-intro .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #chapter-intro-bg {
+      width: 100%; height: 180px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #chapter-intro-body {
+      padding: 20px 20px 16px;
+    }
+    #chapter-intro-num {
+      font-size: 0.65rem; color: var(--accent); letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    #chapter-intro-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 700;
+      color: var(--text); letter-spacing: 1px; margin-bottom: 10px;
+    }
+    #chapter-intro-tagline {
+      font-size: 0.78rem; color: var(--textdim); line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* ── Chronicles: Progress Bar ───────────────────────────────────── */
+    #chronicles-progress {
+      display: none;
+      padding: 4px 12px 0;
+      background: transparent;
+    }
+    #chronicles-progress.visible { display: block; }
+    #chronicles-prog-label {
+      font-size: 0.58rem; color: var(--textdim); letter-spacing: 1px;
+      margin-bottom: 3px; text-align: right;
+    }
+    #chronicles-prog-wrap {
+      height: 3px; background: rgba(255,255,255,0.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    #chronicles-prog-bar {
+      height: 100%; background: var(--accent);
+      border-radius: 2px; transition: width 0.4s ease;
+      box-shadow: 0 0 6px rgba(58,123,213,0.6);
+    }
+
+    /* ── Chronicles: Chapter Clear 풀스크린 연출 ───────────────────── */
+    @keyframes clear-title-in {
+      from { opacity:0; transform:translateY(18px) scale(.92); }
+      to   { opacity:1; transform:translateY(0)    scale(1); }
+    }
+    @keyframes clear-stamp {
+      0%   { opacity:0; transform:scale(2.2); }
+      60%  { opacity:1; transform:scale(.95); }
+      80%  { transform:scale(1.06); }
+      100% { opacity:1; transform:scale(1); }
+    }
+    #chapter-clear-title  { animation: clear-title-in .7s .5s both; }
+    #chapter-clear-era    { animation: clear-title-in .5s .3s both; }
+    #chapter-clear-msg    { animation: clear-title-in .6s .9s both; }
+    #chapter-clear-stamp  { animation: clear-stamp .6s 1.1s both; }
+
+    /* ── Chronicles: Chapter Complete 모달 ─────────────────────────── */
+    #ol-chapter-complete .ol-panel {
+      padding: 0; overflow: hidden; max-width: 360px; width: 92vw;
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    #chapter-complete-bg {
+      width: 100%; height: 200px; object-fit: cover; display: block;
+      background: var(--panel);
+    }
+    #chapter-complete-body { padding: 20px 20px 16px; }
+    #chapter-complete-era {
+      font-size: 0.65rem; color: var(--accent); letter-spacing: 3px; margin-bottom: 6px;
+    }
+    #chapter-complete-title {
+      font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700;
+      color: var(--text); margin-bottom: 8px;
+    }
+    #chapter-complete-msg {
+      font-size: 0.78rem; color: var(--textdim); line-height: 1.6; margin-bottom: 16px;
+    }
+    /* Epoch Stamp */
+    #epoch-stamp-wrap {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,210,63,0.07); border: 1px solid rgba(255,210,63,0.2);
+      border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;
+    }
+    #epoch-stamp-icon {
+      font-size: 1.8rem; line-height: 1;
+      animation: stamp-pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+    }
+    #epoch-stamp-text {
+      font-size: 0.72rem; color: #ffd23f; letter-spacing: 1px;
+    }
+    #epoch-stamp-count { font-size: 0.62rem; color: var(--textdim); margin-top: 2px; }
+    @keyframes stamp-pop {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      70%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    /* ── Chronicles: Step 나레이션 바 (보드 아래 / 컨트롤 위 고정) ── */
+    #chronicles-narration {
+      display: none;
+      width: 100%; max-width: 480px; margin: 0 auto;
+      padding: 10px 14px;
+      background: rgba(10,14,30,0.88);
+      border-top: 1px solid rgba(58,123,213,0.3);
+      border-bottom: 1px solid rgba(58,123,213,0.15);
+    }
+    #chronicles-narration.visible {
+      display: flex; gap: 10px; align-items: flex-start;
+      animation: narration-in 0.3s ease;
+    }
+    #ctoast-thumb {
+      width: 48px; height: 48px; flex-shrink: 0;
+      border-radius: 4px; overflow: hidden;
+      border: 1px solid rgba(58,123,213,0.4);
+      background: var(--panel);
+      margin-top: 2px;
+    }
+    #ctoast-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #ctoast-text { flex: 1; min-width: 0; }
+    #ctoast-step {
+      font-size: 0.58rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 3px;
+    }
+    #ctoast-title {
+      font-size: 0.75rem; font-weight: 700; color: var(--text);
+      margin-bottom: 2px; line-height: 1.3;
+    }
+    #ctoast-desc {
+      font-size: 0.7rem; color: rgba(255,255,255,0.62); line-height: 1.5;
+      white-space: normal; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    }
+    @keyframes narration-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Toss: portrait mode lock */
+    @media (orientation: landscape) {
+      body::before {
+        content: '세로 모드로 회전해주세요';
+        position: fixed; inset: 0; display: flex;
+        align-items: center; justify-content: center;
+        background: var(--bg, #050810); color: var(--text, #dde8f6);
+        font-size: 1.2rem; z-index: 9999; font-family: sans-serif;
+      }
+      body > * { visibility: hidden; }
+    }
+  </style>
+  <script src="/src/toss-bridge.js"></script>
+</head>
+<body>
+
+<!-- ── DEV BAR (?dev 파라미터 시 표시) ──────────────────────────── -->
+<div id="dev-bar" style="display:none">
+  <span style="color:#ff4060;font-weight:bold">DEV</span>
+  <button onclick="devResetAll()">RESET DATA</button>
+  <button id="btn-cheat" onclick="devToggleCheat()">CHEAT OFF</button>
+  <button onclick="devStartDaily()" style="color:#ffd23f;border-color:#ffd23f">DAILY</button>
+  <label style="font-size:.75rem;color:#aaa">THEME:</label>
+  <select id="dev-theme-select" onchange="devSetTheme(this.value)" style="background:#111;color:#fff;border:1px solid #444;font-size:.75rem;padding:1px 4px"></select>
+  <button onclick="devUnlockActiveTheme()">UNLOCK</button>
+</div>
+
+<!-- ── 앱 루트 ──────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- 헤더: 제목 | 스탯 | 액션버튼 (한 줄, 겹침 없음) -->
+  <div id="header">
+    <div id="game-title">EARTH &amp; BEYOND</div>
+    <div id="stats">
+      <div class="stat-item" id="stat-item-1">
+        <span class="stat-label" id="stat-label-1">SCORE</span>
+        <span class="stat-value" id="stat-score">0</span>
+      </div>
+      <div class="stat-item" id="stat-item-2">
+        <span class="stat-label" id="stat-label-2">BEST</span>
+        <span class="stat-value" id="stat-best">0</span>
+      </div>
+    </div>
+    <div id="header-actions">
+      <div id="wallet-chip" title="Stars"><span class="wc-star">⭐</span><span id="wallet-balance">0</span></div>
+      <button id="btn-settings" aria-label="settings" title="Settings" onclick="openSettings()" style="position:relative">⚙<span id="header-settings-dot" class="reddot hidden"></span></button>
+    </div>
+  </div>
+
+  <!-- Chronicles: Progress Bar (캔버스 위) -->
+  <div id="chronicles-progress">
+    <div id="chronicles-prog-label">CHAPTER 1 · 0 / 11</div>
+    <div id="chronicles-prog-wrap"><div id="chronicles-prog-bar" style="width:0%"></div></div>
+  </div>
+
+  <!-- 캔버스 -->
+  <div id="canvas-wrap">
+    <canvas id="gameCanvas"></canvas>
+    <div id="game-toast"></div>
+  </div>
+
+  <!-- Chronicles: 나레이션 바 (보드 아래 · 컨트롤 위 고정) -->
+  <div id="chronicles-narration">
+    <div id="ctoast-thumb"><img id="ctoast-img" src="" alt=""></div>
+    <div id="ctoast-text">
+      <div id="ctoast-step">STEP 01</div>
+      <div id="ctoast-title"></div>
+      <div id="ctoast-desc"></div>
+    </div>
+  </div>
+
+  <!-- 방향 컨트롤: ↑ 위, 아래 줄에 ← ↓ → 나란히 (2줄, 세로 최적화) -->
+  <div id="controls">
+    <button class="dirbtn" data-dir="up" aria-label="up">↑</button>
+    <div class="dirrow">
+      <button class="dirbtn" data-dir="left" aria-label="left">←</button>
+      <button class="dirbtn" data-dir="down" aria-label="down">↓</button>
+      <button class="dirbtn" data-dir="right" aria-label="right">→</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── START 히어로 화면 ──────────────────────────────────────────── -->
+<div id="ol-start" class="overlay">
+
+  <!-- 3분할 배경 콜라주 -->
+  <div id="start-hero">
+    <div class="start-hero-slice" style="background-image:url('themes/primordial-earth/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('themes/human-civilization/bg-step-11.webp')"></div>
+    <div class="start-hero-slice" style="background-image:url('themes/solar-system/bg-step-11.webp')"></div>
+  </div>
+
+  <!-- 타이틀 -->
+  <div id="start-title-block">
+    <div class="hero-title">EARTH &amp; BEYOND</div>
+    <div class="hero-sub" data-i18n="ui.gameSubtitle">Merge tiles to travel from Primordial Earth to the edge of the Universe</div>
+  </div>
+
+  <!-- 버튼 패널 -->
+  <div id="start-panel">
+    <button class="btn-primary modal-btn" id="btn-collection" data-action="collection" onclick="openChroniclesEntry()" data-i18n="ui.btn.chronicles">CHRONICLES</button>
+    <button class="btn-secondary modal-btn" id="btn-endless-menu" data-action="endless" onclick="menuEndlessClick()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <span id="endless-menu-label">ENDLESS ∞</span>
+      <span id="endless-menu-sub" style="font-size:.6rem;letter-spacing:1px;opacity:.65"></span>
+    </button>
+    <button class="btn-secondary modal-btn" id="btn-daily" data-action="daily" onclick="openDailyMenu()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <span id="daily-menu-label">DAILY CHALLENGE</span>
+      <span id="daily-menu-sub" style="font-size:.6rem;letter-spacing:1px;opacity:.65"></span>
+      <span id="menu-daily-dot" class="reddot hidden"></span>
+    </button>
+    <button class="btn-secondary modal-btn" id="btn-gallery-menu" data-action="gallery" onclick="openGalleryFromMenu()" style="position:relative">
+      GALLERY <span id="menu-gallery-dot" class="reddot hidden"></span>
+    </button>
+    <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()" data-i18n="ui.btn.settings">SETTINGS</button>
+    <!-- dev 전용 -->
+    <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
+    <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
+    <div class="modal-hint" style="margin-top:4px">↑↓ Move · Enter Select</div>
+    <div id="app-version" style="color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
+  </div>
+
+</div>
+
+<!-- ── Daily Challenge 팝업 (메인 메뉴에서 진입 시) ──────────────── -->
+<div id="ol-daily-menu" class="overlay hidden">
+  <div class="ol-panel" style="max-width:320px">
+    <div class="ol-title" style="font-size:1.3rem" data-i18n="ui.btn.dailyChallenge">DAILY CHALLENGE</div>
+    <div id="daily-menu-type" style="font-size:.65rem;color:var(--accent);letter-spacing:3px;margin-bottom:4px"></div>
+    <div id="daily-menu-status" style="font-size:.8rem;color:var(--textdim);margin-bottom:16px;line-height:1.6"></div>
+    <!-- 남은 시도 있을 때 -->
+    <div id="daily-menu-panel-play">
+      <div id="daily-menu-retries" style="font-size:.7rem;color:var(--textdim);margin-bottom:10px;text-align:center"></div>
+      <button class="btn-primary modal-btn" id="btn-daily-menu-play" onclick="openDailyMenuPlay()" data-i18n="ui.btn.playNow">PLAY NOW ›</button>
+    </div>
+    <!-- 오늘 소진 -->
+    <div id="daily-menu-panel-done" style="display:none">
+      <div style="font-size:1.4rem;margin-bottom:8px">🏁</div>
+      <div id="daily-menu-next" style="font-size:.75rem;color:var(--accent);margin-bottom:14px;letter-spacing:1px"></div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px;line-height:1.5" data-i18n="ui.label.dailyDoneMsg">내일 새로운 Daily Challenge가 열립니다</div>
+    </div>
+    <button class="btn-secondary modal-btn" onclick="closeDailyMenu()" data-i18n="ui.btn.back">BACK</button>
+  </div>
+</div>
+
+<!-- ── Daily 튜토리얼 (최초 1회) ──────────────────────────────────── -->
+<div id="ol-daily-tutorial" class="overlay hidden">
+  <div class="dtut-panel">
+    <div class="dtut-slides">
+
+      <!-- Slide 1: 모드 소개 (JS로 내용 주입) -->
+      <div class="dtut-slide active" id="dtut-slide-0">
+        <div class="dtut-icon" id="dtut-icon-0">🌍</div>
+        <div class="dtut-title" id="dtut-title-0">HOW TO PLAY</div>
+        <div class="dtut-desc" id="dtut-desc-0"></div>
+      </div>
+
+      <!-- Slide 2: 별 획득 -->
+      <div class="dtut-slide" id="dtut-slide-1">
+        <div class="dtut-icon">⭐</div>
+        <div class="dtut-title">EARN STARS</div>
+        <div class="dtut-desc">
+          Hit tile milestones to earn stars:<br>
+          <strong>64→★ · 128→★★ · 256→★★★<br>512→★★★★★</strong><br>
+          Each milestone can trigger multiple times!
+        </div>
+      </div>
+
+      <!-- Slide 3: 모드별 (JS로 내용 주입) -->
+      <div class="dtut-slide" id="dtut-slide-2">
+        <div class="dtut-icon" id="dtut-icon-2">🏆</div>
+        <div class="dtut-title" id="dtut-title-2"></div>
+        <div class="dtut-desc" id="dtut-desc-2"></div>
+      </div>
+
+    </div>
+
+    <div class="dtut-footer">
+      <button class="dtut-btn-skip" onclick="closeDailyTutorial()">SKIP</button>
+      <div class="dtut-dots">
+        <div class="dtut-dot active" id="dtut-dot-0"></div>
+        <div class="dtut-dot" id="dtut-dot-1"></div>
+        <div class="dtut-dot" id="dtut-dot-2"></div>
+      </div>
+      <button class="dtut-btn-next" id="dtut-btn-next" onclick="nextDailyTutorial()">NEXT ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GAME OVER 오버레이 ─────────────────────────────────────────── -->
+<div id="ol-gameover" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title">GAME OVER</div>
+    <div class="ol-score" id="go-score">0</div>
+    <div class="ol-label">SCORE · BEST <span id="go-best">0</span></div>
+    <button class="btn-primary modal-btn" data-action="restart" onclick="restartGame()">PLAY AGAIN</button>
+    <button class="btn-secondary modal-btn" data-action="menu" onclick="goToStart()">MENU</button>
+    <div class="modal-hint">↑↓ Move · Enter Select</div>
+  </div>
+</div>
+
+<!-- Daily game-over -->
+<div id="ol-daily-over" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
+    <div class="ol-label"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="daily-run-stars">⭐0</span> · <span data-i18n="ui.label.todayBest">TODAY BEST</span> <span id="daily-total-stars">⭐0</span></div>
+    <!-- 더미 리더보드: QA 통과 후 Playgama public token 연결 전까지 DEMO 표시 -->
+    <div id="daily-lb">
+      <div class="lb-title"><span data-i18n="ui.label.todayRanking">TODAY'S RANKING</span> <span id="daily-lb-badge" class="lb-badge">DEMO</span></div>
+      <div id="daily-lb-rows"></div>
+    </div>
+
+    <!-- [A] 리트라이 (무제한): RETRY → 지금 받기 보조 -->
+    <div id="daily-panel-retry" style="display:none">
+      <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px"><span id="daily-retries"></span><span data-i18n="ui.label.higherBestTip"> higher BEST = bigger CLAIM</span></div>
+      <button class="btn-ad modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" style="background:var(--warn)" data-i18n="ui.btn.retryAd">📺 RETRY FOR HIGHER BEST</button>
+      <button class="btn-secondary modal-btn" id="btn-daily-claim-now" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimNow">CLAIM NOW</span> ⭐<span id="daily-claim-now-amt">0</span></button>
+    </div>
+
+    <!-- [B] 리트라이 소진 (일반): CLAIM 하나 + MENU -->
+    <div id="daily-panel-done" style="display:none">
+      <button class="btn-ad ad-gold modal-btn" id="btn-daily-claim" onclick="claimDailyAndExit()"><span data-i18n="ui.btn.claim">CLAIM</span> ⭐<span id="daily-claim-amt">0</span></button>
+      <button class="btn-secondary modal-btn" onclick="dailyToMenu()" data-i18n="ui.btn.menu">MENU</button>
+    </div>
+
+    <!-- [C] 온보딩 (첫 접속): Chronicles CTA 우선 → CLAIM 보조 -->
+    <div id="daily-panel-onboard" style="display:none">
+      <button class="btn-primary modal-btn" id="btn-daily-onboard" onclick="onboardToChronicles()" data-i18n="ui.btn.startJourney">START YOUR JOURNEY →</button>
+      <button class="btn-secondary modal-btn" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimAndMenu">CLAIM &amp; go to menu</span> ⭐<span id="daily-claim-onboard-amt">0</span></button>
+    </div>
+
+    <div class="modal-hint" data-i18n="ui.hint.keyboard">↑↓ Move · Enter Select</div>
+  </div>
+</div>
+
+
+<!-- ── Collection: 체인 해금 팝업 ─────────────────────────────────── -->
+<div id="ol-unlock" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title" id="unlock-chain-title">CHAIN 1/10</div>
+    <div class="unlock-thumb" id="unlock-thumb">
+      <div style="color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:2rem">★</div>
+    </div>
+    <div class="ol-label" id="unlock-theme-label">NEON CITY — STEP 1</div>
+    <button class="btn-primary modal-btn" onclick="closeUnlockPopup()" data-i18n="ui.btn.continueGame">CONTINUE</button>
+  </div>
+</div>
+
+<!-- ── Chronicles: 챕터 클리어 연출 (풀스크린, 탭/클릭으로 스킵) ── -->
+<div id="ol-chapter-clear" class="overlay hidden" style="padding:0;cursor:pointer" onclick="skipChapterClear()">
+  <img id="chapter-clear-bg" alt=""
+       style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.6s">
+  <canvas id="chapter-clear-canvas"
+          style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+  <!-- 어두운 그라디언트 dim -->
+  <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(5,8,16,.92) 0%,rgba(5,8,16,.45) 50%,rgba(5,8,16,.65) 100%)"></div>
+  <div id="chapter-clear-text" style="
+    position:relative;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;padding:24px;width:100%">
+    <div id="chapter-clear-era"
+         style="font-size:.6rem;letter-spacing:4px;color:var(--accent);margin-bottom:10px"></div>
+    <div id="chapter-clear-title"
+         style="font-family:'Rajdhani',sans-serif;font-size:2.4rem;font-weight:700;
+                color:#fff;letter-spacing:2px;text-shadow:0 0 32px rgba(58,123,213,.95);
+                margin-bottom:14px"></div>
+    <div id="chapter-clear-stamp"
+         style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;
+                letter-spacing:4px;color:var(--accent);border:2px solid var(--accent);
+                padding:4px 18px;border-radius:4px;margin-bottom:16px;
+                text-shadow:0 0 12px var(--accent);box-shadow:0 0 16px rgba(58,123,213,.4)">
+      CHAPTER COMPLETE
+    </div>
+    <div id="chapter-clear-msg"
+         style="font-size:.8rem;color:rgba(255,255,255,.72);line-height:1.7;
+                max-width:300px;text-shadow:0 1px 8px rgba(0,0,0,.9)"></div>
+    <div style="margin-top:32px;font-size:.58rem;color:rgba(255,255,255,.28);letter-spacing:3px">
+      TAP TO CONTINUE
+    </div>
+  </div>
+</div>
+
+<!-- ── Gallery: 셀 상세 팝업 ─────────────────────────────────────── -->
+<div id="ol-gallery-detail" class="overlay hidden">
+  <div class="ol-panel" style="padding:0;overflow:hidden;max-width:340px;width:92vw">
+    <img id="gd-img" src="" alt="" style="width:100%;aspect-ratio:1;object-fit:cover;display:block">
+    <div style="padding:16px 18px 18px">
+      <div id="gd-theme" style="font-size:.58rem;color:var(--textdim);letter-spacing:2px;margin-bottom:2px;text-transform:uppercase"></div>
+      <div id="gd-step" style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:6px">STEP 01</div>
+      <div id="gd-title" style="font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:8px"></div>
+      <div id="gd-desc" style="font-size:.78rem;color:var(--textdim);line-height:1.6;margin-bottom:16px"></div>
+      <button class="btn-primary modal-btn" onclick="closeGalleryDetail()" data-i18n="ui.btn.close">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chronicles: Chapter Intro 모달 ────────────────────────────── -->
+<div id="ol-chapter-intro" class="overlay hidden">
+  <div class="ol-panel">
+    <img id="chapter-intro-bg" alt="">
+    <div id="chapter-intro-body">
+      <div id="chapter-intro-num">CHAPTER 1</div>
+      <div id="chapter-intro-title">PRIMORDIAL EARTH</div>
+      <div id="chapter-intro-tagline"></div>
+      <button class="btn-primary modal-btn" id="btn-chapter-start" onclick="closeChapterIntro()" data-i18n="ui.btn.beginChapter">BEGIN CHAPTER ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chronicles: Step-01 Reveal 팝업 ──────────────────────────── -->
+<div id="ol-step-reveal" class="overlay hidden">
+  <div class="ol-panel">
+    <img id="step-reveal-img" src="" alt="">
+    <div id="step-reveal-body">
+      <div id="step-reveal-badge">⭐ STEP 01 — FIRST DISCOVERY</div>
+      <div id="step-reveal-title"></div>
+      <div id="step-reveal-desc"></div>
+      <button class="btn-primary modal-btn" id="btn-step-reveal-start" onclick="closeStepReveal()">START ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chronicles: Chapter Complete 모달 (중간 챕터 → 다음 챕터 전환) ── -->
+<div id="ol-chapter-complete" class="overlay hidden">
+  <div class="ol-panel" style="padding:0;overflow:hidden;max-width:360px;width:92vw">
+    <img id="chapter-complete-bg" alt="" style="width:100%;height:160px;object-fit:cover;display:block">
+    <div style="padding:20px 20px 18px">
+      <div id="chapter-complete-era" style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:6px">CHAPTER COMPLETE</div>
+      <div id="chapter-complete-title" style="font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;color:var(--text);letter-spacing:1px;margin-bottom:8px"></div>
+      <div id="chapter-complete-msg" style="font-size:.75rem;color:var(--textdim);line-height:1.55;margin-bottom:10px"></div>
+      <div id="chapter-complete-bridge" style="display:none;font-size:.7rem;color:var(--accent);opacity:.85;font-style:italic;line-height:1.5;border-left:2px solid var(--accent);padding-left:8px;margin-bottom:14px"></div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:12px">
+        <span id="chapter-complete-reward-label" style="color:#ffd23f;font-weight:700;font-size:.9rem">⭐20</span> EARNED
+        &nbsp;·&nbsp; <span id="epoch-stamp-count">0 / 3</span> CHAPTERS
+      </div>
+      <button class="btn-primary modal-btn" id="btn-chapter-next" onclick="chroniclesNextChapter()" data-i18n="ui.btn.nextChapter">NEXT CHAPTER ›</button>
+      <button class="btn-ad ad-gold modal-btn" id="btn-chapter-double" onclick="chapterCompleteDoubleStars()" style="margin-top:6px">
+        📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Endless Mode: 게임오버 ─────────────────────────────────────── -->
+<div id="ol-endless-over" class="overlay hidden">
+  <div class="ol-panel" style="max-width:360px;width:94vw">
+    <div class="ol-title">GAME OVER</div>
+    <div style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:8px">ENDLESS MODE</div>
+    <div class="ol-score" id="endless-run-score" style="font-size:1.5rem;line-height:1.2;color:#ffd23f">0</div>
+    <div style="font-size:.62rem;color:var(--textdim);letter-spacing:2px;margin-bottom:4px">SCORE</div>
+    <div id="endless-run-meta" style="font-size:.72rem;color:var(--textdim);margin-bottom:14px"></div>
+    <!-- 리더보드 -->
+    <div id="endless-lb">
+      <div class="lb-title" style="color:var(--textdim);font-size:.68rem;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+        RANKING <span id="endless-lb-badge" class="lb-badge">DEMO</span>
+      </div>
+      <div id="endless-lb-rows"></div>
+    </div>
+    <button class="btn-ad ad-gold modal-btn" id="btn-endless-double" onclick="endlessDoubleStars()" style="margin-top:10px">
+      📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
+    </button>
+    <button class="btn-primary modal-btn" onclick="endlessAgain()">PLAY AGAIN</button>
+    <button class="btn-secondary modal-btn" onclick="endlessToMenu()">MENU</button>
+  </div>
+</div>
+
+<!-- ── Collection: 마지막 테마 완료 (더 이상 다음 챕터 없음) ──────── -->
+<div id="ol-theme-complete" class="overlay hidden">
+  <div class="ol-panel" style="padding:0;overflow:hidden;max-width:360px;width:92vw">
+    <img id="theme-complete-bg" alt="" style="width:100%;height:140px;object-fit:cover;display:block">
+    <div style="padding:20px 20px 18px">
+      <div style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:6px">ALL CHAPTERS COMPLETE</div>
+      <div id="theme-complete-label" style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:1px;margin-bottom:8px"></div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px">
+        <span id="theme-complete-reward" style="color:#ffd23f;font-weight:700;font-size:.9rem">⭐20</span> EARNED
+      </div>
+      <button class="btn-ad ad-gold modal-btn" id="btn-theme-double" onclick="themeCompleteDoubleStars()">
+        📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
+      </button>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(58,123,213,0.2)">
+        <div style="font-size:.6rem;color:var(--accent);letter-spacing:2px;margin-bottom:8px">NEW MODE UNLOCKED</div>
+        <button class="btn-primary modal-btn" onclick="startEndless()">ENDLESS MODE ∞</button>
+        <div style="font-size:.65rem;color:var(--textdim);margin-top:4px;line-height:1.4">Merge freely — no story, no limits.<br>Farm stars as long as you survive.</div>
+      </div>
+      <button class="btn-secondary modal-btn" onclick="collectionToMenu()" style="margin-top:10px">MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Collection: 도감(Gallery) ────────────────────────────────────── -->
+<div id="ol-gallery" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title">GALLERY</div>
+    <div id="gallery-tabs"><!-- tabs injected by JS --></div>
+    <div id="gallery-progress">0 / 10</div>
+    <div id="gallery-bar-wrap"><div id="gallery-bar" style="width:0%"></div></div>
+    <div id="gallery-grid"><!-- cells injected by JS --></div>
+    <button class="btn-primary modal-btn" id="btn-gallery-play" onclick="startCollectionFromGallery()" data-i18n="ui.btn.playChapter">PLAY CHAPTER</button>
+    <button class="btn-secondary modal-btn" onclick="closeGallery()" data-i18n="ui.btn.close">CLOSE</button>
+  </div>
+</div>
+
+
+<!-- ── Collection: 게임오버 ─────────────────────────────────────────── -->
+<!-- 2단계: (1) CONTINUE 권유 → (2) 거절 시 DOUBLE STARS 정산. 광고 버튼 동시 노출 금지. -->
+<div id="ol-collection-over" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
+    <div class="ol-score" id="collection-chain-display">3/10</div>
+
+    <!-- 1단계: 이어하기 권유 -->
+    <div id="co-phase-continue">
+      <div class="ol-label" id="continue-info" style="font-size:0.72rem;margin-bottom:6px;color:var(--textdim)" data-i18n="ui.label.clearAllBut">Clear all but the top 3 tiers and keep going</div>
+      <button class="btn-ad ad-green modal-btn" id="btn-continue-ad" onclick="collectionContinueWithAd()">
+        📺 CONTINUE <span style="opacity:.8">(AD)</span>
+      </button>
+      <button class="btn-secondary modal-btn" id="btn-end-run" onclick="collectionShowSettle()" data-i18n="ui.btn.endRun">END RUN ▸</button>
+    </div>
+
+    <!-- 2단계: 이번 판 스타 정산 (x2 광고) -->
+    <div id="co-phase-settle" class="hidden">
+      <div class="ol-label" style="margin-bottom:2px"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
+      <button class="btn-ad ad-gold modal-btn" id="btn-double-stars" onclick="collectionDoubleStars()">
+        📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
+      </button>
+    </div>
+
+    <button class="btn-secondary modal-btn" onclick="openGallery()" data-i18n="ui.btn.gallery">GALLERY</button>
+    <button class="btn-secondary modal-btn" onclick="collectionToMenu()" data-i18n="ui.btn.menu">MENU</button>
+  </div>
+</div>
+
+<!-- ── 설정 패널 (사운드셋 + BGM) ─────────────────────────────────── -->
+<div id="ol-settings" class="overlay hidden">
+  <div class="ol-panel" style="padding-bottom:16px">
+    <div class="ol-title" data-i18n="ui.label.settings">SETTINGS</div>
+
+    <!-- 언어 선택 -->
+    <div class="ol-label" style="margin-bottom:8px" data-i18n="ui.label.language">LANGUAGE</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="chip-lang-ko" class="soundset-chip modal-btn" data-action="lang-ko" onclick="selectLang('ko')" style="flex:1;justify-content:center">
+        <span>한국어</span>
+      </button>
+      <button id="chip-lang-en" class="soundset-chip modal-btn" data-action="lang-en" onclick="selectLang('en')" style="flex:1;justify-content:center">
+        <span>English</span>
+      </button>
+    </div>
+
+    <!-- SOUND 마스터 토글 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="ol-label" style="margin:0">SOUND</div>
+      <button id="chip-sound-toggle" class="soundset-chip modal-btn" data-action="sound-toggle"
+              style="padding:5px 18px;font-size:.72rem;min-width:0" onclick="toggleSoundEnabled()">
+        <span id="sound-toggle-state">ON</span>
+      </button>
+    </div>
+
+    <!-- SOUND SET -->
+    <div class="ol-label" style="margin-bottom:8px" data-i18n="ui.label.soundSet">SOUND SET</div>
+    <button id="soundset-trigger" onclick="toggleSoundsetDropdown()">
+      <span id="soundset-trigger-label">—</span>
+      <span class="sdt-arrow">▼</span>
+    </button>
+    <div id="soundset-dropdown"><!-- items injected by JS --></div>
+    <button id="chip-haptic" class="soundset-chip modal-btn" data-action="haptic" onclick="toggleHaptic()">
+      <span>HAPTIC</span><span class="sc-desc" id="haptic-state">ON</span>
+    </button>
+
+    <!-- BGM 섹션 — 스크롤 가능한 내부 영역 -->
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="ol-label" style="margin:0">BGM</div>
+        <button id="chip-bgm-toggle" class="soundset-chip" style="padding:5px 14px;font-size:.72rem;min-width:0" onclick="toggleBgmEnabled()">
+          <span id="bgm-toggle-state">OFF</span>
+        </button>
+      </div>
+
+      <!-- BGM 음색 칩 -->
+      <div style="font-size:.6rem;color:var(--textdim);letter-spacing:1.5px;margin-bottom:5px">TONE</div>
+      <div id="bgm-tone-list" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+        <!-- chips injected by JS -->
+      </div>
+
+      <!-- BGM 테마 칩 -->
+      <div style="font-size:.6rem;color:var(--textdim);letter-spacing:1.5px;margin-bottom:5px">THEME &amp; PREVIEW</div>
+      <div id="bgm-theme-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+        <!-- chips injected by JS -->
+      </div>
+
+      <!-- 볼륨 슬라이더 -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:.65rem;color:var(--textdim);letter-spacing:1px;white-space:nowrap">VOL</span>
+        <input id="bgm-vol-slider" type="range" min="0" max="100" value="38"
+          style="flex:1;accent-color:var(--accent);height:4px"
+          oninput="onBgmVolSlider(this.value)">
+        <span id="bgm-vol-label" style="font-size:.65rem;color:var(--accent);width:26px;text-align:right">38</span>
+      </div>
+    </div>
+
+    <button class="btn-secondary modal-btn" id="btn-settings-gallery" onclick="openGalleryFromSettings()" style="display:none;position:relative" data-i18n="ui.btn.gallery">
+      GALLERY <span id="settings-gallery-dot" class="reddot hidden"></span>
+    </button>
+    <button class="btn-secondary modal-btn" id="btn-settings-tutorial" onclick="reopenTutorial()"
+            style="margin-top:4px;font-size:.78rem" data-i18n="ui.btn.tutorial">HOW TO PLAY</button>
+    <button class="btn-primary modal-btn" data-action="close" onclick="closeSettings()" data-i18n="ui.btn.close">CLOSE</button>
+    <button class="btn-secondary modal-btn" id="btn-settings-menu" data-action="menu" onclick="settingsToMenu()" style="display:none" data-i18n="ui.btn.menu">MENU</button>
+    <div class="modal-hint" data-i18n="ui.hint.keyboardSound">↑↓ Move · ←→ Sound Set · Enter Select</div>
+  </div>
+</div>
+
+<!-- ── 플랫폼 SDK ─────────────────────────────────────────────────── -->
+<script src="firebase-config.js"></script>
+<script src="notify.js"></script>
+<script src="crazygames.js"></script>
+<script src="playgama.js"></script>
+<script src="firebase.js"></script>
+<script src="sound.js?v=4"></script>
+
+<!-- ── 게임 모듈 (의존성 순서) ──────────────────────────────────── -->
+<script src="palette.js"></script>
+<script src="particles.js"></script>
+<script src="star-fly.js"></script>
+<script src="neon-drift.js"></script>
+<script src="grid-render.js"></script>
+<script src="daily.js"></script>
+<script src="collection.js"></script>
+<script src="i18n.js"></script>
+<script src="collection-themes.js"></script>
+
+<!-- ── 게임 메인 스크립트 ────────────────────────────────────────── -->
+<script>
+const STORAGE_KEY_BEST  = 'earthbeyond_best';
+const STORAGE_KEY_PLAYER = 'earthbeyond_player_id';
+
+// ── 버전 ──────────────────────────────────────────────────────────
+// 개발노트(docs/dev-notes.md)와 동기화. 버전 = 기능 묶음 단위.
+const APP_VERSION = 'v0.1';
+
+// ── 상태 ──────────────────────────────────────────────────────────
+const ND = SG.ND;
+let score = 0;
+let bestScore = parseInt(localStorage.getItem(STORAGE_KEY_BEST) || '0', 10);
+var gameRunning = false;
+
+var renderer = null;
+let rng = null;
+var grid = null;
+let level = 0;
+let isAnimating = false;
+let isPlatformPaused = false;
+let maxChain = 0;
+
+// ── Daily mode state ──────────────────────────────────────────────
+let dailyMode = false;
+let dailyState = null;     // SG.Daily DailyState
+let dailyRunStars = 0;     // stars in the current run (truth — drives game-over)
+let dailyStarsShown = 0;   // stars displayed in HUD (lags via fly-in animation)
+let dailyRunScore = 0;     // raw scoreGained sum in the current run (for leaderboard tiebreak)
+// practiceMode removed — Practice 모드 제거 (v0.4)
+let dailyTypeCfg = null;   // today's type config
+let dailyOpts = null;      // applyMove opts for daily
+let mainOpts = null;       // applyMove opts for main game (START Dev)
+let dailyTheme = null;     // 현재 Daily 세션에 선택된 테마 (null = 숫자 모드)
+
+function utcDateStr() {
+  const d = new Date();
+  return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+}
+function utcDayOfWeek() {            // JS getUTCDay 0=Sun..6=Sat → 0=Mon..6=Sun
+  return (new Date().getUTCDay() + 6) % 7;
+}
+function dailySeededRng(dateStr) {
+  let s = SG.ND.dateSeed(dateStr) | 0;
+  return function () {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = (t + Math.imul(t ^ t >>> 7, 61 | t)) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+const canvas = document.getElementById('gameCanvas');
+
+// Live (non-deterministic) RNG seed; core stays deterministic given this fn.
+function makeRng() {
+  let seed = (Date.now() ^ (Math.floor(Math.random() * 1e9))) | 0;
+  return function () {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ── 캔버스 크기 ───────────────────────────────────────────────────
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const size = Math.min(wrap.clientWidth - 16, wrap.clientHeight - 16, 480);
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  if (renderer) { renderer.resize(); if (grid) renderer.drawGrid(grid); }
+}
+
+// ── HUD ───────────────────────────────────────────────────────────
+// 누적 재화(지갑 ⭐) 칩 — 모드 무관 항상 갱신. 값이 늘면 bump 연출.
+let _walletShown = -1;
+function updateWalletChip() {
+  const el = document.getElementById('wallet-balance');
+  if (!el) return;
+  const v = SG.Daily.getWalletStars(localStorage);
+  if (v !== _walletShown) {
+    el.textContent = v;
+    if (v > _walletShown && _walletShown >= 0) {
+      const chip = document.getElementById('wallet-chip');
+      if (chip) { chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }
+    }
+    _walletShown = v;
+  }
+}
+
+// 리워드 광고 버튼 상태 갱신 — 쿼터 소진 시 버튼 숨김
+// ids: 광고 버튼 element id 목록
+function syncAdButtons(ids) {
+  const left = SG.Daily.rewardedAdsLeft(localStorage);
+  const exhausted = left <= 0;
+  ids.forEach(function (id) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (exhausted) {
+      // 쿼터 소진 → 버튼 숨김 (비활성 버튼이 떠 있으면 혼란스러움)
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.title = left + ' ad' + (left === 1 ? '' : 's') + ' remaining today';
+    }
+  });
+}
+
+// 두 스탯 슬롯에 (라벨, 값) 설정. 모드별 핵심 지표 1~2개만.
+function setStats(label1, value1, label2, value2) {
+  document.getElementById('stat-label-1').textContent = label1;
+  document.getElementById('stat-score').textContent = value1;
+  const item2 = document.getElementById('stat-item-2');
+  if (label2 == null) {
+    item2.style.display = 'none';
+  } else {
+    item2.style.display = '';
+    document.getElementById('stat-label-2').textContent = label2;
+    document.getElementById('stat-best').textContent = value2;
+  }
+}
+
+function updateStats(chain) {
+  // 본게임: SCORE / BEST (CHAIN 제거 — 체인배수는 게임 제목 옆 보조 표기로)
+  setStats('SCORE', score.toLocaleString(), 'BEST', bestScore.toLocaleString());
+  const chainTag = chain && chain > 1 ? '  ×' + chain : '';
+  document.getElementById('game-title').textContent = 'EARTH & BEYOND · GOAL ' + MAIN_GOAL_SIZE + chainTag;
+  updateWalletChip();
+  updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
+}
+
+// 방향 버튼 누름 피드백: 입력원(키/클릭/스와이프) 무관하게 밝게 잠깐 점등.
+function flashDirBtn(dir) {
+  const btn = document.querySelector('.dirbtn[data-dir="' + dir + '"]');
+  if (!btn) return;
+  btn.classList.add('active');
+  setTimeout(function () { btn.classList.remove('active'); }, 110);
+}
+
+// 보드 프레임의 진행 방향 모서리를 빛나게 → 어느 방향으로 밀렸는지 표시.
+function flashBoardEdge(dir) {
+  try { if (renderer && renderer.flashEdge) renderer.flashEdge(dir); } catch (_) {}
+}
+
+// 인라인 토스트 — 화면 흐름을 끊지 않는 부드러운 안내 (콜렉션 첫 블록 등)
+let _toastTimer = null;
+function showGameToast(msg, ms) {
+  const el = document.getElementById('game-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function () { el.classList.remove('show'); }, ms || 2400);
+}
+
+// ── 한 번의 밀기 ──────────────────────────────────────────────────
+function doMove(dir) {
+  flashDirBtn(dir);
+  if (!gameRunning || isAnimating || isPlatformPaused) return;
+  flashBoardEdge(dir);
+  const opts = dailyMode ? dailyOpts : mainOpts;
+  const before = ND.cloneGrid(grid);
+  const result = ND.applyMove(grid, dir, rng, opts);
+  if (!result.moved) return;
+  devCheatPatchSpawn(result);
+  grid = result.grid;
+  if (dailyMode) {
+    dailyRunStars += result.starsGained || 0;
+    dailyRunScore += result.scoreGained || 0;  // 리더보드 동점 분리용
+    // Fly earned stars into the HUD counter (ticks dailyStarsShown as they land).
+    // No completed targets → just sync the displayed count immediately.
+    if (result.completed && result.completed.length) flyStarsToHud(result.completed);
+    else { dailyStarsShown = dailyRunStars; collectionMode ? updateCollectionHud() : updateDailyHud(); }
+  } else {
+    score += result.scoreGained;
+    if (result.chain > maxChain) maxChain = result.chain;
+    updateStats(result.chain);
+  }
+  try {
+    if (result.merges.length && SG.Sound && SG.Sound.playMerge) {
+      const notes = result.merges.map(function (m) { const t = result.grid[m.at[0]] && result.grid[m.at[0]][m.at[1]]; return { blockType: t ? t.color : 0, size: m.size }; });
+      SG.Sound.playMerge(notes);
+    }
+  } catch (_) {}
+  isAnimating = true;
+  renderer.animate(before, result, function () {
+    isAnimating = false;
+    if (dailyMode) {
+      if (endlessMode) {
+        endlessScore += result.merges.reduce(function (acc, m) { return acc + m.size; }, 0);
+        updateEndlessHud();
+        if (result.collapse) { endlessCollapse(result.collapse); return; }
+        if (ND.checkGameOver(grid, 'sizeOnly')) { endlessGameOver(); }
+        return;
+      }
+      if (collectionMode) {
+        const mergedSizes = result.merges.map(function (m) { return m.size; });
+        // 머지가 있으면 항상 collectionCheckMerges로 (gameOver 판단도 내부에서)
+        if (mergedSizes.length) { collectionCheckMerges(mergedSizes); return; }
+        if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
+        return;
+      }
+      // 현재 보드 최고 타일로 배경 갱신
+      if (result.merges.length) updateDailyBoardBg();
+      if (result.collapse) { dailyCollapse(result.collapse); return; }
+      if (ND.checkGameOver(grid, 'sizeOnly')) { dailyGameOver(); }
+      return;
+    }
+    // 본게임 클리어 = 아무 색이든 1024 블록 1개 도달.
+    updateStats(result.chain);
+    if (ND.maxSize(grid) >= MAIN_GOAL_SIZE) { mainGameClear(); return; }
+    if (ND.checkGameOver(grid, 'colorAndSize')) endGame();
+  });
+}
+
+// 본게임 클리어: 1024 도달 → 클리어 연출 후 점수 정산.
+function mainGameClear() {
+  try { showGameToast('🏆 ' + MAIN_GOAL_SIZE + ' REACHED — CLEAR!', 2600); } catch (_) {}
+  try {
+    if (renderer) {
+      const gold = { fill: '#ffd23f', glow: '#ffe98a' };
+      const cx = renderer.canvas.clientWidth / 2, cy = renderer.canvas.clientHeight / 2;
+      if (renderer.particles) renderer.particles.emit(cx, cy, gold, 60);
+      renderer.flash = { life: 500, maxLife: 500, color: gold.glow, peak: 0.5 };
+    }
+  } catch (_) {}
+  endGame();   // 점수·베스트 정산 + 리더보드 제출 + GAME OVER 패널
+}
+
+// ── 게임 루프 ─────────────────────────────────────────────────────
+let _rafId = null;
+function loop(ts) {
+  if (renderer) renderer.tick(ts || 0);
+  _rafId = requestAnimationFrame(loop);
+}
+
+// ── 시작 / 재시작 / 메뉴 ──────────────────────────────────────────
+// START 화면 표시 + 키보드 네비게이션 활성화.
+// ── 온보딩 (첫 접속) ─────────────────────────────────────────────
+const ONBOARD_KEY = 'earthbeyond_onboarded';
+function isFirstVisit() {
+  try { return !localStorage.getItem(ONBOARD_KEY); } catch (_) { return false; }
+}
+function markOnboarded() {
+  try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (_) {}
+}
+
+function showStart() {
+  document.getElementById('ol-start').classList.remove('hidden');
+  gameRunning = false;
+  endlessMode = false;
+  collectionMode = false;
+  dailyMode = false;
+  updateWalletChip();
+  updateGalleryDot();
+  _refreshMenuDots();
+  openModalNav('ol-start');
+}
+
+// 메인 메뉴 버튼 상태 전체 갱신 (레드닷 + 서브텍스트 + Endless 잠김)
+function _refreshMenuDots() {
+  // ── ENDLESS 버튼 ───────────────────────────────────────────────
+  const endlessUnlocked = isEndlessUnlocked();
+  const endlessBtn = document.getElementById('btn-endless-menu');
+  const endlessLabel = document.getElementById('endless-menu-label');
+  const endlessSub   = document.getElementById('endless-menu-sub');
+  var _ko = (SG.i18n && SG.i18n.getLang() === 'ko');
+  if (endlessBtn) {
+    endlessBtn.style.display = '';   // 항상 표시
+    if (endlessUnlocked) {
+      if (endlessLabel) endlessLabel.textContent = 'ENDLESS ∞';
+      if (endlessSub) {
+        var best = 0;
+        try { best = parseInt(localStorage.getItem('earthbeyond_endless_best') || '0', 10) || 0; } catch (_) {}
+        endlessSub.textContent = best > 0 ? 'BEST  ' + best : '';
+      }
+      endlessBtn.style.opacity = '';
+    } else {
+      if (endlessLabel) endlessLabel.textContent = '🔒  ENDLESS ∞';
+      var meta0 = SG.Collection.loadMeta(localStorage);
+      var total0 = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
+      var done0  = (meta0.completedThemes && meta0.completedThemes.length) || 0;
+      if (endlessSub) endlessSub.textContent = _ko
+        ? ('CHRONICLES  ' + done0 + ' / ' + total0 + '  완료')
+        : ('CHRONICLES  ' + done0 + ' / ' + total0 + '  COMPLETE');
+      endlessBtn.style.opacity = '0.55';
+    }
+  }
+
+  // ── DAILY CHALLENGE 버튼 ───────────────────────────────────────
+  var ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
+  var dailyLabel = document.getElementById('daily-menu-label');
+  var dailySub   = document.getElementById('daily-menu-sub');
+  if (dailyLabel) dailyLabel.textContent = _t('ui.btn.dailyChallenge');
+  if (dailySub) {
+    var played = SG.Daily.retriesLeft(ds);  // retriesLeft = 플레이한 횟수
+    dailySub.textContent = played > 0
+      ? (_ko ? (played + '판 플레이함') : (played + ' played today'))
+      : (_ko ? '오늘 도전 가능' : 'Play today\'s challenge');
+  }
+  var dailyDot = document.getElementById('menu-daily-dot');
+  var hasUnclaimed = SG.Daily.claimableBest(ds) > 0;
+  if (dailyDot) dailyDot.classList.toggle('hidden', !hasUnclaimed);
+
+  // ── GALLERY 레드닷 ─────────────────────────────────────────────
+  var hasNew = false;
+  var meta1 = SG.Collection.loadMeta(localStorage);
+  (SG.CollectionThemes || []).forEach(function (t) {
+    if (meta1.unlockedThemes.indexOf(t.id) !== -1) {
+      if (SG.Collection.hasNew(t.id, localStorage, t)) hasNew = true;
+    }
+  });
+  var galDot = document.getElementById('menu-gallery-dot');
+  if (galDot) galDot.classList.toggle('hidden', !hasNew);
+}
+
+// 메인 메뉴에서 Endless 버튼 클릭
+function menuEndlessClick() {
+  if (isEndlessUnlocked()) {
+    openGalleryForEndless();
+  } else {
+    var ko = SG.i18n && SG.i18n.getLang() === 'ko';
+    var msg = ko
+      ? 'Chronicles 챕터를 1개 이상 완료하면 열립니다'
+      : 'Complete at least one Chronicles chapter to unlock Endless';
+    showGameToast(msg, 2400);
+  }
+}
+
+// 메인 메뉴 DAILY CHALLENGE 버튼 → Daily 상태 팝업
+function openDailyMenu() {
+  const date = utcDateStr();
+  const ds = SG.Daily.loadDaily(date, localStorage);
+  const isDev = localStorage.getItem('sg_dev') === '1' ||
+                new URLSearchParams(location.search).has('dev');
+  const t = SG.ND.dailyType(utcDayOfWeek());
+
+  document.getElementById('daily-menu-type').textContent = t.label;
+
+  const panelPlay = document.getElementById('daily-menu-panel-play');
+  const panelDone = document.getElementById('daily-menu-panel-done');
+
+  // 리트라이 무제한 — 항상 play 패널
+  panelPlay.style.display = '';
+  panelDone.style.display = 'none';
+  const played = SG.Daily.retriesLeft(ds);  // 이미 플레이한 횟수
+  const retriesEl = document.getElementById('daily-menu-retries');
+  var _ko3 = SG.i18n.getLang() === 'ko';
+  if (retriesEl) retriesEl.textContent = played > 0
+    ? (_ko3 ? (played + '판 플레이함') : (played + ' played today'))
+    : '';
+  const statusEl = document.getElementById('daily-menu-status');
+  var _ko2 = SG.i18n.getLang() === 'ko';
+  if (ds.bestRun > 0) {
+    statusEl.textContent = _ko2
+      ? ('오늘 최고 ⭐' + ds.bestRun + '  ·  더 높은 점수에 도전하세요!')
+      : ('Best today ⭐' + ds.bestRun + '  ·  Go for a higher score!');
+  } else {
+    statusEl.textContent = _ko2
+      ? '아직 플레이하지 않았습니다. 도전해보세요!'
+      : "You haven't played yet. Give it a try!";
+  }
+
+  document.getElementById('ol-start').classList.add('hidden');
+  document.getElementById('ol-daily-menu').classList.remove('hidden');
+  openModalNav('ol-daily-menu');
+}
+
+var _dailyMenuTimer = null;
+
+function closeDailyMenu() {
+  if (_dailyMenuTimer) { clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; }
+  document.getElementById('ol-daily-menu').classList.add('hidden');
+  closeModalNav();
+  document.getElementById('ol-start').classList.remove('hidden');
+  openModalNav('ol-start');
+}
+
+function openDailyMenuPlay() {
+  if (_dailyMenuTimer) { clearInterval(_dailyMenuTimer); _dailyMenuTimer = null; }
+  document.getElementById('ol-daily-menu').classList.add('hidden');
+  closeModalNav();
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, localStorage);
+  document.getElementById('ol-start').classList.add('hidden');
+
+  const seen = localStorage.getItem('earthbeyond_tutorial_seen');
+  if (!seen) {
+    _dtutOnDone = function () { startDailyRun(); };
+    _showTutorial('daily');
+  } else {
+    startDailyRun();
+  }
+}
+
+// ── 공용 튜토리얼 ─────────────────────────────────────────────────
+var _dtutSlide = 0;
+var _dtutOnDone = null;
+var _dtutTotal  = 3;
+var _dtutMode   = 'daily';  // 'daily' | 'chronicles'
+
+var _DTUT_CONTENT = {
+  daily: {
+    en: {
+      s0: { icon: '🌍', title: 'DAILY CHALLENGE',
+            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.' },
+      s2: { icon: '🏆', title: 'COMPETE DAILY',
+            desc: 'Your <strong>best run</strong> is posted to today\'s leaderboard.<br>You get <strong>3 attempts</strong> per day — use them wisely!' },
+    },
+    ko: {
+      s0: { icon: '🌍', title: '데일리 챌린지',
+            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.' },
+      s2: { icon: '🏆', title: '리더보드 경쟁',
+            desc: '오늘의 <strong>최고 기록</strong>이 리더보드에 등록돼요.<br>하루에 <strong>3번</strong> 도전할 수 있으니 신중하게!' },
+    },
+  },
+  chronicles: {
+    en: {
+      s0: { icon: '📖', title: 'CHRONICLES',
+            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.' },
+      s2: { icon: '🎨', title: 'UNLOCK SCENES',
+            desc: 'Merge tiles to unlock <strong>11 scenes</strong> per Era.<br>Complete all 3 Eras — from Primordial Earth to the edge of the Universe!' },
+    },
+    ko: {
+      s0: { icon: '📖', title: '크로니클',
+            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.' },
+      s2: { icon: '🎨', title: '장면 수집',
+            desc: '타일을 합쳐 시대별 <strong>11개 장면</strong>을 해금해요.<br>원시지구부터 우주의 끝까지, 3개 시대를 완성하세요!' },
+    },
+  },
+};
+
+function _showTutorial(mode) {
+  _dtutMode  = mode || 'daily';
+  _dtutSlide = 0;
+  var lang = (SG.i18n && SG.i18n.getLang() === 'ko') ? 'ko' : 'en';
+  var c = _DTUT_CONTENT[_dtutMode][lang];
+  document.getElementById('dtut-icon-0').textContent  = c.s0.icon;
+  document.getElementById('dtut-title-0').textContent = c.s0.title;
+  document.getElementById('dtut-desc-0').innerHTML    = c.s0.desc;
+  document.getElementById('dtut-icon-2').textContent  = c.s2.icon;
+  document.getElementById('dtut-title-2').textContent = c.s2.title;
+  document.getElementById('dtut-desc-2').innerHTML    = c.s2.desc;
+  // Slide 2 (별 획득) 한/영 전환
+  var s1title = document.querySelector('#dtut-slide-1 .dtut-title');
+  var s1desc  = document.querySelector('#dtut-slide-1 .dtut-desc');
+  if (lang === 'ko') {
+    if (s1title) s1title.textContent = '별 획득하기';
+    if (s1desc)  s1desc.innerHTML = '타일 목표에 도달하면 별을 얻어요:<br><strong>64→★ · 128→★★ · 256→★★★<br>512→★★★★★</strong><br>한 판에 여러 번 달성 가능!';
+  } else {
+    if (s1title) s1title.textContent = 'EARN STARS';
+    if (s1desc)  s1desc.innerHTML = 'Hit tile milestones to earn stars:<br><strong>64→★ · 128→★★ · 256→★★★<br>512→★★★★★</strong><br>Each milestone can trigger multiple times!';
+  }
+  var skipBtn = document.getElementById('dtut-btn-skip') || document.querySelector('.dtut-btn-skip');
+  if (skipBtn) skipBtn.textContent = lang === 'ko' ? '건너뛰기' : 'SKIP';
+  _dtutRenderSlide();
+  document.getElementById('ol-daily-tutorial').classList.remove('hidden');
+}
+
+function _dtutRenderSlide() {
+  for (var i = 0; i < _dtutTotal; i++) {
+    document.getElementById('dtut-slide-' + i).classList.toggle('active', i === _dtutSlide);
+    document.getElementById('dtut-dot-' + i).classList.toggle('active', i === _dtutSlide);
+  }
+  var isLast = _dtutSlide === _dtutTotal - 1;
+  var _isKo = SG.i18n && SG.i18n.getLang() === 'ko';
+  document.getElementById('dtut-btn-next').textContent =
+    isLast ? (_isKo ? '시작하기!' : "LET'S GO!") : (_isKo ? '다음 ›' : 'NEXT ›');
+}
+
+function nextDailyTutorial() {
+  if (_dtutSlide < _dtutTotal - 1) {
+    _dtutSlide++;
+    _dtutRenderSlide();
+  } else {
+    closeDailyTutorial();
+  }
+}
+
+function closeDailyTutorial() {
+  localStorage.setItem('earthbeyond_tutorial_seen', '1');
+  document.getElementById('ol-daily-tutorial').classList.add('hidden');
+  if (typeof _dtutOnDone === 'function') { var fn = _dtutOnDone; _dtutOnDone = null; fn(); }
+}
+
+function reopenTutorial() {
+  closeSettings();
+  var mode = collectionMode ? 'chronicles' : 'daily';
+  _dtutOnDone = null;  // 다시 보기 — 게임 재시작 없음
+  _showTutorial(mode);
+}
+
+// 터치 스와이프로 슬라이드 이동
+(function () {
+  var el = document.getElementById('ol-daily-tutorial');
+  var _tx = 0;
+  el.addEventListener('touchstart', function (e) { _tx = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].clientX - _tx;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) nextDailyTutorial();
+  }, { passive: true });
+})();
+
+// 메인 메뉴 GALLERY 버튼 → 갤러리 열기
+function openGalleryFromMenu() {
+  openGallery();
+}
+
+// 온보딩: boot 시 1회 호출. 첫 접속이면 Daily를 튜토리얼로 바로 시작.
+function _checkOnboarding() {
+  if (!isFirstVisit()) return;
+  markOnboarded();
+  dailyState = SG.Daily.loadDaily(utcDateStr(), window.localStorage);
+  _pendingOnboard = true;
+  startDailyRun();
+}
+
+let _pendingOnboard = false;   // Daily 게임오버 시 Chronicles CTA 표시 여부
+
+// Daily 게임오버 패널 상태 갱신 — 3개 패널 중 1개만 표시
+// [C] 온보딩 > [A] 리트라이 가능 > [B] 리트라이 소진
+function _updateDailyOverPanel(claimable) {
+  const show = function (id) {
+    ['daily-panel-retry', 'daily-panel-done', 'daily-panel-onboard'].forEach(function (pid) {
+      document.getElementById(pid).style.display = (pid === id) ? '' : 'none';
+    });
+  };
+  if (_pendingOnboard) {
+    show('daily-panel-onboard');
+    const el = document.getElementById('daily-claim-onboard-amt');
+    if (el) el.textContent = claimable;
+  } else {
+    // 리트라이 무제한 — 항상 retry 패널 표시
+    show('daily-panel-retry');
+    const el = document.getElementById('daily-claim-now-amt');
+    if (el) el.textContent = claimable;
+    const retriesEl = document.getElementById('daily-retries');
+    // 이미 플레이한 횟수 표시 (retriesLeft = retriesUsed로 재정의됨)
+    if (retriesEl) retriesEl.textContent = SG.Daily.retriesLeft(dailyState) + ' played';
+  }
+}
+
+// "START YOUR JOURNEY →" 클릭: 스타 정산 + Chronicles 진입
+function onboardToChronicles() {
+  _pendingOnboard = false;
+  if (dailyState) SG.Daily.claimBestToWallet(dailyState, window.localStorage);
+  pgSyncStorage();
+  closeModalNav();
+  document.getElementById('ol-daily-over').classList.add('hidden');
+  dailyMode = false;
+  renderer.setMode('main');
+  openChroniclesEntry();
+}
+
+// ── 본게임(START Dev) 옵션 — 8x8 · colorAndSize · 2색상 50:50 · graded ──
+// 클리어 = 두 색이 "각각" 1024 도달. 같은 색끼리만 머지되므로 2색 병렬 육성 = 난이도↑.
+// 본게임(START Dev): 8x8 · colorAndSize · 2색 · graded.
+// 클리어 = "아무 색이든" 1024 블록 1개 도달. 2색은 '같은 색만 머지' 제약으로 난이도↑ 연출.
+// (시뮬: "두 색 각각 달성"은 그리디 0% — 구조적 불가 → 단일 1024로 확정)
+const MAIN_COLORS = 2;
+const MAIN_GOAL_SIZE = 1024;
+// 약한 graded: 큰 수 스폰은 색 정렬 제약과 겹쳐 오히려 난이도↑(시뮬 검증) → 약하게만.
+const MAIN_GRADED_TIERS = [
+  { maxAtMost: 8,        dist: [[1, 1.0]] },
+  { maxAtMost: 64,       dist: [[1, 0.85], [2, 0.12], [4, 0.03]] },
+  { maxAtMost: Infinity, dist: [[1, 0.75], [2, 0.18], [4, 0.07]] },
+];
+function buildMainOpts() {
+  return {
+    n: 8, mergeRule: 'colorAndSize', colors: MAIN_COLORS,
+    bias: 0.7, clampThreshold: 1,   // 약한 편향 — 한 색을 끝까지 키울 수 있게
+    gradedTiers: MAIN_GRADED_TIERS,
+    noColorWin: true,               // 단색 win 비활성 — spawn 억제 방지
+  };
+}
+// 본게임 시작 보드: 빈 8x8에 graded 규칙으로 시작 블록 배치.
+function buildMainBoard(rng, opts) {
+  const g = SG.ND.emptyGrid(8);
+  const START_BLOCKS = 6;
+  for (let i = 0; i < START_BLOCKS; i++) {
+    const s = SG.ND.spawnTile(g, rng, opts);
+    if (s) g[s.at[0]][s.at[1]] = { color: s.color, size: s.size };
+  }
+  return g;
+}
+
+// 스토리 모드 — DEV 전용 stub. 실제 구현 전까지 안내 토스트만 표시.
+function startStory() {
+  showGameToast('STORY MODE — 준비 중 (DEV)', 2400);
+}
+
+async function startGame() {
+  dailyMode = false;
+  collectionMode = false;
+
+  if (renderer) { renderer.setCollectionTheme(null); renderer.setMode('main'); }
+  closeModalNav();
+  document.getElementById('ol-start').classList.add('hidden');
+  score = 0; level = 0; maxChain = 0;
+  rng = makeRng();
+  mainOpts = buildMainOpts();
+  grid = buildMainBoard(rng, mainOpts);
+  devCheatPatchInitialGrid(grid);
+  gameRunning = true;
+  updateStats(0);
+  if (renderer) renderer.drawGrid(grid);
+  try { SG.CG.gameplayStart(); } catch (_) {}
+}
+
+// ── Daily mode lifecycle ──────────────────────────────────────────
+// Chronicles 진입점 — 메인 메뉴 CHRONICLES 버튼
+// 갤러리를 기본 화면으로 열고, 갤러리에서 PLAY 버튼으로 게임 시작
+function openChroniclesEntry() {
+  document.getElementById('ol-start').classList.add('hidden');
+  closeModalNav();
+  openGallery();
+}
+
+// 갤러리 PLAY CHAPTER 버튼 → activeTheme으로 startCollection
+function startEndlessFromGallery() {
+  // 현재 활성 탭에서 테마 ID 추출
+  const activeTab = document.querySelector('.gallery-tab.active');
+  let skinTheme = null;
+  if (activeTab) {
+    skinTheme = SG.CollectionThemes.find(function (t) {
+      return activeTab.textContent.indexOf(t.label) === 0;
+    }) || null;
+  }
+  document.getElementById('ol-gallery').classList.add('hidden');
+  closeModalNav();
+  _galleryMode = 'collection';
+  startEndless(skinTheme);
+}
+
+function startCollectionFromGallery() {
+  const seen = localStorage.getItem('earthbeyond_tutorial_seen');
+  if (!seen) {
+    // 갤러리 닫기 + 튜토리얼 → startCollection
+    document.getElementById('ol-gallery').classList.add('hidden');
+    closeModalNav();
+    _dtutOnDone = function () { _doStartCollectionFromGallery(); };
+    _showTutorial('chronicles');
+    return;
+  }
+  _doStartCollectionFromGallery();
+}
+
+function _doStartCollectionFromGallery() {
+  const activeMeta = SG.Collection.loadMeta(localStorage);
+  const activeTab = document.querySelector('.gallery-tab.active');
+  if (activeTab) {
+    const tabTheme = SG.CollectionThemes.find(function (t) {
+      return activeTab.textContent.indexOf(t.label) === 0;
+    });
+    // 미완료 테마 탭에서 PLAY를 눌렀을 때만 activeThemeId를 변경.
+    // 이미 completed 된 테마를 탭에서 선택해도 진행 중인 테마를 유지.
+    if (tabTheme && activeMeta.unlockedThemes.indexOf(tabTheme.id) !== -1 &&
+        activeMeta.completedThemes.indexOf(tabTheme.id) === -1) {
+      activeMeta.activeThemeId = tabTheme.id;
+      SG.Collection.saveMeta(localStorage, activeMeta);
+    }
+  }
+  document.getElementById('ol-gallery').classList.add('hidden');
+  closeModalNav();
+  startCollection();
+}
+
+// Settings에서 Daily EVENT 진입
+function openDailyFromSettings() {
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  // ol-start를 먼저 숨겨서 closeSettings의 nav 복원이 발동하지 않도록
+  document.getElementById('ol-start').classList.add('hidden');
+  closeSettings();
+  startDailyRun();
+}
+
+function openDaily() {
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  startDailyRun();
+}
+
+// Shared 4x4 daily/practice move options for the given weekday type.
+// Tiered targets tuned for a 4x4 board. 1024/2048 are unreachable here
+// (sim: 0% over 1400 games), so every run scored zero. All tiers grant stars
+// on each qualifying merge (remove:false → re-earnable score) and the tile
+// STAYS on the board, so the player can keep building past 512 (toward 1024+)
+// instead of it vanishing. Sim: avg ~8★, median 6★/run.
+function buildDailyOpts(typeCfg) {
+  return {
+    n: 4, mergeRule: 'sizeOnly', daily: true,
+    spawnFourProb: typeCfg.spawnFourProb,
+    collapseSize: 1024,   // 1024 달성 → collapse 이벤트 → 보드 리셋 후 계속 플레이
+    targets: [
+      { size: 64,  stars: 1, remove: false },
+      { size: 128, stars: 2, remove: false },
+      { size: 256, stars: 3, remove: false },
+      { size: 512, stars: 5, remove: false },
+    ],
+  };
+}
+
+let _devDailyAllThemes = false;  // dev Daily: 모든 테마 랜덤 소개
+
+// Daily 보드 배경 = 현재 grid의 최고 타일 size에 해당하는 step 배경으로 갱신.
+// 머지로 새 최고 타일이 나올 때마다 호출.
+function updateDailyBoardBg() {
+  if (!dailyTheme || !renderer || !grid) { if (renderer) renderer.clearStepBg(); return; }
+  const sizes = SG.Collection.getThemeSizes(dailyTheme);
+  // 현재 보드의 최대 size
+  let maxSz = 0;
+  for (let r = 0; r < grid.length; r++)
+    for (let c = 0; c < grid[r].length; c++)
+      if (grid[r][c] && grid[r][c].size > maxSz) maxSz = grid[r][c].size;
+  const step = sizes.indexOf(maxSz) + 1;   // 0→없음, 1-based
+  const bgPath = step > 0
+    ? ((dailyTheme.stepBgs && dailyTheme.stepBgs[step - 1]) ||
+       (dailyTheme.svgPaths && dailyTheme.svgPaths[step - 1]) || null)
+    : null;
+  if (bgPath) renderer.setStepBg(bgPath);
+  else renderer.clearStepBg();
+}
+
+function startDailyRun() {
+  const date = utcDateStr();
+  const dow = utcDayOfWeek();
+  dailyTypeCfg = SG.ND.dailyType(dow);
+  dailyOpts = buildDailyOpts(dailyTypeCfg);
+  // Dev Daily는 매번 새 랜덤 보드, 일반 Daily는 날짜 시드
+  rng = _devDailyAllThemes ? makeRng() : dailySeededRng(date);
+  grid = SG.Daily.dailyBoard(date, dow, rng);
+  // 판 시작 시 retry 1회 소모 (dev 모드 제외)
+  const _isDev = localStorage.getItem('sg_dev') === '1' ||
+                 new URLSearchParams(location.search).has('dev');
+  if (!_isDev && !_devDailyAllThemes) {
+    SG.Daily.useRetry(dailyState, window.localStorage);
+  }
+
+  dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0; dailyRunScore = 0;
+  document.getElementById('ol-start').classList.add('hidden');
+  document.getElementById('ol-daily-over').classList.add('hidden');
+  closeModalNav();
+
+  // 테마 선택: dev Daily는 전체 테마 랜덤, 일반 Daily는 해금 테마 랜덤
+  const _allThemes = SG.CollectionThemes || [];
+  dailyTheme = null;
+  if (_devDailyAllThemes && _allThemes.length > 0) {
+    dailyTheme = _allThemes[Math.floor(makeRng()() * _allThemes.length)];
+  } else {
+    const _collMeta = SG.Collection.loadMeta(window.localStorage);
+    const _unlocked = _allThemes.filter(function (t) {
+      return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
+    });
+    const _themeRng = dailySeededRng(date + ':theme');
+    if (_unlocked.length > 0) dailyTheme = _unlocked[Math.floor(_themeRng() * _unlocked.length)];
+  }
+
+  // Daily: Chronicles 진행 UI 숨김, 테마 적용
+  renderer.setCollectionTheme(dailyTheme || null);
+  document.getElementById('chronicles-progress').classList.remove('visible');
+  document.getElementById('chronicles-narration').classList.remove('visible');
+  renderer.setMode('daily');
+  // 테마가 있으면 이미지 타일 렌더링 — colorBySize(숫자) 모드 해제
+  if (dailyTheme) renderer.colorBySize = false;
+  // 보드 배경 = 현재 보드의 최고 타일 step 배경으로 초기화
+  updateDailyBoardBg();
+  renderer.drawGrid(grid);
+  updateDailyHud();
+  applyBgmForMode('daily');
+  try { SG.CG.gameplayStart(); } catch (_) {}
+}
+
+// Practice: daily mechanics (4x4, sizeOnly, star targets) but a fresh RANDOM
+// board each run and NO ranking/persistence. Free to start, unlimited AGAIN.
+// collapseSize:1024 is Practice-only — 1024 merge resets the board and continues.
+
+// ── Endless mode state ────────────────────────────────────────────
+let endlessMode = false;
+let endlessScore = 0;       // 이번 판 누적 점수 (머지 크기 합산)
+let endlessStarsDoubled = false;
+const ENDLESS_STARS_PER = 100;  // 100점당 ⭐1
+
+function endlessScoreToStars(score) { return Math.floor(score / ENDLESS_STARS_PER); }
+const ENDLESS_BEST_KEY = 'earthbeyond_endless_best';
+
+// ── Collection mode state ─────────────────────────────────────────
+let collectionMode = false;
+var activeThemeId = 'primordial-earth';
+let collectionCollapseCount = 0;
+let collectionContinueCount = 0;   // 이번 콜렉션 세션의 CONTINUE 사용 횟수 (비용 곡선용)
+const CONTINUE_COSTS = [5, 10, 20, 40];   // 회수당 스타 비용 (이후는 마지막 값 유지)
+let lastInterstitialAt = 0;
+const INTERSTITIAL_COOLDOWN_MS = 60000;
+
+// 리워드 광고 공통 래퍼 — 일일 쿼터 소비 후 실제 광고 요청.
+// 쿼터 소진 시 토스트 표시 후 { granted: false } 반환 (실제 광고 미노출).
+// 광고 실패 시 쿼터 자동 반환.
+async function showInterstitial() {
+  try { SG.CG.hideBanner(); } catch (_) {}
+  try { await TossBridge.requestInterstitialAd(); } catch (_) {}
+  try { SG.CG.showBanner(); } catch (_) {}
+  // 광고 완료 후 플랫폼이 pauseStateChanged(false)를 보내지 않는 경우 대비
+  isPlatformPaused = false;
+}
+
+async function requestRewardedAdWithQuota(placement) {
+  if (!SG.Daily.useRewardedAd(localStorage)) {
+    showGameToast('Daily ad limit reached (' + SG.Daily.REWARDED_DAILY_LIMIT + '/' + SG.Daily.REWARDED_DAILY_LIMIT + '). Come back tomorrow!', 2500);
+    return { granted: false };
+  }
+  try {
+    try { SG.CG.hideBanner(); } catch (_) {}
+    const res = await TossBridge.requestRewardedAd(placement);
+    try { SG.CG.showBanner(); } catch (_) {}
+    return res || { granted: true };
+  } catch (_) {
+    try { SG.CG.showBanner(); } catch (_e) {}
+    SG.Daily.refundRewardedAd(localStorage);
+    return { granted: false };
+  } finally {
+    // 광고 완료 후 플랫폼이 pauseStateChanged(false)를 보내지 않는 경우 대비
+    isPlatformPaused = false;
+  }
+}
+
+
+function updateDailyHud() {
+  const label = dailyTypeCfg ? dailyTypeCfg.label : '';
+  document.getElementById('game-title').textContent = 'DAILY · ' + label;
+  const _played = dailyState ? SG.Daily.retriesLeft(dailyState) : 0;
+  setStats('THIS RUN', '⭐' + dailyStarsShown,
+           'PLAYED', '#' + _played);
+  updateWalletChip();
+  updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
+}
+
+// Fly each completed target's stars from its board cell into the ⭐ HUD counter.
+// dailyStarsShown ticks up as stars land (dailyRunStars already holds the truth).
+// Falls back to an instant count if StarFly/renderer geometry is unavailable.
+function flyStarsToHud(completed) {
+  // daily: THIS RUN(첫 칸=stat-score). collection: THIS RUN이 둘째 칸(stat-best).
+  const hud = document.getElementById(collectionMode ? 'stat-best' : 'stat-score');
+  const canFly = hud && SG.StarFly && renderer && typeof renderer.cellXY === 'function';
+  if (!canFly) { dailyStarsShown = dailyRunStars; updateDailyHud(); return; }
+  const rect = canvas.getBoundingClientRect();   // canvas viewport box (CSS px)
+  // cellXY returns CSS px within the canvas; rect.left/top map to viewport.
+  const scaleX = rect.width / (canvas.clientWidth || rect.width || 1);
+  for (const c of completed) {
+    const [cssX, cssY] = renderer.cellXY(c.at[0], c.at[1]);
+    SG.StarFly.burst({
+      from: { x: rect.left + cssX * scaleX, y: rect.top + cssY * scaleX },
+      to: hud,
+      count: c.stars,
+      // 표시값은 실제값(dailyRunStars)을 넘지 않도록 clamp — fly 중첩 시 6→4 감소 버그 방지.
+      onArrive: function () {
+        if (dailyStarsShown < dailyRunStars) dailyStarsShown++;
+        collectionMode ? updateCollectionHud() : updateDailyHud();
+      },
+    });
+  }
+}
+
+async function dailyGameOver() {
+  gameRunning = false;
+  try { SG.CG.gameplayStop(); } catch (_) {}
+  SG.Daily.addStars(dailyState, dailyRunStars, window.localStorage);
+  // best 갱신만 (지갑 적립은 세션 종료 CLAIM 시점에 1회). bestRun = ⭐별 수 (CLAIM 계산 기준).
+  SG.Daily.setBestRun(dailyState, dailyRunStars, window.localStorage);
+  pgSyncStorage();
+  // 리더보드 점수 = 별 × 10000 + 게임점수 (별이 주 기준, 동점 시 게임점수로 구분).
+  // CLAIM 이후에도 더 높은 점수 달성 시 리더보드 갱신 가능.
+  const _lbScore = (dailyRunStars * 10000) + dailyRunScore;
+  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(_lbScore); } catch (_) {}
+  try { if (SG.FB.isConnected()) await SG.FB.submitScore(_lbScore, { mode: 'daily' }); } catch (_) {}
+
+  document.getElementById('daily-run-stars').textContent = '⭐' + dailyRunStars;
+  document.getElementById('daily-total-stars').textContent = '⭐' + (dailyState.bestRun || 0);
+
+  const claimable = SG.Daily.claimableBest(dailyState);
+  renderDailyLeaderboard();
+  updateWalletChip();
+  _updateDailyOverPanel(claimable);
+  syncAdButtons(['btn-daily-retry']);
+  document.getElementById('ol-daily-over').classList.remove('hidden');
+  openModalNav('ol-daily-over');
+}
+
+// Daily 세션 종료 = 오늘 best 미정산분을 지갑에 1회 정산 후 메뉴로.
+// (RETRY로 best를 올린 만큼만 추가 수령 — 광고 보고 도전한 가치가 보장됨)
+function claimDailyAndExit() {
+  const earned = SG.Daily.claimBestToWallet(dailyState, window.localStorage);
+  pgSyncStorage();
+  updateWalletChip();
+  if (earned > 0) showGameToast('⭐ +' + earned + ' CLAIMED', 1800);
+  dailyToMenu();
+}
+
+// Practice game-over: NOT ranked, NOT persisted. Free, unlimited AGAIN.
+// Flow (per spec): game-over → interstitial ad → result overlay.
+
+// ── 공통 Collapse 처리 (FX + 광고 쿨다운 + 보드 리셋) ────────────
+async function _collapseShared(collapseInfo) {
+  try {
+    if (renderer && collapseInfo && collapseInfo.at) {
+      for (const pos of collapseInfo.at) {
+        const [cx, cy] = renderer.cellXY(pos[0], pos[1]);
+        const gold = { fill: '#ffd23f', glow: '#ffe98a' };
+        if (renderer.particles) renderer.particles.emit(cx, cy, gold, 28);
+        if (renderer.rings) renderer.rings.push(
+          new SG.Ring(cx, cy, renderer.cell * 0.5, renderer.cell * 2.2, gold.glow, 520)
+        );
+        renderer.flash = { life: 400, maxLife: 400, color: gold.glow, peak: 0.45 };
+      }
+    }
+  } catch (_) {}
+  await new Promise(function (r) { setTimeout(r, 400); });
+
+  const now = Date.now();
+  const canShowAd = (now - lastInterstitialAt) >= INTERSTITIAL_COOLDOWN_MS;
+  if (canShowAd) {
+    await showInterstitial(); lastInterstitialAt = now;
+  }
+
+  grid = SG.ND.emptyGrid(4);
+  cheatIdx = 0;   // collapse 후 시퀀스 리셋 — 새 라운드는 처음부터
+  for (let i = 0; i < 2; i++) {
+    const s = SG.ND.spawnTile(grid, rng, dailyOpts);
+    if (s) {
+      const size = cheatActive ? CHEAT_SEQ[cheatIdx++ % CHEAT_SEQ.length] : s.size;
+      grid[s.at[0]][s.at[1]] = { color: s.color, size: size };
+    }
+  }
+  gameRunning = true;
+}
+
+// Daily 1024 Collapse — FX + 보드 리셋 후 계속 플레이
+async function dailyCollapse(collapseInfo) {
+  gameRunning = false;
+  await _collapseShared(collapseInfo);
+  updateDailyHud();
+  renderer.drawGrid(grid);
+}
+
+
+// ── Collection: 머지 감지 → step 획득 처리 ────────────────────────
+let _checkMergesRunning = false;   // async 중복 진입 방지
+// 이번 세션에서 이미 나레이션을 표시한 step 번호 (재시작마다 초기화)
+let _narratedStepsThisSession = new Set();
+async function collectionCheckMerges(mergedSizes) {
+  if (_checkMergesRunning) return;
+  _checkMergesRunning = true;
+  try {
+    await _collectionCheckMergesInner(mergedSizes);
+  } finally {
+    _checkMergesRunning = false;
+  }
+}
+async function _collectionCheckMergesInner(mergedSizes) {
+  const themes = SG.CollectionThemes;
+  const activeThemeObj = themes.find(function (t) { return t.id === activeThemeId; }) || null;
+  const rec = SG.Collection.recordMerges(activeThemeId, mergedSizes, localStorage, themes, activeThemeObj);
+
+  // 신규 획득 없고 완성도 아닌 경우:
+  // 이미 획득된 스텝 중 이번 세션에 아직 나레이션 미표시 항목 확인 (Chronicles 전용)
+  if (rec.newSteps.length === 0 && !rec.isComplete) {
+    if (collectionMode) {
+      const sizeToStep = SG.Collection.SIZE_TO_STEP;
+      const themeState = SG.Collection.loadTheme(activeThemeId, localStorage, activeThemeObj);
+      const sizeMap = {};
+      (SG.Collection.getThemeSizes(activeThemeObj) || []).forEach(function (sz, i) { sizeMap[sz] = i + 1; });
+      let narrateStep = null;
+      for (const sz of (mergedSizes || [])) {
+        const step = sizeMap[sz];
+        if (!step) continue;
+        if (themeState.acquiredSizes.indexOf(sz) !== -1 && !_narratedStepsThisSession.has(step)) {
+          narrateStep = step;
+          break;
+        }
+      }
+      if (narrateStep !== null) {
+        _narratedStepsThisSession.add(narrateStep);
+        chroniclesShowStepToast(activeThemeObj, narrateStep);
+      }
+    }
+    if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
+    return;
+  }
+
+  // 새 step 획득 — 게임 일시 정지
+  gameRunning = false;
+
+  // step을 순서대로 1개씩 팝업
+  for (const item of rec.newSteps) {
+    await showUnlockPopup(item.step, activeThemeId, item.size);
+  }
+
+  // Chronicles: 마지막 획득 step 서사 토스트 + 세션 나레이션 이력 기록
+  if (rec.newSteps.length > 0) {
+    const _lastStep = rec.newSteps[rec.newSteps.length - 1];
+    const _toastTheme = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; });
+    _narratedStepsThisSession.add(_lastStep.step);
+    chroniclesShowStepToast(_toastTheme, _lastStep.step);
+  }
+
+  if (rec.isComplete) {
+    // 보드 리셋 먼저 (FX 배경 뒤에 빈 보드가 보여도 무방)
+    grid = SG.ND.emptyGrid(4);
+    renderer.drawGrid(grid);
+    // 풀스크린 챕터 클리어 연출 (탭으로 스킵 가능) → 완료 후 정산
+    await showChapterClearFX(activeThemeId);
+    await collectionThemeComplete(activeThemeId);
+    return;
+  }
+
+  // 팝업 후 게임 재개
+  gameRunning = true;
+  updateCollectionHud();
+  renderer.drawGrid(grid);
+}
+
+// 1024 collapse 단독 발생 (새 step 없음) — 보드만 리셋
+async function collectionCollapse(collapseInfo) {
+  if (!gameRunning) return;
+  gameRunning = false;
+  collectionCollapseCount++;
+  await _collapseShared(collapseInfo);
+  updateCollectionHud();
+  renderer.drawGrid(grid);
+}
+
+// 획득 팝업: step 번호 + 테마 SVG 이미지 표시
+// step: 1~10, size: 실제 머지 크기(2,4,...,1024)
+function showUnlockPopup(step, themeId, size) {
+  return new Promise(function (resolve) {
+    const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+    document.getElementById('unlock-chain-title').textContent =
+      (theme ? theme.label : themeId.toUpperCase()) + ' — STEP ' + step + ' / ' + SG.Collection.getThemeStepCount(theme || null);
+    document.getElementById('unlock-theme-label').textContent = 'MERGE × ' + size + ' UNLOCKED!';
+
+    const thumb = document.getElementById('unlock-thumb');
+    const fallback = '<div style="color:var(--accent);font-family:\'Rajdhani\',sans-serif;font-size:3.5rem;font-weight:700;line-height:1">' + size + '</div>';
+    thumb.innerHTML = fallback;
+    if (theme) renderThemeAssetToCell(theme, step, thumb, fallback);
+
+    // 획득 연출: 사운드 + 렌더러 FX
+    try { if (SG.Sound && SG.Sound.playClear) SG.Sound.playClear(); } catch (_) {}
+    try {
+      if (renderer) {
+        const gold = { fill: '#ffd23f', glow: '#ffe98a' };
+        const cx = renderer.canvas.clientWidth / 2;
+        const cy = renderer.canvas.clientHeight / 2;
+        if (renderer.rings) renderer.rings.push(new SG.Ring(cx, cy, 20, renderer.canvas.clientWidth * 0.7, gold.glow, 600));
+        if (renderer.particles) renderer.particles.emit(cx, cy, gold, 40);
+        renderer.flash = { life: 350, maxLife: 350, color: gold.glow, peak: 0.35 };
+      }
+    } catch (_) {}
+
+    document.getElementById('ol-unlock').classList.remove('hidden');
+    openModalNav('ol-unlock');
+    window._unlockResolve = resolve;
+  });
+}
+
+function closeUnlockPopup() {
+  document.getElementById('ol-unlock').classList.add('hidden');
+  closeModalNav();
+  if (window._unlockResolve) { window._unlockResolve(); window._unlockResolve = null; }
+}
+
+// 챕터 클리어 풀스크린 연출 — showCompletionPopup + showChapterCompleteModal 대체
+// 탭/클릭으로 스킵 가능. resolve되면 collectionThemeComplete()가 보상 정산 진행.
+function showChapterClearFX(themeId) {
+  return new Promise(function (resolve) {
+    const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+
+    // 배경: step-11 bg 우선, 없으면 board-bg
+    const bgEl = document.getElementById('chapter-clear-bg');
+    const bgSrc = (theme && theme.stepBgs && theme.stepBgs[10]) ||
+                  (theme && theme.boardBg) || '';
+    if (bgSrc) { bgEl.src = bgSrc; bgEl.style.opacity = '1'; }
+    else { bgEl.style.opacity = '0'; }
+
+    // 텍스트
+    const ch = theme && theme.chapter;
+    document.getElementById('chapter-clear-era').textContent =
+      ch ? ('CHAPTER ' + ch.number) : '';
+    document.getElementById('chapter-clear-title').textContent =
+      ch ? ch.title.toUpperCase() : (theme ? theme.label : themeId.toUpperCase());
+    document.getElementById('chapter-clear-msg').textContent =
+      (ch && ch.completeMessage) || '';
+
+    // 사운드
+    try { if (SG.Sound && SG.Sound.playClear) SG.Sound.playClear(); } catch (_) {}
+
+    // 파티클 폭죽 — 3연발
+    try {
+      if (renderer && renderer.particles && renderer.rings) {
+        const W = renderer.canvas.clientWidth;
+        const H = renderer.canvas.clientHeight;
+        const cx = W / 2, cy = H / 2;
+        const gold  = { fill: '#ffd23f', glow: '#ffe680' };
+        const blue  = { fill: '#3a7bd5', glow: '#7aacff' };
+        const white = { fill: '#ffffff', glow: '#c0d8ff' };
+        // 1차 — 즉시
+        renderer.particles.emit(cx, cy * 0.55, gold,  50);
+        renderer.rings.push(new SG.Ring(cx, cy, 10, W * 0.9, gold.glow,  900));
+        renderer.flash = { life: 400, maxLife: 400, color: gold.glow, peak: 0.55 };
+        // 2차 — 600ms
+        setTimeout(function () {
+          try {
+            renderer.particles.emit(cx * 0.35, cy * 0.4, blue, 35);
+            renderer.particles.emit(cx * 1.65, cy * 0.4, blue, 35);
+            renderer.rings.push(new SG.Ring(cx, cy, 10, W * 0.6, blue.glow, 700));
+          } catch (_) {}
+        }, 600);
+        // 3차 — 1200ms
+        setTimeout(function () {
+          try {
+            renderer.particles.emit(cx, cy * 1.3, white, 40);
+            renderer.particles.emit(cx * 0.2, cy * 1.1, gold, 20);
+            renderer.particles.emit(cx * 1.8, cy * 1.1, gold, 20);
+            renderer.rings.push(new SG.Ring(cx, cy, 10, W * 0.75, white.glow, 800));
+          } catch (_) {}
+        }, 1200);
+      }
+    } catch (_) {}
+
+    // 오버레이 표시
+    const el = document.getElementById('ol-chapter-clear');
+    el.classList.remove('hidden');
+
+    // 3.5초 후 자동 진행 or 탭으로 스킵
+    let done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      el.classList.add('hidden');
+      resolve();
+    }
+    el.onclick = finish;
+    setTimeout(finish, 3500);
+  });
+}
+
+const THEME_COMPLETE_REWARD = 20;   // 테마 완성 기본 보상
+let _themeStarsDoubled = false;      // 이번 완성에서 x2 받았는지
+
+async function collectionThemeComplete(themeId) {
+  gameRunning = false;
+  try { SG.CG.gameplayStop(); } catch (_) {}
+
+  try {
+    if (SG.FB.isConnected()) {
+      await SG.FB.submitScore(10, {
+        mode: 'collection_' + themeId,
+        themeId: themeId,
+        date: utcDateStr(),
+      });
+    }
+  } catch (_) {}
+
+  // 보상 적립
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  pgSyncStorage();
+  const nextId = SG.Collection.unlockNextTheme(themeId, localStorage, SG.CollectionThemes);
+
+  // Chapter Complete 모달 표시 (x2 광고 + NEXT 버튼)
+  // showChapterClearFX가 이미 완료 연출을 담당했으므로 여기선 정산 패널만
+  if (nextId) {
+    showChapterCompleteModal(themeId);
+  } else {
+    // 마지막 챕터 — 엔딩 패널
+    const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+    document.getElementById('theme-complete-label').textContent = theme ? theme.label : themeId.toUpperCase();
+    document.getElementById('theme-complete-reward').textContent = '⭐' + THEME_COMPLETE_REWARD;
+    const tcBg = document.getElementById('theme-complete-bg');
+    if (tcBg && theme) {
+      const bgSrc = (theme.stepBgs && theme.stepBgs[10]) || theme.boardBg || '';
+      tcBg.src = bgSrc; tcBg.style.display = bgSrc ? 'block' : 'none';
+    }
+    const dblBtn = document.getElementById('btn-theme-double');
+    if (dblBtn) { dblBtn.style.display = ''; dblBtn.disabled = false; dblBtn.style.opacity = ''; }
+    syncAdButtons(['btn-theme-double']);
+    document.getElementById('ol-theme-complete').classList.remove('hidden');
+    openModalNav('ol-theme-complete');
+  }
+}
+
+// 테마 완성 x2 (마지막 챕터 전용)
+async function themeCompleteDoubleStars() {
+  if (_themeStarsDoubled) return;
+  _themeStarsDoubled = true;   // 즉시 잠금
+  const dblBtn = document.getElementById('btn-theme-double');
+  if (dblBtn) { dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+
+  let granted = false;
+  try { const res = await requestRewardedAdWithQuota('collection_theme_double'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
+
+  if (!granted) {
+    _themeStarsDoubled = false;
+    if (dblBtn) { dblBtn.disabled = false; dblBtn.style.opacity = ''; }
+    showGameToast('Ad failed. Try again.', 1800);
+    return;
+  }
+
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  pgSyncStorage();
+  document.getElementById('theme-complete-reward').textContent = '⭐' + (THEME_COMPLETE_REWARD * 2) + ' (x2!)';
+  if (dblBtn) { dblBtn.innerHTML = '⭐ ×2 CLAIMED'; dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+  showGameToast('⭐ x2 CLAIMED! +' + THEME_COMPLETE_REWARD, 2000);
+}
+
+// 콜렉션 진행도 연동 graded 스폰:
+// 해금/완성한 테마 수가 늘수록 시작 블록을 점진적으로 키워 체감 난이도를 일정하게 유지.
+// (목표: 후반 테마일수록 칸 고갈 완화 → 진행 유도 + 광고/반복플레이 욕구 자극)
+//   progress 0 (첫 테마)     → always1 (학습 구간)
+//   progress 1               → 약한 graded
+//   progress 2+              → 강한 graded
+function collectionGradedTiers(progress) {
+  if (progress <= 0) return null;                    // 첫 테마: always1
+  if (progress === 1) return [
+    { maxAtMost: 16,  dist: [[1, 1.0]] },
+    { maxAtMost: 128, dist: [[1, 0.80], [2, 0.15], [4, 0.05]] },
+    { maxAtMost: Infinity, dist: [[1, 0.65], [2, 0.25], [4, 0.10]] },
+  ];
+  return [                                           // progress >= 2: 강한 graded
+    { maxAtMost: 16,  dist: [[1, 1.0]] },
+    { maxAtMost: 128, dist: [[1, 0.65], [2, 0.25], [4, 0.10]] },
+    { maxAtMost: Infinity, dist: [[1, 0.50], [4, 0.30], [8, 0.20]] },
+  ];
+}
+
+function startCollection() {
+  const meta = SG.Collection.loadMeta(localStorage);
+  activeThemeId = meta.activeThemeId || 'primordial-earth';
+  // 구버전 ID 복구
+  if (!SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; })) {
+    activeThemeId = SG.CollectionThemes[0].id;
+    meta.activeThemeId = activeThemeId;
+    if (meta.unlockedThemes.indexOf(activeThemeId) === -1) meta.unlockedThemes.push(activeThemeId);
+    SG.Collection.saveMeta(localStorage, meta);
+  }
+  // 이미 완료된 테마로 시작하려는 경우 → 다음 미완료 테마로 자동 교정
+  if (meta.completedThemes && meta.completedThemes.indexOf(activeThemeId) !== -1) {
+    const nextTheme = SG.CollectionThemes.find(function (t) {
+      return meta.unlockedThemes.indexOf(t.id) !== -1 &&
+             meta.completedThemes.indexOf(t.id) === -1;
+    });
+    if (nextTheme) {
+      activeThemeId = nextTheme.id;
+      meta.activeThemeId = activeThemeId;
+      SG.Collection.saveMeta(localStorage, meta);
+    }
+  }
+  const activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  // step-01(size 1) 자동 획득 — 팝업 없이 조용히, NEW 마크만 (갤러리 확인 시 스타)
+  SG.Collection.grantStartStep(activeThemeId, localStorage, activeThemeObj);
+  const dow = utcDayOfWeek();
+  dailyTypeCfg = SG.ND.dailyType(dow);
+  const base = buildDailyOpts(dailyTypeCfg);
+  // 진행도 = 완성한 테마 수 (없으면 0). 진행할수록 graded 강도↑.
+  const progress = (meta.completedThemes && meta.completedThemes.length) || 0;
+  const gradedTiers = collectionGradedTiers(progress);
+  // 콜렉션 모드: size 1부터 스폰 (daily spawn은 size 2/4 → false로 오버라이드)
+  dailyOpts = Object.assign({}, base, {
+    daily: false,
+    bias: 0.6, clampThreshold: 3, colors: 4,
+    gradedTiers: gradedTiers,   // null이면 always1, 있으면 graded
+    collapseSize: SG.Collection.getCollapseSize(activeThemeObj),
+  });
+  rng = makeRng();
+  const gridSize = (activeThemeObj && activeThemeObj.gridSize) || 4;
+  grid = SG.ND.emptyGrid(gridSize);
+  cheatIdx = 0;
+  for (let i = 0; i < 2; i++) {
+    const s = SG.ND.spawnTile(grid, rng, dailyOpts);
+    if (s) {
+      const size = cheatActive ? CHEAT_SEQ[cheatIdx++ % CHEAT_SEQ.length] : s.size;
+      grid[s.at[0]][s.at[1]] = { color: s.color, size: size };
+    }
+  }
+  devCheatPatchInitialGrid(grid);
+  _checkMergesRunning = false;   // 이전 async 체인 완전 종료 보장
+  _narratedStepsThisSession = new Set();  // 세션 나레이션 이력 초기화
+  endlessMode = false;
+  collectionMode = true;
+  collectionCollapseCount = 0;
+  collectionContinueCount = 0;
+  SG.Daily.resetAdQuota(localStorage);  // 새 판마다 광고 3회 리셋
+
+  dailyMode = true;
+  dailyRunStars = 0;
+  dailyStarsShown = 0;
+  ['ol-start', 'ol-collection-over', 'ol-theme-complete'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  closeModalNav();
+  renderer.setMode('daily', gridSize);
+  renderer.setCollectionTheme(activeThemeObj);
+  renderer.clearStepBg();
+  document.getElementById('chronicles-narration').classList.remove('visible');
+  renderer.drawGrid(grid);
+  updateCollectionHud();
+  applyBgmForMode(activeThemeId);
+  try { SG.CG.gameplayStart(); } catch (_) {}
+  // dev 드롭다운 현재값 동기화
+  const _devSel = document.getElementById('dev-theme-select');
+  if (_devSel) _devSel.value = activeThemeId;
+
+  // Chapter Intro 필요 여부를 먼저 확인 — 있으면 Intro가 닫힐 때 gameRunning=true
+  const _introKey = 'earthbeyond_intro_seen_' + activeThemeId;
+  const _needsIntro = activeThemeObj && activeThemeObj.chapter &&
+    !localStorage.getItem(_introKey);
+  gameRunning = !_needsIntro;   // Intro 있으면 일시 정지 상태로 시작
+
+  if (_needsIntro) {
+    // step-01 NEW 토스트는 Intro 닫은 후 보여줌 (closeChapterIntro에서 처리)
+    setTimeout(function () { showChapterIntroIfNeeded(activeThemeId); }, 200);
+  } else if (SG.Collection.hasNew(activeThemeId, localStorage, activeThemeObj)) {
+    setTimeout(function () { showGameToast('New block found! Check the gallery ⭐'); }, 500);
+  }
+}
+
+// ── Endless Mode ──────────────────────────────────────────────────
+
+function isEndlessUnlocked() {
+  const isDev = localStorage.getItem('sg_dev') === '1' ||
+                new URLSearchParams(location.search).has('dev');
+  if (isDev) return true;
+  const meta = SG.Collection.loadMeta(localStorage);
+  // Chronicles 챕터를 1개 이상 완료하면 해금
+  return meta.completedThemes && meta.completedThemes.length > 0;
+}
+
+function startEndless(skinTheme) {
+  if (!isEndlessUnlocked()) {
+    var ko = SG.i18n && SG.i18n.getLang() === 'ko';
+    showGameToast(ko
+      ? 'Chronicles 챕터를 1개 이상 완료하면 열립니다'
+      : 'Complete at least one Chronicles chapter to unlock Endless', 2200);
+    return;
+  }
+  // 모든 오버레이 닫기
+  ['ol-start', 'ol-theme-complete', 'ol-endless-over', 'ol-collection-over'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  closeModalNav();
+
+  endlessMode = true;
+  collectionMode = false;
+  dailyMode = true;
+  endlessScore = 0;
+  endlessStarsDoubled = false;
+  _runSettled = false;
+
+  rng = makeRng();
+  dailyOpts = {
+    n: 4, mergeRule: 'sizeOnly', daily: true,
+    spawnFourProb: 0.12,
+    collapseSize: 1024,
+    targets: [],
+    always1: true,
+  };
+  grid = SG.ND.emptyGrid(4);
+  for (let i = 0; i < 2; i++) {
+    const s = SG.ND.spawnTile(grid, rng, dailyOpts);
+    if (s) grid[s.at[0]][s.at[1]] = { color: s.color, size: 1 };
+  }
+
+  renderer.setMode('daily', 4);
+  renderer.clearStepBg();
+  // 갤러리에서 선택한 테마 스킨 적용 (없으면 스킨 없음)
+  renderer.setCollectionTheme(skinTheme || null);
+  document.getElementById('chronicles-narration').classList.remove('visible');
+  updateEndlessHud();
+  renderer.drawGrid(grid);
+  gameRunning = true;
+  applyBgmForMode('endless');
+  try { SG.CG.gameplayStart(); } catch (_) {}
+}
+
+function updateEndlessHud() {
+  let best = 0;
+  try { best = parseInt(localStorage.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
+  document.getElementById('game-title').textContent = 'ENDLESS ∞';
+  setStats('SCORE', endlessScore, 'BEST', best);
+  updateWalletChip();
+}
+
+async function endlessCollapse(collapseInfo) {
+  if (!gameRunning) return;
+  gameRunning = false;
+  await _collapseShared(collapseInfo);
+  updateEndlessHud();
+  renderer.drawGrid(grid);
+  gameRunning = true;
+}
+
+async function endlessGameOver() {
+  gameRunning = false;
+  try { SG.CG.gameplayStop(); } catch (_) {}
+  try { if (SG.Sound && SG.Sound.playGameOver) SG.Sound.playGameOver(); } catch (_) {}
+
+  // 베스트 점수 갱신
+  let prevBest = 0;
+  try { prevBest = parseInt(localStorage.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
+  const isNewBest = endlessScore > prevBest;
+  if (isNewBest) {
+    try { localStorage.setItem(ENDLESS_BEST_KEY, String(endlessScore)); } catch (_) {}
+  }
+
+  // 리더보드 제출
+  try {
+    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      await SG.FB.submitScore(endlessScore, { mode: 'endless', date: utcDateStr() });
+    }
+  } catch (_) {}
+  try {
+    if (SG.PG && SG.PG.isAvailable && SG.PG.isAvailable()) {
+      await SG.PG.leaderboard.submit(endlessScore, SG.PG.LB_ENDLESS);
+    }
+  } catch (_) {}
+
+  // 점수 → 스타 환산 후 지갑 적립 (daily 캡 공유)
+  const rawStars = endlessScoreToStars(endlessScore);
+  const earnedStars = rawStars > 0 ? SG.Daily.earnStarsToWallet(rawStars, 'endless', localStorage) : 0;
+  const capReached = rawStars > earnedStars;
+  if (earnedStars > 0) { pgSyncStorage(); updateWalletChip(); }
+
+  await showInterstitial();
+
+  endlessStarsDoubled = false;
+  const dblBtn = document.getElementById('btn-endless-double');
+  if (dblBtn) {
+    dblBtn.disabled = false; dblBtn.style.opacity = '';
+    dblBtn.innerHTML = '📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>';
+    dblBtn.style.display = earnedStars > 0 ? '' : 'none';
+    dblBtn.dataset.runStars = String(earnedStars);
+  }
+
+  // 점수 표시
+  const scoreEl = document.getElementById('endless-run-score');
+  if (scoreEl) scoreEl.textContent = endlessScore.toLocaleString();
+  const metaEl = document.getElementById('endless-run-meta');
+  if (metaEl) {
+    var metaParts = ['⭐ ' + earnedStars + ' earned'];
+    if (isNewBest) metaParts.push('🏆 NEW BEST');
+    if (capReached) metaParts.push('daily cap reached');
+    metaEl.textContent = metaParts.join('  ·  ');
+  }
+
+  syncAdButtons(['btn-endless-double']);
+  document.getElementById('ol-endless-over').classList.remove('hidden');
+  openModalNav('ol-endless-over');
+  renderEndlessLeaderboard();
+}
+
+async function renderEndlessLeaderboard() {
+  const box   = document.getElementById('endless-lb-rows');
+  const badge = document.getElementById('endless-lb-badge');
+  if (!box) return;
+  box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
+
+  let rows = [];
+  let isDemo = true;
+  try {
+    // 1) Playgama Bridge 리더보드 우선
+    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
+      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_ENDLESS);
+      if (pgEntries && pgEntries.length) {
+        rows = _normalizePgEntries(pgEntries);
+        isDemo = false;
+      }
+    }
+    // 2) Firebase 폴백
+    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'endless', limit: 10 });
+      if (rows && rows.length) isDemo = false;
+    }
+    // 3) 데모 더미
+    if (isDemo || !rows || !rows.length) {
+      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
+      isDemo = true;
+    }
+  } catch (_) { rows = []; isDemo = true; }
+  if (badge) badge.style.display = isDemo ? '' : 'none';
+
+  const myId = SG.FB ? SG.FB.getPlayerId() : '';
+  const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
+
+  box.innerHTML = rows.slice(0, 10).map(function (r, i) {
+    const cc  = r.country || '';
+    const fl  = cc ? flag(cc) : '🌐';
+    const id  = (r.playerId || 'player').slice(-6);
+    const sc  = (r.score != null ? Number(r.score).toLocaleString() : '0');
+    const isMe = r.playerId === myId;
+    return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
+      '<span class="lb-rank">' + (i + 1) + '</span>' +
+      '<span class="lb-flag">' + fl + '</span>' +
+      '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
+      '<span class="lb-score">' + sc + '</span>' +
+      '</div>';
+  }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
+}
+
+async function endlessDoubleStars() {
+  if (endlessStarsDoubled) return;
+  endlessStarsDoubled = true;
+  const dblBtn = document.getElementById('btn-endless-double');
+  if (dblBtn) { dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+
+  let granted = false;
+  try {
+    const res = await requestRewardedAdWithQuota('endless_double');
+    granted = !res || res.granted !== false;
+  } catch (_) { granted = false; }
+
+  if (!granted) {
+    endlessStarsDoubled = false;
+    if (dblBtn) { dblBtn.disabled = false; dblBtn.style.opacity = ''; }
+    showGameToast('Ad failed. Try again.', 1800);
+    return;
+  }
+
+  const bonusStars = parseInt((dblBtn && dblBtn.dataset.runStars) || '0', 10) || 0;
+  // 광고 리워드는 캡 제외 ('collection' mode = 일회성 보상으로 처리)
+  SG.Daily.earnStarsToWallet(bonusStars, 'collection', localStorage);
+  pgSyncStorage(); updateWalletChip();
+  if (dblBtn) { dblBtn.innerHTML = '⭐ ×2 CLAIMED'; dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+  showGameToast('⭐ ×2 CLAIMED! +' + bonusStars + ' bonus', 2000);
+}
+
+function endlessAgain() {
+  document.getElementById('ol-endless-over').classList.add('hidden');
+  closeModalNav();
+  startEndless();
+}
+
+function endlessToMenu() {
+  endlessMode = false;
+  dailyMode = false;
+  document.getElementById('ol-endless-over').classList.add('hidden');
+  closeModalNav();
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
+  renderer.setMode('main');
+  showStart();
+}
+
+// ── Collection HUD ─────────────────────────────────────────────────
+function updateCollectionHud() {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; });
+  const themeLabel = theme ? theme.label : activeThemeId.toUpperCase();
+  const state = SG.Collection.loadTheme(activeThemeId, localStorage, theme || null);
+  const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
+  const total = SG.Collection.getThemeStepCount(theme || null);
+  // 제목엔 테마명만. 콜렉션 핵심=단계 → STEP 먼저, 이번 판 ⭐는 보조. (누적 ⭐는 칩)
+  document.getElementById('game-title').textContent = 'COLLECTION · ' + themeLabel;
+  setStats('STEP', acquired + '/' + total, 'THIS RUN', '+⭐' + dailyStarsShown);
+  updateWalletChip();
+  updateGalleryDot();   // 헤더 설정 아이콘 NEW 레드닷
+  chroniclesUpdateProgress(theme, acquired, total);
+}
+
+// ── Chronicles: 스토리 모드 UI ──────────────────────────────────────
+
+// Progress Bar 업데이트
+function chroniclesUpdateProgress(theme, acquired, total) {
+  const wrap = document.getElementById('chronicles-progress');
+  if (!wrap) return;
+  if (!theme || !theme.chapter) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+  const pct = total > 0 ? Math.round((acquired / total) * 100) : 0;
+  document.getElementById('chronicles-prog-label').textContent =
+    'CHAPTER ' + theme.chapter.number + ' · ' + acquired + ' / ' + total;
+  document.getElementById('chronicles-prog-bar').style.width = pct + '%';
+}
+
+// Chapter Intro 모달 — 첫 진입 1회만
+function showChapterIntroIfNeeded(themeId) {
+  const key = 'earthbeyond_intro_seen_' + themeId;
+  try { if (localStorage.getItem(key)) return; } catch (_) {}
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+  if (!theme || !theme.chapter) return;
+
+  const bgEl = document.getElementById('chapter-intro-bg');
+  if (theme.boardBg) { bgEl.src = theme.boardBg; bgEl.style.display = 'block'; }
+  else { bgEl.style.display = 'none'; }
+
+  document.getElementById('chapter-intro-num').textContent = 'CHAPTER ' + theme.chapter.number;
+  document.getElementById('chapter-intro-title').textContent = theme.chapter.title.toUpperCase();
+  document.getElementById('chapter-intro-tagline').textContent = theme.chapter.tagline;
+
+  document.getElementById('ol-chapter-intro').classList.remove('hidden');
+  openModalNav('ol-chapter-intro');
+}
+
+function closeChapterIntro() {
+  const key = 'earthbeyond_intro_seen_' + activeThemeId;
+  try { localStorage.setItem(key, '1'); } catch (_) {}
+  document.getElementById('ol-chapter-intro').classList.add('hidden');
+  closeModalNav();
+  // 렌더러 준비 (canvas resize 대응)
+  const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  const gridSize = (themeObj && themeObj.gridSize) || 4;
+  renderer.setMode('daily', gridSize);
+  renderer.setCollectionTheme(themeObj);
+  renderer.clearStepBg();
+  renderer.drawGrid(grid);
+  // Intro → Step-01 Reveal
+  showStepReveal(themeObj, 1);
+}
+
+function showStepReveal(themeObj, step) {
+  if (!themeObj || !themeObj.stepDescriptions) { _startGameAfterReveal(themeObj); return; }
+  const fullDesc = themeObj.stepDescriptions[step - 1];
+  if (!fullDesc) { _startGameAfterReveal(themeObj); return; }
+
+  const dashIdx = fullDesc.indexOf(' — ');
+  const title = dashIdx !== -1 ? fullDesc.slice(0, dashIdx) : fullDesc;
+  const body  = dashIdx !== -1 ? fullDesc.slice(dashIdx + 3) : '';
+
+  const imgPath = (themeObj.stepBgs && themeObj.stepBgs[step - 1]) ||
+                  (themeObj.svgPaths && themeObj.svgPaths[step - 1]) || '';
+  const imgEl = document.getElementById('step-reveal-img');
+  if (imgPath) { imgEl.src = imgPath; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+
+  const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+  document.getElementById('step-reveal-badge').textContent =
+    ko ? '⭐ STEP 01 — 첫 번째 발견' : '⭐ STEP 01 — FIRST DISCOVERY';
+  document.getElementById('step-reveal-title').textContent = title;
+  document.getElementById('step-reveal-desc').textContent = body;
+  const startBtn = document.getElementById('btn-step-reveal-start');
+  if (startBtn) startBtn.textContent = ko ? '시작 ›' : 'START ›';
+
+  document.getElementById('ol-step-reveal').classList.remove('hidden');
+  openModalNav('ol-step-reveal');
+}
+
+function closeStepReveal() {
+  document.getElementById('ol-step-reveal').classList.add('hidden');
+  closeModalNav();
+  const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  _startGameAfterReveal(themeObj);
+}
+
+function _startGameAfterReveal(themeObj) {
+  // 나레이션 바에도 step-01 표시
+  if (themeObj) chroniclesShowStepToast(themeObj, 1);
+  gameRunning = true;
+}
+
+// Chronicles 나레이션 바 업데이트
+// - 신규 획득 시: 팝업 + 나레이션 바 + 배경
+// - 재시작 후 재등장 시: 나레이션 바 + 배경만 (팝업 없음)
+function chroniclesShowStepToast(theme, step) {
+  if (!theme || !theme.stepDescriptions) return;
+  const fullDesc = theme.stepDescriptions[step - 1];
+  if (!fullDesc) return;
+
+  // "제목 — 본문" 포맷 분리
+  const dashIdx = fullDesc.indexOf(' — ');
+  const title = dashIdx !== -1 ? fullDesc.slice(0, dashIdx) : '';
+  const body  = dashIdx !== -1 ? fullDesc.slice(dashIdx + 3) : fullDesc;
+
+  // 배경 교체 (stepBgs 우선)
+  const stepBgPath = (theme.stepBgs && theme.stepBgs[step - 1]) || null;
+  if (stepBgPath) renderer.setStepBg(stepBgPath);
+
+  // 썸네일: stepBgs 이미지 우선, 없으면 svgPath
+  const imgPath = (theme.stepBgs && theme.stepBgs[step - 1]) ||
+                  (theme.svgPaths && theme.svgPaths[step - 1]) || '';
+  const el = document.getElementById('chronicles-narration');
+  const imgEl = document.getElementById('ctoast-img');
+  if (imgPath) { imgEl.src = imgPath; imgEl.style.display = 'block'; }
+  else { imgEl.style.display = 'none'; }
+
+  document.getElementById('ctoast-step').textContent = 'STEP ' + String(step).padStart(2, '0');
+  document.getElementById('ctoast-title').textContent = title;
+  document.getElementById('ctoast-desc').textContent = body;
+
+  el.classList.remove('visible');
+  void el.offsetWidth;
+  el.classList.add('visible');
+}
+
+// Chapter Complete 모달
+let _chapterStarsDoubled = false;
+function showChapterCompleteModal(themeId) {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+  if (!theme || !theme.chapter) return;
+
+  // 배경: step-11 bg 이미지 우선, 없으면 boardBg
+  const bgEl = document.getElementById('chapter-complete-bg');
+  const bgStep11 = theme.stepBgs && theme.stepBgs[10];
+  const step11img = theme.svgPaths && theme.svgPaths[10];
+  const bgSrc = bgStep11 || step11img || theme.boardBg || '';
+  if (bgSrc) { bgEl.src = bgSrc; bgEl.style.display = 'block'; }
+  else { bgEl.style.display = 'none'; }
+
+  const meta = SG.Collection.loadMeta(localStorage);
+  const completedCount = (meta.completedThemes && meta.completedThemes.length) || 0;
+  const totalThemes = SG.CollectionThemes.length;
+  const nextTheme = SG.CollectionThemes.find(function (t) { return t.unlockCondition === themeId; });
+
+  document.getElementById('chapter-complete-era').textContent =
+    completedCount + ' / ' + totalThemes + '  CHAPTERS UNLOCKED';
+  document.getElementById('chapter-complete-title').textContent =
+    theme.chapter.title.toUpperCase() + ' — COMPLETE';
+
+  document.getElementById('chapter-complete-msg').textContent =
+    theme.chapter.completeMessage || '';
+  const bridgeEl = document.getElementById('chapter-complete-bridge');
+  if (bridgeEl) {
+    const teaser = theme.chapter.bridgeTeaser || '';
+    bridgeEl.textContent = teaser;
+    bridgeEl.style.display = teaser ? '' : 'none';
+  }
+
+  // 보상 라벨
+  const rewardEl = document.getElementById('chapter-complete-reward-label');
+  if (rewardEl) rewardEl.textContent = '⭐' + THEME_COMPLETE_REWARD;
+
+  // x2 광고 버튼 초기화 (이미 받은 경우 건드리지 않음)
+  _chapterStarsDoubled = false;
+  const dblBtn = document.getElementById('btn-chapter-double');
+  if (dblBtn) {
+    dblBtn.disabled = false;
+    dblBtn.style.opacity = '';
+    dblBtn.style.display = '';
+    dblBtn.innerHTML = '📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>';
+  }
+
+  // Epoch Stamp 카운트
+  document.getElementById('epoch-stamp-count').textContent =
+    completedCount + ' / ' + totalThemes;
+
+  // 다음 챕터 버튼
+  const nextBtn = document.getElementById('btn-chapter-next');
+  if (nextTheme && nextTheme.chapter) {
+    nextBtn.textContent = (theme.chapter.bridgeTitle || ('NEXT: ' + nextTheme.chapter.title.toUpperCase())) + ' ›';
+    nextBtn.style.display = '';
+  } else {
+    nextBtn.style.display = 'none';
+  }
+
+  // ol-theme-complete가 혹시 열려있으면 닫기
+  document.getElementById('ol-theme-complete').classList.add('hidden');
+  syncAdButtons(['btn-chapter-double']);
+  document.getElementById('ol-chapter-complete').classList.remove('hidden');
+  openModalNav('ol-chapter-complete');
+}
+
+async function chapterCompleteDoubleStars() {
+  if (_chapterStarsDoubled) return;
+  _chapterStarsDoubled = true;   // 즉시 잠금 — 광고 대기 중 재진입 방지
+  const dblBtn = document.getElementById('btn-chapter-double');
+  if (dblBtn) { dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+  let granted = true;
+  try {
+    const res = await requestRewardedAdWithQuota('chapter_double');
+    granted = !res || res.granted !== false;
+  } catch (_) { granted = false; }
+  if (!granted) {
+    // 광고 실패 → 잠금 해제해서 재시도 가능하게
+    _chapterStarsDoubled = false;
+    if (dblBtn) {
+      dblBtn.disabled = false;
+      dblBtn.style.opacity = '';
+      dblBtn.innerHTML = '📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>';
+    }
+    showGameToast('Ad failed. Try again.', 1800);
+    return;
+  }
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  pgSyncStorage();
+  updateWalletChip();
+  if (dblBtn) {
+    dblBtn.innerHTML = '⭐ ×2 CLAIMED';
+    dblBtn.disabled = true;
+    dblBtn.style.opacity = '0.5';
+  }
+  showGameToast('⭐ ×2 — ⭐' + (THEME_COMPLETE_REWARD * 2) + ' total!', 2000);
+}
+
+function chroniclesNextChapter() {
+  document.getElementById('ol-chapter-complete').classList.add('hidden');
+  closeModalNav();
+  startNextTheme();
+}
+
+// 이번 판 x2 스타를 이미 받았는지 (게임오버 1회당 1번만)
+let _gameoverStarsDoubled = false;
+// 이번 판(dailyRunStars)을 지갑에 정산했는지. CONTINUE는 정산 안 함(이어감).
+let _runSettled = false;
+
+// 이번 판 누적 스타를 지갑에 적립(정산). 1회만. END RUN/RETRY/MENU에서 호출.
+function settleRunStars() {
+  if (_runSettled) return;
+  _runSettled = true;
+  if (dailyRunStars > 0) SG.Daily.earnStarsToWallet(dailyRunStars, 'collection', localStorage);
+}
+
+async function collectionGameOver() {
+  gameRunning = false;
+  try { SG.CG.gameplayStop(); } catch (_) {}
+  try { if (SG.Sound && SG.Sound.playGameOver) SG.Sound.playGameOver(); } catch (_) {}
+
+  // 이번 판 누적 스타. 적립은 '정산'(END RUN/RETRY/MENU) 시점에만 — CONTINUE면 유지하고 이어감.
+  // (스타는 누적 재화: 게임오버/CONTINUE로 사라지지 않음)
+  const runStars = dailyRunStars;
+  dailyStarsShown = runStars;
+  _gameoverStarsDoubled = false;
+  _runSettled = false;   // 이번 판이 아직 지갑에 정산되지 않음
+
+  // 게임오버 시 전체광고 노출 → 그 다음 팝업
+  await showInterstitial();
+
+  const _activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+  const state = SG.Collection.loadTheme(activeThemeId, localStorage, _activeThemeObj);
+  const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
+  document.getElementById('collection-chain-display').textContent =
+    acquired + '/' + SG.Collection.getThemeStepCount(_activeThemeObj) + ' STEPS';
+
+  // 정산 단계 데이터 준비 (2단계에서 사용)
+  document.getElementById('gameover-run-stars').textContent = '⭐' + runStars;
+  const dblBtn = document.getElementById('btn-double-stars');
+  if (dblBtn) {
+    dblBtn.style.display = runStars > 0 ? '' : 'none';
+    dblBtn.disabled = false;
+    dblBtn.style.opacity = '';
+    dblBtn.dataset.runStars = String(runStars);
+  }
+
+  // CONTINUE 가능 여부 = 상위 3종 외 제거할 블록이 있을 때.
+  const canContinue = continueRemovableCells(grid).length > 0;
+  const continueBtn = document.getElementById('btn-continue-ad');
+  if (continueBtn) {
+    continueBtn.disabled = false;
+    continueBtn.style.opacity = '';
+    continueBtn.style.display = '';  // 쿼터 소진으로 숨겼다가 새 과부하 시 복원
+    // 라벨: 스타 잔액 충분하면 비용(⭐N), 부족하면 광고(AD) / 쿼터 소진이면 비활성
+    const cost = continueCost();
+    const wallet = SG.Daily.getWalletStars(localStorage);
+    const adsLeft = SG.Daily.rewardedAdsLeft(localStorage);
+    if (wallet >= cost) {
+      const tag = '⭐' + cost;
+      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(' + tag + ')</span>';
+    } else if (adsLeft > 0) {
+      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(📺 AD ' + adsLeft + '/' + SG.Daily.REWARDED_DAILY_LIMIT + ')</span>';
+    } else {
+      // 스타도 없고 광고 쿼터도 소진 → 버튼 숨기기
+      continueBtn.style.display = 'none';
+    }
+  }
+
+  // CONTINUE 가능하면 1단계(이어하기 권유), 아니면 바로 2단계(정산).
+  collectionSetOverPhase(canContinue ? 'continue' : 'settle');
+
+  // btn-continue-ad는 스타 결제도 가능 — 광고 쿼터와 무관하게 노출 유지
+  // btn-double-stars만 광고 쿼터 체크 (runStars > 0인 경우만 보임)
+  syncAdButtons(['btn-double-stars']);
+  document.getElementById('ol-collection-over').classList.remove('hidden');
+  openModalNav('ol-collection-over');
+}
+
+// 게임오버 오버레이 단계 전환: 'continue'(이어하기 권유) | 'settle'(스타 정산)
+function collectionSetOverPhase(phase) {
+  const cont = document.getElementById('co-phase-continue');
+  const settle = document.getElementById('co-phase-settle');
+  if (cont) cont.classList.toggle('hidden', phase !== 'continue');
+  if (settle) settle.classList.toggle('hidden', phase !== 'settle');
+  // 단계가 바뀌면 보이는 버튼만 키보드 네비에 잡히도록 재수집
+  if (_modal && _modal.id === 'ol-collection-over') openModalNav('ol-collection-over');
+}
+
+// END RUN ▸ : 이어하기를 포기하고 정산 단계로 전환 → 이번 판 스타를 지갑에 적립.
+function collectionShowSettle() {
+  settleRunStars();
+  updateCollectionHud();   // BEST(지갑) 갱신
+  collectionSetOverPhase('settle');
+  // settle 단계 진입 시 btn-double-stars 광고 쿼터 재체크
+  // (runStars=0이면 이미 display:none이므로 syncAdButtons가 덮어써도 무해)
+  const dblBtn = document.getElementById('btn-double-stars');
+  if (dblBtn && dblBtn.style.display !== 'none') {
+    syncAdButtons(['btn-double-stars']);
+  }
+}
+
+// 게임오버 x2 스타: 리워드 광고 시청 시 이번 판 획득 스타만큼 추가 적립 (1배 더)
+async function collectionDoubleStars() {
+  const dblBtn = document.getElementById('btn-double-stars');
+  if (_gameoverStarsDoubled) return;
+  const runStars = dblBtn ? parseInt(dblBtn.dataset.runStars || '0', 10) : 0;
+  if (runStars <= 0) return;
+
+  if (dblBtn) { dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+  let granted = false;
+  try { const res = await requestRewardedAdWithQuota('collection_double_stars'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
+
+  if (!granted) {
+    // 광고 실패/거부 → 보상 없음, 버튼 복구 (재시도 가능)
+    if (dblBtn) { dblBtn.disabled = false; dblBtn.style.opacity = ''; }
+    showGameToast('Ad failed to load. Please try again.', 2200);
+    return;
+  }
+
+  // 추가 1배 적립 (settle 진입 시 1배 이미 정산됨 → 총 x2)
+  SG.Daily.earnStarsToWallet(runStars, 'collection', localStorage);
+  _gameoverStarsDoubled = true;
+  dailyStarsShown = runStars * 2;
+  if (dblBtn) { dblBtn.style.display = 'none'; }
+  if (_modal && _modal.id === 'ol-collection-over') openModalNav('ol-collection-over');
+  document.getElementById('gameover-run-stars').textContent = '⭐' + (runStars * 2) + ' (x2!)';
+  updateCollectionHud();   // 지갑 갱신
+  showGameToast('⭐ x2 CLAIMED! +' + runStars, 2000);
+}
+
+// CONTINUE 대상: 보드에 존재하는 size 중 상위 3종을 제외한 나머지 셀 좌표 목록.
+// (상위 3종 = 보드에 실제 있는 distinct size 내림차순 상위 3개)
+function continueRemovableCells(g) {
+  const sizes = [];
+  for (let r = 0; r < g.length; r++) for (let c = 0; c < g[r].length; c++) {
+    if (g[r][c]) sizes.push(g[r][c].size);
+  }
+  const distinct = Array.from(new Set(sizes)).sort(function (a, b) { return b - a; });
+  const keep = new Set(distinct.slice(0, 3));   // 상위 3종 유지
+  const cells = [];
+  for (let r = 0; r < g.length; r++) for (let c = 0; c < g[r].length; c++) {
+    const t = g[r][c];
+    if (t && !keep.has(t.size)) cells.push([r, c]);
+  }
+  return cells;
+}
+
+// 현재 CONTINUE 비용 (회수당 5→10→20→40, 이후 40 유지)
+function continueCost() {
+  return CONTINUE_COSTS[Math.min(collectionContinueCount, CONTINUE_COSTS.length - 1)];
+}
+
+// CONTINUE: 상위 3종 외 블록을 제거하고 이어하기.
+//  - 1순위: 스타 소모(회수당 증가). 잔액 충분하면 차감.
+//  - 잔액 부족: 리워드 광고로 대체(무료 진행).
+//  - 누적 스타(dailyRunStars)는 유지 — 이어가는 판이므로 정산하지 않음.
+async function collectionContinueWithAd() {
+  const btn = document.getElementById('btn-continue-ad');
+  const cells = continueRemovableCells(grid);
+  if (cells.length === 0) return;   // 제거할 게 없으면 무의미
+
+  const cost = continueCost();
+  const wallet = SG.Daily.getWalletStars(localStorage);
+  let paid = false;
+
+  if (wallet >= cost) {
+    // 스타로 결제
+    paid = SG.Daily.spendStars(cost, localStorage);
+  } else {
+    // 잔액 부족 → 광고 대체
+    if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+      // 쿼터 소진: 버튼 숨기고 종료 유도
+      if (btn) { btn.style.display = 'none'; }
+      showGameToast('No more ads available. End run or come back tomorrow!', 2800);
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+    let granted = false;
+    try { const res = await requestRewardedAdWithQuota('collection_continue'); granted = res && res.granted !== false; } catch (_) { granted = false; }
+    if (!granted) {
+      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      // 쿼터가 소진된 경우(requestRewardedAdWithQuota 내부에서 이미 토스트 표시됨)
+      if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+        if (btn) { btn.style.display = 'none'; }
+      }
+      return;
+    }
+    paid = true;
+  }
+  if (!paid) { showGameToast('Not enough stars.', 1800); return; }
+
+  collectionContinueCount++;
+  closeModalNav();
+  document.getElementById('ol-collection-over').classList.add('hidden');
+
+  // 광고/오버레이 직후 캔버스 좌표계 동기화 (광고 SDK가 리사이즈했을 수 있음)
+  try { resizeCanvas(); } catch (_) {}
+  renderer.drawGrid(grid);
+  await new Promise(function (r) { requestAnimationFrame(function () { r(); }); });
+
+  // 1) 제거 연출을 먼저 보여준다 (연출 실패해도 제거·재개는 보장)
+  try { await playClearFx(cells); } catch (_) {}
+  // 2) 실제 제거
+  for (const [r, c] of cells) grid[r][c] = null;
+  renderer.drawGrid(grid);
+
+  // 누적 스타(dailyRunStars/Shown)는 그대로 — 이어가는 판
+  gameRunning = true;
+  updateCollectionHud();
+  applyBgmForMode(activeThemeId);
+  try { SG.CG.gameplayStart(); } catch (_) {}
+}
+
+// 지정한 셀들에 터지는 연출(파티클/링/플래시/사운드) 후 약간의 텀을 두고 resolve.
+function playClearFx(cells) {
+  return new Promise(function (resolve) {
+    try {
+      if (renderer && cells && cells.length) {
+        const pink = { fill: '#ff2d78', glow: '#ff7aaa' };
+        for (const [r, c] of cells) {
+          const [cx, cy] = renderer.cellXY(r, c);
+          if (renderer.particles) renderer.particles.emit(cx, cy, pink, 22);
+          if (renderer.rings && SG.Ring) renderer.rings.push(
+            new SG.Ring(cx, cy, renderer.cell * 0.4, renderer.cell * 1.8, pink.glow, 480)
+          );
+        }
+        renderer.flash = { life: 420, maxLife: 420, color: pink.glow, peak: 0.4 };
+        // 사운드: 제거되는 블록들의 size로 아르페지오 (없으면 playClear 폴백)
+        try {
+          if (SG.Sound && SG.Sound.playMerge) {
+            const notes = cells.map(function (p) {
+              const t = grid[p[0]] && grid[p[0]][p[1]];
+              return { blockType: 0, size: t ? t.size : 2 };
+            });
+            SG.Sound.playMerge(notes);
+          } else if (SG.Sound && SG.Sound.playClear) {
+            SG.Sound.playClear();
+          }
+        } catch (_) {}
+      }
+    } catch (e) { console.warn('[playClearFx] error:', e); }
+    setTimeout(resolve, 650);   // 연출이 보일 시간 확보 후 제거
+  });
+}
+
+function collectionToMenu() {
+  settleRunStars();   // 이번 판 종료 → 누적 스타 정산
+  closeModalNav();
+  ['ol-collection-over', 'ol-theme-complete', 'ol-gallery'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  collectionMode = false;
+  dailyMode = false;
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
+  if (renderer) { renderer.setCollectionTheme(null); renderer.setMode('main'); }
+  showStart();
+}
+
+function startNextTheme() {
+  closeModalNav();
+  ['ol-theme-complete', 'ol-chapter-complete'].forEach(function (id) {
+    document.getElementById(id).classList.add('hidden');
+  });
+  const meta = SG.Collection.loadMeta(localStorage);
+  activeThemeId = meta.activeThemeId;
+  startCollection();
+}
+
+// ── Gallery ────────────────────────────────────────────────────────
+// 갤러리를 열기 전에 표시 중이던 오버레이를 기억해 닫을 때 복원
+let _galleryReturnOverlay = null;
+let _galleryMode = 'collection';  // 'collection' | 'endless'
+
+// 설정 메뉴에서 갤러리 열기 (콜렉션 모드 주 진입점)
+function openGalleryFromSettings() {
+  openGallery();
+}
+
+// 헤더 설정 아이콘 레드닷 갱신 — 콜렉션 모드 + NEW 블록 있을 때 표시.
+function updateGalleryDot() {
+  const dot = document.getElementById('header-settings-dot');
+  if (!dot) return;
+  const show = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage);
+  dot.classList.toggle('hidden', !show);
+}
+
+function openGalleryForEndless() {
+  _galleryMode = 'endless';
+  openGallery();
+}
+
+function openGallery(themeId) {
+  if (_galleryMode !== 'endless') _galleryMode = 'collection';
+
+  // 현재 열려 있는 오버레이(설정/game-over 등)를 일시 숨김 후 기억
+  const candidates = ['ol-start', 'ol-settings', 'ol-collection-over', 'ol-theme-complete', 'ol-daily-over'];
+  _galleryReturnOverlay = null;
+  for (const id of candidates) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) {
+      _galleryReturnOverlay = id;
+      el.classList.add('hidden');
+      break;
+    }
+  }
+
+  const meta = SG.Collection.loadMeta(localStorage);
+  const viewThemeId = themeId || (collectionMode ? activeThemeId : null) || meta.activeThemeId || 'primordial-earth';
+  renderGalleryTabs(meta, viewThemeId);
+  renderGalleryCells(viewThemeId);
+
+  const playBtn = document.getElementById('btn-gallery-play');
+  if (playBtn) {
+    if (_galleryMode === 'endless') {
+      // Endless 모드: 항상 표시, 선택된 탭의 테마로 시작
+      playBtn.style.display = '';
+      playBtn.onclick = startEndlessFromGallery;
+      const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+      playBtn.textContent = ko ? 'ENDLESS 시작 ∞' : 'START ENDLESS ∞';
+    } else {
+      // Chronicles 모드: 게임 중이면 숨김, 메뉴에서 진입 시 표시
+      playBtn.onclick = startCollectionFromGallery;
+      const fromMenu = !collectionMode;
+      playBtn.style.display = fromMenu ? '' : 'none';
+      if (fromMenu) {
+        const playThemeId = meta.activeThemeId || 'primordial-earth';
+        const playTheme = SG.CollectionThemes.find(function (t) { return t.id === playThemeId; });
+        const st = SG.Collection.loadTheme(playThemeId, localStorage, playTheme || null);
+        const hasProgress = st.acquiredSteps && st.acquiredSteps.length > 0;
+        const chapterLabel = playTheme && playTheme.chapter ? playTheme.chapter.title.toUpperCase() : playThemeId.toUpperCase();
+        playBtn.textContent = (hasProgress ? 'CONTINUE: ' : 'BEGIN: ') + chapterLabel + ' ›';
+      }
+    }
+  }
+  document.getElementById('ol-gallery').classList.remove('hidden');
+  openModalNav('ol-gallery');
+}
+
+function closeGallery() {
+  closeModalNav();
+  document.getElementById('ol-gallery').classList.add('hidden');
+
+  if (_galleryReturnOverlay) {
+    // 게임오버/설정/START 등 이전 오버레이로 복귀
+    const retEl = document.getElementById(_galleryReturnOverlay);
+    if (retEl) retEl.classList.remove('hidden');
+    openModalNav(_galleryReturnOverlay);
+    // START로 돌아갈 때 메뉴 닷 갱신
+    if (_galleryReturnOverlay === 'ol-start') _refreshMenuDots();
+    _galleryReturnOverlay = null;
+  } else if (collectionMode) {
+    // 게임 진행 중 갤러리를 열었다가 닫는 경우 — 보드 재드로우
+    const themeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+    const gridSize = (themeObj && themeObj.gridSize) || 4;
+    renderer.setMode('daily', gridSize);
+    renderer.setCollectionTheme(themeObj);
+    renderer.drawGrid(grid);
+  } else {
+    // 메뉴(START)에서 갤러리 진입 후 CLOSE → 시작 화면 복귀
+    showStart();
+  }
+}
+
+// 별로 잠긴 테마 즉시 해금하는 가격
+const THEME_UNLOCK_COST = 200;
+
+function renderGalleryTabs(meta, activeId) {
+  const tabs = document.getElementById('gallery-tabs');
+  tabs.innerHTML = '';
+  SG.CollectionThemes.forEach(function (t) {
+    const isUnlocked = meta.unlockedThemes.indexOf(t.id) !== -1;
+    const btn = document.createElement('button');
+    btn.className = 'gallery-tab' + (t.id === activeId ? ' active' : '') + (!isUnlocked ? ' locked' : '');
+    const check = meta.completedThemes.indexOf(t.id) !== -1 ? ' ✓' : '';
+    const lock = !isUnlocked ? ' 🔒' : '';
+    btn.textContent = t.label + check + lock;
+    btn.onclick = function () {
+      document.querySelectorAll('.gallery-tab').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderGalleryCells(t.id);   // 잠긴 테마는 셀 영역에 해금 패널 표시
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+// 잠긴 테마를 별로 즉시 해금.
+function unlockThemeWithStars(themeId) {
+  const meta = SG.Collection.loadMeta(localStorage);
+  if (meta.unlockedThemes.indexOf(themeId) !== -1) return;   // 이미 해금
+  if (!SG.Daily.spendStars(THEME_UNLOCK_COST, localStorage)) {
+    showGameToast('Not enough stars (need ⭐' + THEME_UNLOCK_COST + ')', 2000);
+    return;
+  }
+  SG.Collection.forceUnlockTheme(themeId, localStorage, SG.CollectionThemes);
+  updateWalletChip();
+  showGameToast('🔓 Theme unlocked! −⭐' + THEME_UNLOCK_COST, 2000);
+  // 갤러리 갱신
+  const m2 = SG.Collection.loadMeta(localStorage);
+  renderGalleryTabs(m2, themeId);
+  renderGalleryCells(themeId);
+}
+
+function renderGalleryCells(themeId) {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
+  if (!theme) return;
+
+  // 잠긴 테마: 셀 대신 해금 패널 표시 (별로 즉시 해금)
+  const meta = SG.Collection.loadMeta(localStorage);
+  if (meta.unlockedThemes.indexOf(themeId) === -1) {
+    document.getElementById('gallery-progress').textContent = 'LOCKED';
+    document.getElementById('gallery-bar').style.width = '0%';
+    const wallet = SG.Daily.getWalletStars(localStorage);
+    const afford = wallet >= THEME_UNLOCK_COST;
+    const gridEl0 = document.getElementById('gallery-grid');
+    gridEl0.innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:24px 8px">' +
+        '<div style="font-size:2.2rem;margin-bottom:8px">🔒</div>' +
+        '<div style="color:var(--textdim);font-size:.8rem;margin-bottom:16px">' + theme.label + ' is locked</div>' +
+        '<button class="btn-ad ad-gold" style="max-width:220px;margin:0 auto' + (afford ? '' : ';opacity:.5') + '"' +
+          ' onclick="unlockThemeWithStars(\'' + themeId + '\')">' +
+          'UNLOCK ⭐' + THEME_UNLOCK_COST + '</button>' +
+        (afford ? '' : '<div style="color:var(--textdim);font-size:.66rem;margin-top:8px">Need ⭐' + THEME_UNLOCK_COST + ' · you have ⭐' + wallet + '</div>') +
+      '</div>';
+    return;
+  }
+
+  const state = SG.Collection.loadTheme(themeId, localStorage, theme);
+  const acquiredSteps = state.acquiredSteps || [];
+  const newSizes = state.newSizes || [];
+  const SIZES = SG.Collection.getThemeSizes(theme);  // 테마별 단계 크기 배열
+  const TOTAL = SG.Collection.getThemeStepCount(theme); // 테마별 단계 수
+
+  document.getElementById('gallery-progress').textContent =
+    acquiredSteps.length + ' / ' + TOTAL + ' STEPS';
+  const pct = Math.min(100, Math.round((acquiredSteps.length / TOTAL) * 100));
+  document.getElementById('gallery-bar').style.width = pct + '%';
+
+  const gridEl = document.getElementById('gallery-grid');
+  gridEl.innerHTML = '';
+  for (let step = 1; step <= TOTAL; step++) {
+    const size = SIZES[step - 1];
+    const cell = document.createElement('div');
+    const isUnlocked = acquiredSteps.indexOf(step) !== -1;
+    const isNew = isUnlocked && newSizes.indexOf(size) !== -1;
+    cell.className = 'gallery-cell ' + (isUnlocked ? 'unlocked' : 'locked') + (isNew ? ' is-new' : '');
+    if (isUnlocked) {
+      const fallback = '<span style="font-size:1.2rem;font-weight:700;color:var(--accent)">' + size + '</span>'
+        + (isNew ? '<span class="gallery-new-badge">NEW</span>' : '');
+      renderThemeAssetToCell(theme, step, cell, fallback);
+      const s = step, sz = size;
+      cell.onclick = function () { galleryClaimStep(themeId, s, sz, cell); };
+    } else {
+      // 미획득: 자물쇠 + 클릭 시 잠김 팝업
+      cell.innerHTML = '<span class="gallery-lock-icon">🔒</span><span style="font-size:0.65rem;color:var(--textdim);display:block;margin-top:2px">×' + size + '</span>';
+      const s = step, sz = size;
+      cell.onclick = function () { galleryShowLocked(themeId, s, sz); };
+    }
+    gridEl.appendChild(cell);
+  }
+}
+
+// 갤러리 셀 클릭: NEW 해제 + (미수령이면) ⭐1 보상 → 상세 팝업
+function galleryClaimStep(themeId, step, size, cell) {
+  const _claimTheme = SG.CollectionThemes.find(function (t) { return t.id === themeId; }) || null;
+  const res = SG.Collection.claimStep(themeId, size, localStorage, _claimTheme);
+  if (res.starAwarded) {
+    try { SG.Daily.earnStarsToWallet(1, 'collection', localStorage); } catch (_) {}
+    galleryStarBurst(cell);
+  }
+  if (res.wasNew || res.starAwarded) {
+    renderGalleryCells(themeId);
+    const meta = SG.Collection.loadMeta(localStorage);
+    renderGalleryTabs(meta, themeId);
+    updateGalleryDot();
+    if (collectionMode) updateCollectionHud();
+  }
+  // 스타 획득 연출 후 상세 팝업 (starAwarded면 짧게 딜레이)
+  const delay = res.starAwarded ? 400 : 0;
+  setTimeout(function () { openGalleryDetail(themeId, step, size, res.starAwarded); }, delay);
+}
+
+// 미획득 셀 클릭: 잠김 안내 팝업
+function galleryShowLocked(themeId, step, size) {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; }) || null;
+  document.getElementById('gd-img').style.display = 'none';
+  document.getElementById('gd-step').textContent = 'STEP ' + String(step).padStart(2, '0') + '  ×' + size;
+  document.getElementById('gd-title').textContent = '🔒  NOT YET DISCOVERED';
+  document.getElementById('gd-desc').textContent =
+    'Merge ' + size + ' tiles in Chronicles to unlock this scene.';
+  document.getElementById('ol-gallery-detail').classList.remove('hidden');
+  openModalNav('ol-gallery-detail');
+}
+
+// 획득한 셀 상세 팝업
+function openGalleryDetail(themeId, step, size, showStarBadge) {
+  const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; }) || null;
+  // 이미지: bg-step webp 우선, 없으면 svgPath
+  const imgEl = document.getElementById('gd-img');
+  const bgPath = theme && theme.stepBgs && theme.stepBgs[step - 1];
+  const svgPath = theme && theme.svgPaths && theme.svgPaths[step - 1];
+  const imgPath = bgPath || svgPath || '';
+  if (imgPath) {
+    imgEl.src = imgPath;
+    imgEl.style.display = 'block';
+  } else {
+    imgEl.style.display = 'none';
+  }
+  // 테마명 + 스텝 레이블
+  const themeEl = document.getElementById('gd-theme');
+  if (themeEl) themeEl.textContent = (theme && theme.label) || '';
+  document.getElementById('gd-step').textContent =
+    'STEP ' + String(step).padStart(2, '0') + (showStarBadge ? '  ⭐ +1' : '');
+  // 타이틀 + 나레이션: stepDescriptions[step-1] "제목 — 본문" 포맷
+  const descs = theme && theme.stepDescriptions;
+  const fullDesc = (descs && descs[step - 1]) || '';
+  const dashIdx = fullDesc.indexOf(' — ');
+  const title = dashIdx !== -1 ? fullDesc.slice(0, dashIdx) : ('STEP ' + step);
+  const body  = dashIdx !== -1 ? fullDesc.slice(dashIdx + 3) : fullDesc;
+  document.getElementById('gd-title').textContent = title;
+  document.getElementById('gd-desc').textContent = body;
+  document.getElementById('ol-gallery-detail').classList.remove('hidden');
+  openModalNav('ol-gallery-detail');
+}
+
+function closeGalleryDetail() {
+  document.getElementById('ol-gallery-detail').classList.add('hidden');
+  closeModalNav();
+  // 갤러리가 아직 열려 있으면 키보드 포커스 복원
+  if (!document.getElementById('ol-gallery').classList.contains('hidden')) {
+    openModalNav('ol-gallery');
+  }
+}
+
+// 갤러리 셀 → HUD로 별이 날아가는 연출 (StarFly 가용 시)
+function galleryStarBurst(cell) {
+  try {
+    const hud = document.getElementById('stat-best');
+    if (!cell || !hud || !SG.StarFly) return;
+    const r = cell.getBoundingClientRect();
+    SG.StarFly.burst({ from: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, to: hud, count: 1 });
+  } catch (_) {}
+}
+
+// SVG 파일을 텍스트로 로드 (SVG 인라인 삽입용)
+async function loadThemeSvg(themeId, step) {
+  try {
+    const path = 'themes/' + themeId + '/step-' + String(step).padStart(2, '0') + '.svg';
+    const r = await fetch(path);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch (_) { return null; }
+}
+
+// 테마 svgPaths 배열에서 경로를 꺼내 셀에 이미지 삽입.
+// SVG → fetch 인라인, 나머지(png/webp) → <img> 태그.
+// fallbackHtml: 이미지 로드 실패 시 표시할 HTML (NEW 배지 포함 가능).
+function renderThemeAssetToCell(theme, step, cell, fallbackHtml) {
+  if (!theme || !theme.svgPaths) { cell.innerHTML = fallbackHtml; return; }
+  const path = theme.svgPaths[step - 1];
+  if (!path) { cell.innerHTML = fallbackHtml; return; }
+  // NEW 배지: fallbackHtml에 포함돼 있으면 이미지 로드 후 재삽입
+  const hasNewBadge = fallbackHtml.indexOf('gallery-new-badge') !== -1;
+  const badgeEl = '<span class="gallery-new-badge">NEW</span>';
+  if (path.endsWith('.svg')) {
+    fetch(path).then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (svg) {
+        cell.innerHTML = svg ? svg : fallbackHtml;
+        if (svg && hasNewBadge) cell.insertAdjacentHTML('beforeend', badgeEl);
+      })
+      .catch(function () { cell.innerHTML = fallbackHtml; });
+  } else {
+    const img = document.createElement('img');
+    img.src = path;
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block';
+    img.onerror = function () { cell.innerHTML = fallbackHtml; };
+    cell.innerHTML = '';
+    cell.appendChild(img);
+    if (hasNewBadge) cell.insertAdjacentHTML('beforeend', badgeEl);
+  }
+}
+
+// Playgama lbGetEntries 응답을 공통 {playerId, score, country} 형태로 정규화
+function _normalizePgEntries(entries) {
+  if (!entries || !Array.isArray(entries)) return [];
+  return entries.map(function (e) {
+    return {
+      playerId: String(e.id || e.playerId || e.name || ''),
+      score:    Number(e.score || 0),
+      country:  e.extraData && e.extraData.country ? e.extraData.country : '',
+    };
+  });
+}
+
+// Render the daily leaderboard rows.
+// 우선순위: 1) Playgama in_game 리더보드 → 2) Firebase → 3) 데모 더미
+async function renderDailyLeaderboard() {
+  const box   = document.getElementById('daily-lb-rows');
+  const badge = document.getElementById('daily-lb-badge');
+  if (!box) return;
+  let rows = [];
+  let isDemo = true;
+  try {
+    // 1) Playgama Bridge 리더보드 (in_game 타입일 때만 데이터 있음)
+    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
+      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_DAILY);
+      if (pgEntries && pgEntries.length) {
+        rows = _normalizePgEntries(pgEntries);
+        isDemo = false;
+      }
+    }
+    // 2) Firebase 폴백
+    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'daily', limit: 10 });
+      isDemo = false;
+    }
+    // 3) 데모 더미
+    if (isDemo) {
+      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
+    }
+  } catch (_) { rows = []; }
+  if (badge) badge.style.display = isDemo ? '' : 'none';
+
+  const myId = SG.FB ? SG.FB.getPlayerId() : '';
+  const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
+
+  const top10 = rows.slice(0, 10);
+  const myTopIdx = top10.findIndex(function (r) { return r.playerId === myId; });
+
+  // 리더보드 점수 = stars*10000 + gameScore. 표시는 별 수(역산)만.
+  function _lbScoreToStars(raw) { return raw >= 10000 ? Math.floor(raw / 10000) : raw; }
+
+  function rowHtml(r, rank, isMe) {
+    const cc = r.country || '';
+    const fl = cc ? flag(cc) : '🌐';
+    const id = (r.playerId || 'player').slice(-6);
+    const stars = _lbScoreToStars(r.score != null ? r.score : 0);
+    return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
+      '<span class="lb-rank">' + rank + '</span>' +
+      '<span class="lb-flag">' + fl + '</span>' +
+      '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
+      '<span class="lb-score">⭐' + stars + '</span>' +
+      '</div>';
+  }
+
+  let html = top10.map(function (r, i) {
+    return rowHtml(r, i + 1, r.playerId === myId);
+  }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
+
+  // 내가 top-10 밖이면 구분선 + 내 항목을 맨 아래 추가
+  if (myTopIdx === -1 && myId) {
+    const myLbScore = (dailyRunStars * 10000) + dailyRunScore;
+    const myCountry = SG.FB && SG.FB.detectCountry ? SG.FB.detectCountry() : '';
+    const myRank = rows.filter(function (r) { return (r.score || 0) > myLbScore; }).length + 1;
+    const myRow  = { playerId: myId, score: myLbScore, country: myCountry };
+    html += '<div class="lb-sep">···</div>' + rowHtml(myRow, myRank, true);
+  }
+
+  box.innerHTML = html;
+}
+
+async function dailyRetry() {
+  closeModalNav();
+  document.getElementById('ol-daily-over').classList.add('hidden');
+  let granted = false;
+  try { const res = await requestRewardedAdWithQuota('daily_retry'); granted = res && res.granted !== false; } catch (_) { granted = false; }
+  if (!granted) { document.getElementById('ol-daily-over').classList.remove('hidden'); openModalNav('ol-daily-over'); return; }
+  startDailyRun();
+}
+
+function dailyToMenu() {
+  // 안전망: 미정산 best가 있으면 자동 정산 (claimBestToWallet은 idempotent).
+  if (dailyState) { SG.Daily.claimBestToWallet(dailyState, window.localStorage); }
+  closeModalNav();
+  document.getElementById('ol-daily-over').classList.add('hidden');
+  dailyMode = false;
+  _devDailyAllThemes = false;  // dev Daily 플래그 리셋
+  try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
+  showInterstitial();
+  renderer.setMode('main');
+  showStart();
+  refreshDailyMenu();
+  _refreshMenuDots();
+}
+
+function refreshDailyMenu() {
+  // 버튼 텍스트 갱신은 openDailyMenu() 팝업에서 처리 — 여기서는 레드닷만 갱신
+  _refreshMenuDots();
+}
+function msToNextUtcMidnight() {
+  const now = new Date();
+  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0);
+  let s = Math.max(0, Math.floor((next - now.getTime()) / 1000));
+  const h = String(Math.floor(s/3600)).padStart(2,'0'); s %= 3600;
+  const m = String(Math.floor(s/60)).padStart(2,'0'); const ss = String(s%60).padStart(2,'0');
+  return h + ':' + m + ':' + ss;
+}
+
+async function restartGame() {
+  closeModalNav();
+  document.getElementById('ol-gameover').classList.add('hidden');
+  await showInterstitial();
+  await startGame();
+}
+
+function goToStart() {
+  document.getElementById('ol-gameover').classList.add('hidden');
+  showStart();
+}
+
+// ── 종료 ──────────────────────────────────────────────────────────
+async function endGame() {
+  gameRunning = false;
+  try { SG.CG.gameplayStop(); } catch (_) {}
+  try { if (SG.Sound && SG.Sound.playGameOver) SG.Sound.playGameOver(); } catch (_) {}
+
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem(STORAGE_KEY_BEST, String(bestScore));
+  }
+  updateStats(0);
+
+  try { if (SG.FB.isConnected()) await SG.FB.submitScore(score, { level, maxChain }); } catch (_) {}
+  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(score); } catch (_) {}
+
+  document.getElementById('go-score').textContent = score.toLocaleString();
+  document.getElementById('go-best').textContent = bestScore.toLocaleString();
+  document.getElementById('ol-gameover').classList.remove('hidden');
+  try { SG.CG.showBanner(); } catch (_) {}
+  openModalNav('ol-gameover');   // keyboard-focus the modal buttons
+}
+
+// ── 입력 바인딩 ───────────────────────────────────────────────────
+document.querySelectorAll('.dirbtn').forEach(function (b) {
+  b.addEventListener('click', function () { doMove(b.dataset.dir); });
+});
+window.addEventListener('keydown', function (e) {
+  // Modal open → arrows/enter navigate the modal, not the board.
+  if (_modal) { if (modalNavKey(e)) e.preventDefault(); return; }
+  const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  if (map[e.key]) { e.preventDefault(); doMove(map[e.key]); }
+});
+
+// ── 햅틱 (모바일) — 옵션 ON/OFF + 첫 사용자 입력 후에만 진동 ──────
+// 첫 탭/클릭/키 전에는 vibrate가 차단(콘솔 경고)되므로 게이트로 막는다.
+let _userInteracted = false;
+let _hapticEnabled = true;
+try { _hapticEnabled = localStorage.getItem('earthbeyond_haptic') !== 'off'; } catch (_) {}
+function setHaptic(on) {
+  _hapticEnabled = !!on;
+  try { localStorage.setItem('earthbeyond_haptic', on ? 'on' : 'off'); } catch (_) {}
+}
+function haptic(ms) {
+  if (!_hapticEnabled || !_userInteracted) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {}
+}
+// 첫 사용자 입력 표시 (이후부터 진동 허용)
+['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+  window.addEventListener(ev, function () { _userInteracted = true; }, { once: false });
+});
+
+// ── 모달 키보드/마우스 네비게이션 ─────────────────────────────────
+// _modal: { id, items[], idx, axis('v'|'h') }. items are focusable elements.
+let _modal = null;
+function _focusItem(i) {
+  if (!_modal) return;
+  _modal.items.forEach(el => el.classList.remove('focused'));
+  _modal.idx = (i + _modal.items.length) % _modal.items.length;
+  const el = _modal.items[_modal.idx];
+  el.classList.add('focused');
+  // In settings, focusing a sound-pack chip selects+previews it live.
+  // (HAPTIC chip has no data-pack → just blip, don't change pack.)
+  if (_modal.id === 'ol-settings' && el.classList.contains('soundset-chip') && el.dataset.pack) {
+    selectSoundset(el.dataset.pack);
+  } else {
+    try { if (SG.Sound && SG.Sound.playBlip) SG.Sound.playBlip(true); } catch (_) {}
+  }
+  haptic(8);
+}
+function openModalNav(overlayId) {
+  const ov = document.getElementById(overlayId);
+  // gameover: vertical buttons; settings: chips (horizontal) + close button.
+  // 숨겨진 버튼 제외: 자신의 display:none 또는 .hidden 부모(단계 전환) 안에 있으면 offsetParent=null.
+  const items = Array.from(ov.querySelectorAll('.soundset-chip, .modal-btn'))
+    .filter(function (el) { return el.style.display !== 'none' && el.offsetParent !== null; });
+  _modal = { id: overlayId, items, idx: 0, axis: overlayId === 'ol-settings' ? 'h' : 'v' };
+  // mouse: hovering an item focuses it
+  items.forEach((el, i) => { el.onmouseenter = () => _focusItem(i); });
+  _focusItem(0);
+}
+function closeModalNav() {
+  if (_modal) _modal.items.forEach(el => el.classList.remove('focused'));
+  _modal = null;
+}
+function modalNavKey(e) {
+  if (!_modal) return false;
+  const k = e.key;
+  const fwd = (_modal.axis === 'h') ? 'ArrowRight' : 'ArrowDown';
+  const back = (_modal.axis === 'h') ? 'ArrowLeft' : 'ArrowUp';
+  // settings: ←→ change sound pack live; ↑↓ also move focus across chips+close
+  if (k === fwd || k === 'ArrowDown' || k === 'ArrowRight') { _focusItem(_modal.idx + 1); return true; }
+  if (k === back || k === 'ArrowUp' || k === 'ArrowLeft')   { _focusItem(_modal.idx - 1); return true; }
+  if (k === 'Enter' || k === ' ') {
+    const el = _modal.items[_modal.idx];
+    haptic(14);
+    if (el) el.click();
+    return true;
+  }
+  if (k === 'Escape') { if (_modal.id === 'ol-settings') closeSettings(); return true; }
+  return false;
+}
+
+// ── 설정 패널 (사운드셋 드롭다운) ────────────────────────────────
+function buildSoundsetChips() {
+  const dropdown = document.getElementById('soundset-dropdown');
+  dropdown.innerHTML = '';
+  const packs = (SG.Sound && SG.Sound.packs) ? SG.Sound.packs : [];
+  const current = SG.Sound ? SG.Sound.pack : null;
+  packs.forEach(function (p) {
+    const btn = document.createElement('button');
+    btn.className = 'sdd-item';
+    btn.dataset.pack = p.id;
+    btn.setAttribute('aria-selected', String(p.id === current));
+    btn.innerHTML =
+      '<span class="sdd-check"></span>' +
+      '<span>' + p.label + '</span>' +
+      '<span class="sdd-desc">' + p.desc + '</span>';
+    btn.onclick = function () { selectSoundset(p.id); };
+    dropdown.appendChild(btn);
+  });
+  _syncSoundsetTrigger();
+}
+function _syncSoundsetTrigger() {
+  const packs = (SG.Sound && SG.Sound.packs) ? SG.Sound.packs : [];
+  const current = SG.Sound ? SG.Sound.pack : null;
+  const active = packs.find(function (p) { return p.id === current; });
+  const label = document.getElementById('soundset-trigger-label');
+  if (label) label.textContent = active ? active.label : '—';
+}
+function toggleSoundsetDropdown() {
+  const trigger  = document.getElementById('soundset-trigger');
+  const dropdown = document.getElementById('soundset-dropdown');
+  const isOpen = dropdown.classList.contains('open');
+  dropdown.classList.toggle('open', !isOpen);
+  trigger.classList.toggle('open', !isOpen);
+  haptic(6);
+}
+function selectSoundset(id) {
+  if (!SG.Sound) return;
+  SG.Sound.setPack(id);
+  document.querySelectorAll('.sdd-item[data-pack]').forEach(function (c) {
+    c.setAttribute('aria-selected', String(c.dataset.pack === id));
+  });
+  _syncSoundsetTrigger();
+  // 선택 후 드롭다운 닫기
+  document.getElementById('soundset-dropdown').classList.remove('open');
+  document.getElementById('soundset-trigger').classList.remove('open');
+  try { SG.Sound.playMerge([{ blockType: 1, size: 4 }]); } catch (_) {}
+  haptic(10);
+}
+
+// ── Sound master ON/OFF ───────────────────────────────────────────
+var _soundEnabled = true;
+
+function _loadSoundEnabled() {
+  try {
+    var v = localStorage.getItem('earthbeyond_sound_enabled');
+    _soundEnabled = (v === null) ? true : (v === '1');
+  } catch (_) {}
+}
+function _saveSoundEnabled() {
+  try { localStorage.setItem('earthbeyond_sound_enabled', _soundEnabled ? '1' : '0'); } catch (_) {}
+}
+function _applySoundEnabled() {
+  if (!SG.Sound) return;
+  SG.Sound.setMuted(!_soundEnabled);
+  // BGM: 켜질 때만 재생, 꺼질 때는 setMuted가 gain=0으로 처리
+  if (_soundEnabled && _bgmEnabled && _bgmActiveTheme) {
+    if (!SG.Sound.bgmRunning) SG.Sound.playBgm(_bgmActiveTheme);
+  }
+}
+function toggleSoundEnabled() {
+  _soundEnabled = !_soundEnabled;
+  _saveSoundEnabled();
+  _applySoundEnabled();
+  _refreshSoundToggleUI();
+}
+function _refreshSoundToggleUI() {
+  var st   = document.getElementById('sound-toggle-state');
+  var chip = document.getElementById('chip-sound-toggle');
+  if (st)   st.textContent = _soundEnabled ? 'ON' : 'OFF';
+  if (chip) chip.setAttribute('aria-selected', String(_soundEnabled));
+}
+
+// ── BGM Settings ──────────────────────────────────────────────────
+var _bgmEnabled = false;
+var _bgmActiveTheme = null;
+var _bgmPreviewId = null;
+
+function _loadBgmPrefs() {
+  try {
+    var s = localStorage.getItem('earthbeyond_bgm');
+    if (s) { var p = JSON.parse(s); _bgmEnabled = !!p.enabled; _bgmActiveTheme = p.theme || 'solar'; }
+    else { _bgmEnabled = false; _bgmActiveTheme = 'solar'; }
+    var vol = localStorage.getItem('earthbeyond_bgm_vol');
+    if (vol !== null && SG.Sound) {
+      var v = parseFloat(vol);
+      if (!isNaN(v)) SG.Sound.setBgmVolume(v);
+    }
+    var tone = localStorage.getItem('earthbeyond_bgm_tone');
+    if (tone && SG.Sound) SG.Sound.setBgmPack(tone);
+  } catch (_) {}
+}
+function _saveBgmPrefs() {
+  try { localStorage.setItem('earthbeyond_bgm', JSON.stringify({ enabled: _bgmEnabled, theme: _bgmActiveTheme })); } catch (_) {}
+}
+
+function buildBgmUI() {
+  _loadBgmPrefs();
+  _buildBgmToneChips();
+  _buildBgmThemeChips();
+  _refreshBgmVolumeUI();
+  _refreshBgmToggleUI();
+}
+
+function _buildBgmToneChips() {
+  var list = document.getElementById('bgm-tone-list');
+  if (!list || !SG.Sound) return;
+  list.innerHTML = '';
+  var tones = [
+    { id: 'pad',     label: 'PAD',     desc: '신비로운 공간감' },
+    { id: 'bell',    label: 'BELL',    desc: '맑은 차임벨' },
+    { id: 'choir',   label: 'CHOIR',   desc: '성악풍 두께감' },
+    { id: 'crystal', label: 'CRYSTAL', desc: '벨 클래식' },
+    { id: 'cyber',   label: 'CYBER',   desc: '사이버' },
+  ];
+  var cur = (SG.Sound.bgmPack) || 'pad';
+  tones.forEach(function (t) {
+    var chip = document.createElement('button');
+    chip.className = 'bgm-tone-chip';
+    chip.dataset.tone = t.id;
+    chip.setAttribute('aria-selected', String(t.id === cur));
+    chip.title = t.desc;
+    chip.textContent = t.label;
+    chip.onclick = function () { selectBgmTone(t.id); };
+    list.appendChild(chip);
+  });
+}
+
+function selectBgmTone(id) {
+  if (!SG.Sound) return;
+  SG.Sound.setBgmPack(id);
+  try { localStorage.setItem('earthbeyond_bgm_tone', id); } catch (_) {}
+  document.querySelectorAll('.bgm-tone-chip').forEach(function (c) {
+    c.setAttribute('aria-selected', String(c.dataset.tone === id));
+  });
+  if (_bgmEnabled && _bgmActiveTheme && SG.Sound.bgmRunning) {
+    SG.Sound.stopBgm();
+    SG.Sound.playBgm(_bgmActiveTheme, id);
+  }
+  haptic(8);
+}
+
+function _bgmT(ko, en) { return (SG.i18n && SG.i18n.getLang() === 'ko') ? ko : en; }
+
+function _buildBgmThemeChips() {
+  var list = document.getElementById('bgm-theme-list');
+  if (!list || !SG.Sound) return;
+  list.innerHTML = '';
+  var themes = SG.Sound.bgmThemes || [];
+  themes.forEach(function (th) {
+    var chip = document.createElement('div');
+    chip.className = 'bgm-theme-chip';
+    chip.dataset.theme = th.id;
+    chip.setAttribute('aria-selected', String(th.id === _bgmActiveTheme));
+
+    var label = document.createElement('span');
+    label.className = 'btc-label';
+    label.textContent = th.label;
+
+    var prevBtn = document.createElement('button');
+    prevBtn.className = 'btc-prev';
+    prevBtn.id = 'bgm-prev-' + th.id;
+    prevBtn.textContent = _bgmT('▶ 미리듣기', '▶ PREVIEW');
+    prevBtn.onclick = function (e) {
+      e.stopPropagation();
+      previewBgmTheme(th.id, prevBtn);
+    };
+
+    var playBtn = document.createElement('button');
+    playBtn.className = 'btc-play';
+    playBtn.textContent = th.id === _bgmActiveTheme ? _bgmT('✓ 선택됨', '✓ SELECTED') : _bgmT('선택', 'SELECT');
+    playBtn.onclick = function (e) {
+      e.stopPropagation();
+      selectBgmTheme(th.id);
+    };
+
+    chip.appendChild(label);
+    chip.appendChild(prevBtn);
+    chip.appendChild(playBtn);
+    chip.onclick = function () { selectBgmTheme(th.id); };
+    list.appendChild(chip);
+  });
+}
+
+function previewBgmTheme(themeId, btn) {
+  if (!SG.Sound) return;
+  if (_bgmPreviewId === themeId) {
+    SG.Sound.stopBgm();
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+    if (_bgmEnabled && _bgmActiveTheme) SG.Sound.playBgm(_bgmActiveTheme);
+    return;
+  }
+  SG.Sound.stopBgm();
+  _bgmPreviewId = themeId;
+  _resetPreviewBtns();
+  if (btn) { btn.textContent = '■ 중지'; btn.classList.add('playing'); }
+  SG.Sound.previewBgm(themeId, null, function () {
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+    if (_bgmEnabled && _bgmActiveTheme) SG.Sound.playBgm(_bgmActiveTheme);
+  });
+}
+
+function _resetPreviewBtns() {
+  var themes = SG.Sound ? (SG.Sound.bgmThemes || []) : [];
+  themes.forEach(function (th) {
+    var btn = document.getElementById('bgm-prev-' + th.id);
+    if (btn) { btn.textContent = _bgmT('▶ 미리듣기', '▶ PREVIEW'); btn.classList.remove('playing'); }
+  });
+}
+
+function selectBgmTheme(id) {
+  _bgmActiveTheme = id;
+  _saveBgmPrefs();
+  document.querySelectorAll('.bgm-theme-chip').forEach(function (c) {
+    var sel = c.dataset.theme === id;
+    c.setAttribute('aria-selected', String(sel));
+    var playBtn = c.querySelector('.btc-play');
+    if (playBtn) playBtn.textContent = sel ? _bgmT('✓ 선택됨', '✓ SELECTED') : _bgmT('선택', 'SELECT');
+  });
+  if (_bgmEnabled) {
+    SG.Sound.stopBgm();
+    SG.Sound.playBgm(id);
+  }
+  haptic(10);
+}
+
+function toggleBgmEnabled() {
+  _bgmEnabled = !_bgmEnabled;
+  _saveBgmPrefs();
+  _refreshBgmToggleUI();
+  if (_bgmEnabled) {
+    SG.Sound.playBgm(_bgmActiveTheme || 'solar');
+  } else {
+    SG.Sound.stopBgm();
+    _bgmPreviewId = null;
+    _resetPreviewBtns();
+  }
+  haptic(12);
+}
+
+function onBgmVolSlider(val) {
+  var v = parseInt(val, 10) / 100;
+  if (SG.Sound) SG.Sound.setBgmVolume(v);
+  try { localStorage.setItem('earthbeyond_bgm_vol', String(v)); } catch (_) {}
+  var lbl = document.getElementById('bgm-vol-label');
+  if (lbl) lbl.textContent = val;
+}
+
+function _refreshBgmVolumeUI() {
+  var rawVol = (SG.Sound && SG.Sound.bgmVolume != null) ? SG.Sound.bgmVolume : 0.38;
+  var vol = Math.round(rawVol * 100);
+  if (isNaN(vol)) vol = 38;
+  var slider = document.getElementById('bgm-vol-slider');
+  var lbl    = document.getElementById('bgm-vol-label');
+  if (slider) slider.value = vol;
+  if (lbl)    lbl.textContent = vol;
+}
+
+function _refreshBgmToggleUI() {
+  var st   = document.getElementById('bgm-toggle-state');
+  var chip = document.getElementById('chip-bgm-toggle');
+  if (st)   st.textContent = _bgmEnabled ? 'ON' : 'OFF';
+  if (chip) chip.setAttribute('aria-selected', String(_bgmEnabled));
+}
+
+// Era → BGM 자동 매핑 (startCollection / startEndless 등에서 호출)
+function applyBgmForMode(modeOrEra) {
+  if (!_bgmEnabled || !SG.Sound) return;
+  var map = {
+    'primordial-earth': 'earth',
+    'human-civilization': 'civilization',
+    'solar-system': 'solar',
+    'daily': 'solar',
+    'endless': 'solar',
+  };
+  var th = map[modeOrEra] || _bgmActiveTheme || 'solar';
+  if (SG.Sound.bgmTheme === th && SG.Sound.bgmRunning) return;
+  SG.Sound.playBgm(th);
+}
+
+function refreshHapticChip() {
+  const st = document.getElementById('haptic-state');
+  const chip = document.getElementById('chip-haptic');
+  if (st) st.textContent = _hapticEnabled ? 'ON' : 'OFF';
+  if (chip) chip.setAttribute('aria-selected', String(_hapticEnabled));
+}
+function toggleHaptic() {
+  setHaptic(!_hapticEnabled);
+  refreshHapticChip();
+  haptic(12);   // brief feedback if turning ON (and after interaction)
+}
+// ── 언어 설정 ──────────────────────────────────────────────────────
+var LANG_KEY = 'earthbeyond_lang';
+
+function _t(key) {
+  try { return SG.i18n.t(key); } catch (_) { return key; }
+}
+
+// data-i18n 속성을 가진 모든 요소의 텍스트를 현재 언어로 일괄 교체.
+// 요소 내부에 자식 요소(span, reddot 등)가 있을 때 firstChild 텍스트만 교체.
+function applyLang() {
+  var lang = SG.i18n.getLang();
+  document.querySelectorAll('[data-i18n]').forEach(function (el) {
+    var key = el.getAttribute('data-i18n');
+    var txt = _t(key);
+    if (txt === key) return; // 번역 없으면 스킵
+    // 자식 요소가 있는 경우: 첫 번째 텍스트 노드만 교체 (reddot 등 유지)
+    var hasChildElements = el.children.length > 0;
+    if (hasChildElements) {
+      // 첫 번째 텍스트 노드를 찾아 교체
+      for (var i = 0; i < el.childNodes.length; i++) {
+        var node = el.childNodes[i];
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          node.textContent = txt + ' ';
+          break;
+        }
+      }
+    } else {
+      el.textContent = txt;
+    }
+  });
+  // 언어별 동적 문자열 패치
+  _applyLangDynamic(lang);
+}
+
+// JS가 동적으로 생성하거나 i18n 팩에 없는 특수 문자열 패치
+function _applyLangDynamic(lang) {
+  var ko = lang === 'ko';
+  // Daily 메뉴 팝업 내 "내일" 메시지
+  var dmMsg = document.querySelector('[data-i18n="ui.label.dailyDoneMsg"]');
+  if (dmMsg) dmMsg.textContent = ko ? '내일 새로운 Daily Challenge가 열립니다' : 'A new Daily Challenge opens tomorrow.';
+  // 메뉴 Endless 서브레이블 재갱신 (잠김 텍스트 포함)
+  _refreshMenuDots();
+}
+
+function _refreshLangChips() {
+  var cur = SG.i18n.getLang();
+  ['ko', 'en'].forEach(function (lang) {
+    var chip = document.getElementById('chip-lang-' + lang);
+    if (chip) chip.setAttribute('aria-selected', String(cur === lang));
+  });
+}
+
+function selectLang(lang) {
+  if (!SG.i18n) return;
+  SG.i18n.setLang(lang);
+  try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
+  _refreshLangChips();
+  applyLang();
+  haptic(10);
+}
+
+function _loadLang() {
+  try {
+    var saved = localStorage.getItem(LANG_KEY);
+    if (saved && SG.i18n) SG.i18n.setLang(saved);
+  } catch (_) {}
+}
+
+function openSettings() {
+  _loadSoundEnabled();
+  _refreshSoundToggleUI();
+  buildSoundsetChips();
+  buildBgmUI();
+  refreshHapticChip();
+  _refreshLangChips();
+  // MENU 버튼: 게임/Daily/Endless/Collection 중일 때만 표시.
+  // START 화면이거나 Daily game-over 패널이 열려 있으면 숨김 (이미 MENU 버튼 있음).
+  const onStartScreen = !document.getElementById('ol-start').classList.contains('hidden');
+  const onDailyOver   = !document.getElementById('ol-daily-over').classList.contains('hidden');
+  const onEndlessOver = !document.getElementById('ol-endless-over').classList.contains('hidden');
+  const menuBtn = document.getElementById('btn-settings-menu');
+  if (menuBtn) menuBtn.style.display = (onStartScreen || onDailyOver || onEndlessOver) ? 'none' : '';
+  // 콜렉션 모드일 때만 갤러리 버튼 노출 + NEW 레드닷.
+  const galBtn = document.getElementById('btn-settings-gallery');
+  if (galBtn) {
+    galBtn.style.display = collectionMode ? '' : 'none';
+    const dot = document.getElementById('settings-gallery-dot');
+    const _settingsTheme = collectionMode ? (SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null) : null;
+    const hasNew = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage, _settingsTheme);
+    if (dot) dot.classList.toggle('hidden', !hasNew);
+  }
+  document.getElementById('ol-settings').classList.remove('hidden');
+  openModalNav('ol-settings');
+}
+function closeSettings() {
+  // 드롭다운이 열려 있으면 닫기
+  const _dd = document.getElementById('soundset-dropdown');
+  const _dt = document.getElementById('soundset-trigger');
+  if (_dd) _dd.classList.remove('open');
+  if (_dt) _dt.classList.remove('open');
+  closeModalNav();
+  document.getElementById('ol-settings').classList.add('hidden');
+  // Settings can open over the START screen → restore its keyboard nav.
+  if (!document.getElementById('ol-start').classList.contains('hidden')) {
+    openModalNav('ol-start');
+  }
+}
+function settingsToMenu() {
+  document.getElementById('ol-settings').classList.add('hidden');
+  // 실행 중인 모드에 맞는 정산 함수로 위임 (각 함수가 closeModalNav + showStart 처리).
+  if (dailyMode) {
+    gameRunning = false;
+    dailyToMenu();
+  } else if (endlessMode) {
+    endlessToMenu();
+  } else if (collectionMode) {
+    gameRunning = false;
+    collectionMode = false;
+    _devDailyAllThemes = false;
+    closeModalNav();
+    if (renderer) renderer.setMode('main');
+    showStart();
+    _refreshMenuDots();
+  } else {
+    gameRunning = false;
+    closeModalNav();
+    if (renderer) renderer.setMode('main');
+    showStart();
+  }
+}
+let _sx = 0, _sy = 0;
+canvas.addEventListener('touchstart', function (e) {
+  const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY;
+}, { passive: true });
+canvas.addEventListener('touchend', function (e) {
+  const t = e.changedTouches[0]; const dx = t.clientX - _sx, dy = t.clientY - _sy;
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+  if (Math.abs(dx) > Math.abs(dy)) doMove(dx > 0 ? 'right' : 'left');
+  else doMove(dy > 0 ? 'down' : 'up');
+}, { passive: true });
+
+// ── Playgama 오디오/일시정지 훅 ──────────────────────────────────
+SG.PG._onAudioStateChanged = function (isEnabled) {
+  // 플랫폼 오디오 상태 변경 — 유저 설정(_soundEnabled)과 AND
+  try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(!isEnabled || !_soundEnabled); } catch (_) {}
+};
+SG.PG._onPauseStateChanged = function (isPaused) {
+  isPlatformPaused = isPaused;
+  if (isPaused) {
+    try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(true); } catch (_) {}
+  } else {
+    var audioOk = SG.PG._audioEnabled !== false && _soundEnabled;
+    try { if (SG.Sound && SG.Sound.setMuted) SG.Sound.setMuted(!audioOk); } catch (_) {}
+  }
+};
+
+// ── Test/debug helpers (accessed by Playwright visual-check) ─────
+// Exposed as functions so `let` closure variables are accessible from outside.
+function _testGetGrid()      { return grid; }
+function _testGetGameRunning() { return gameRunning; }
+function _testSetGrid(g)     { grid = g; if (renderer) renderer.drawGrid(grid); }
+function _testSetGameRunning(v) { gameRunning = v; }
+function _testSetIsAnimating(v) { isAnimating = v; }
+
+// ── DEV CHEAT ─────────────────────────────────────────────────────
+// Cheat sequence: pairs of same-size tiles so every push merges them.
+// 1,1,…,512,512 → 512 머지로 1024(최종 step) 생성 → 전 단계 + 완성까지 커버.
+const CHEAT_SEQ = [1,1,2,2,4,4,8,8,16,16,32,32,64,64,128,128,256,256,512,512];
+let cheatActive = false;
+let cheatIdx = 0;
+
+function devToggleCheat() {
+  cheatActive = !cheatActive;
+  cheatIdx = 0;
+  const btn = document.getElementById('btn-cheat');
+  if (btn) {
+    btn.textContent = cheatActive ? 'CHEAT ON' : 'CHEAT OFF';
+    btn.style.color = cheatActive ? '#39ff14' : '';
+    btn.style.borderColor = cheatActive ? '#39ff14' : '';
+  }
+}
+
+// 초기 보드(dailyBoard)의 기존 타일을 치트 시퀀스 size로 교체
+function devCheatPatchInitialGrid(g) {
+  if (!cheatActive || !g) return;
+  cheatIdx = 0;
+  const n = g.length;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (g[r][c]) {
+      g[r][c] = { color: g[r][c].color, size: CHEAT_SEQ[cheatIdx++ % CHEAT_SEQ.length] };
+    }
+  }
+}
+
+// Called after applyMove: if cheat is active and a tile was spawned,
+// replace its size with the next value in the sequence.
+function devCheatPatchSpawn(result) {
+  if (!cheatActive || !result || !result.spawned) return;
+  const s = result.spawned;
+  const size = CHEAT_SEQ[cheatIdx % CHEAT_SEQ.length];
+  cheatIdx++;
+  result.grid[s.at[0]][s.at[1]] = { color: s.color, size: size };
+  result.spawned = { at: s.at, color: s.color, size: size };
+}
+
+// ── DEV BAR ───────────────────────────────────────────────────────
+// Dev Daily: 제한 없이 진입, 전 테마 랜덤 배경으로 미해금 테마 소개
+function devStartDaily() {
+  _devDailyAllThemes = true;
+  _pendingOnboard = false;  // 온보딩 CTA 비활성
+  const date = utcDateStr();
+  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  // retries 제한 무시 — dev용 강제 진입
+  dailyState.retriesUsed = 0;
+  startDailyRun();
+}
+
+// dev 모드: 테마 드롭다운을 CollectionThemes 목록으로 채운다.
+function devPopulateThemeSelect() {
+  const sel = document.getElementById('dev-theme-select');
+  if (!sel || !SG.CollectionThemes) return;
+  sel.innerHTML = '';
+  SG.CollectionThemes.forEach(function (t) {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.label || t.id;
+    sel.appendChild(opt);
+  });
+  sel.value = activeThemeId;
+}
+
+// dev 모드: 드롭다운에서 테마를 선택하면 즉시 activeTheme 전환.
+// meta를 직접 수정하고 startCollection()을 재호출하여 반영.
+function devSetTheme(themeId) {
+  const meta = SG.Collection.loadMeta(localStorage);
+  // 선택한 테마가 unlockedThemes에 없으면 자동 추가 (dev 편의)
+  if (meta.unlockedThemes.indexOf(themeId) === -1) meta.unlockedThemes.push(themeId);
+  meta.activeThemeId = themeId;
+  SG.Collection.saveMeta(localStorage, meta);
+  activeThemeId = themeId;
+  // collection 모드 중이면 즉시 재시작, 아니면 메뉴에서 선택 시 반영됨
+  if (collectionMode) startCollection();
+}
+
+// dev 모드: 현재 선택된 테마를 해금 (기존 해금 여부 무관하게 meta에 추가).
+function devUnlockActiveTheme() {
+  const meta = SG.Collection.loadMeta(localStorage);
+  const id = document.getElementById('dev-theme-select').value || activeThemeId;
+  if (meta.unlockedThemes.indexOf(id) === -1) meta.unlockedThemes.push(id);
+  SG.Collection.saveMeta(localStorage, meta);
+  showGameToast('DEV: ' + id + ' unlocked');
+}
+
+function devResetAll() {
+  if (!confirm('Reset all data?')) return;
+  // Wipe ALL game data: every earthbeyond_* key (best, player, settings, and the
+  // date-keyed daily states earthbeyond_daily_YYYY-MM-DD) plus the firebase
+  // player id. Keep sg_dev so the dev tools stay on after reload.
+  try {
+    const kill = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('earthbeyond_') === 0) kill.push(k);
+    }
+    // collection 키도 정리
+    try {
+      const collectionKeys = SG.Collection.getAllKeys(localStorage);
+      collectionKeys.forEach(function (k) { if (kill.indexOf(k) === -1) kill.push(k); });
+    } catch (_) {}
+    kill.forEach(function (k) { localStorage.removeItem(k); });
+    localStorage.removeItem('puzzle_player_id');   // firebase.js getPlayerId()
+  } catch (_) {}
+  location.reload();
+}
+
+// ── 부팅 IIFE ─────────────────────────────────────────────────────
+// SDK / Firebase reject promise sometimes escapes try/catch (e.g. CORS on file://).
+// Swallow silently so the game stays playable without a real backend.
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason;
+  var msg = (r && (r.message || String(r))) || '';
+  if ((r && r.code === 'sdkDisabled') ||
+      msg.indexOf('sdkDisabled') !== -1 ||
+      msg.indexOf('bridge') !== -1 || msg.indexOf('firebase') !== -1 ||
+      msg.indexOf('playgama') !== -1 || msg.indexOf('CORS') !== -1 ||
+      msg.indexOf('Failed to fetch') !== -1) {
+    e.preventDefault();
+    console.warn('[boot] swallowed SDK rejection:', msg);
+  }
+});
+
+// ── Playgama Bridge storage mirror ────────────────────────────────────────
+// 게임 데이터는 localStorage에 저장되지만 Playgama QA는 SDK의 storage.set()
+// 호출을 요구한다. SDK init 직후 + 주요 저장 시점(game-over, claim)에 핵심
+// 키를 Bridge storage에 미러해 QA 저장 이벤트를 충족시킨다.
+function pgSyncStorage() {
+  if (!SG.PG.isAvailable()) return;
+  try {
+    const SYNC_KEYS = [
+      'earthbeyond_wallet',
+      'earthbeyond_collection_meta',
+    ];
+    const payload = {};
+    SYNC_KEYS.forEach(function (k) {
+      const v = localStorage.getItem(k);
+      if (v != null) payload[k] = v;
+    });
+    // 오늘 날짜 daily state도 포함
+    const today = (function () {
+      const d = new Date();
+      return d.getUTCFullYear() + '-' +
+             String(d.getUTCMonth()+1).padStart(2,'0') + '-' +
+             String(d.getUTCDate()).padStart(2,'0');
+    })();
+    const dk = 'earthbeyond_daily_' + today;
+    const dv = localStorage.getItem(dk);
+    if (dv != null) payload[dk] = dv;
+
+    if (Object.keys(payload).length > 0) {
+      SG.PG.storageSet(payload).catch(function () {});
+    }
+  } catch (_) {}
+}
+
+(async function boot() {
+  const _isDev = new URLSearchParams(location.search).has('dev') ||
+      localStorage.getItem('sg_dev') === '1';
+  // 버전 표시 (START 화면). DEV 모드면 DEV 태그 부가.
+  const _verEl = document.getElementById('app-version');
+  if (_verEl) _verEl.textContent = 'EARTH & BEYOND ' + APP_VERSION + (_isDev ? ' · DEV' : '');
+  // DEV BAR + dev-only 버튼 노출 (본게임 START, 스토리모드 STORY)
+  if (_isDev) {
+    document.getElementById('dev-bar').style.display = 'flex';
+    const startBtn = document.getElementById('btn-start');
+    if (startBtn) startBtn.style.display = '';
+    const storyBtn = document.getElementById('btn-story');
+    if (storyBtn) storyBtn.style.display = '';
+    devPopulateThemeSelect();
+  }
+
+  // 캔버스 크기 설정
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // 언어 설정 복원 + UI 적용
+  _loadLang();
+  applyLang();
+
+  // 사운드 인스턴스 생성 (sound.js는 SG.SoundManager 클래스만 노출)
+  try { SG.Sound = new SG.SoundManager(); } catch (_) { SG.Sound = null; }
+  // 저장된 sound ON/OFF 복원
+  _loadSoundEnabled();
+  _applySoundEnabled();
+
+  // 렌더러 + 루프 (게임 모듈 로드 후)
+  renderer = new SG.Renderer(canvas);
+  resizeCanvas();                 // re-fit now that renderer exists
+  requestAnimationFrame(loop);
+
+  // 첫 접속이면 Daily 튜토리얼, 재접속이면 메뉴 표시
+  if (!isFirstVisit()) {
+    openModalNav('ol-start');
+    refreshDailyMenu();
+  } else { _checkOnboarding(); }
+  setInterval(function () { if (!document.getElementById('ol-start').classList.contains('hidden')) refreshDailyMenu(); }, 1000);
+
+  // 로딩 시작 알림
+  SG.CG.loadingStart();
+
+  // SDK 초기화
+  if (window.bridge && typeof window.bridge.initialize === 'function') {
+    await SG.PG.init();
+  } else {
+    await SG.CG.init();
+    if (!SG.CG.isAvailable() && SG.PG) {
+      await SG.PG.init();
+    }
+  }
+
+  // Firebase
+  await SG.FB.init();
+
+  // 배너 광고 (시작 화면)
+  SG.CG.showBanner();
+
+  // 로딩 완료
+  SG.CG.loadingStop();
+
+  // 초기 UI: 누적 재화 칩 노출 (스탯은 모드 진입 시 채워짐)
+  updateWalletChip();
+
+  // Playgama SDK storage sync — QA 요건: SDK init 후 storage.set() 최소 1회 호출.
+  // localStorage의 현재 상태를 Bridge storage에 미러해 QA 저장 이벤트를 트리거한다.
+  pgSyncStorage();
+
+})().catch(function (e) {
+  console.error('[boot] failed:', e);
+  if (SG.Notify) SG.Notify.error('SDK_INIT');
+});
+</script>
+
+</body>
+</html>
