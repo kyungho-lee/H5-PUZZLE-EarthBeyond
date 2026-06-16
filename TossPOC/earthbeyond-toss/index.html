@@ -763,8 +763,8 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Toss: portrait mode lock */
-    @media (orientation: landscape) {
+    /* Toss: portrait mode lock — mobile touch only, desktop browser unaffected */
+    @media (orientation: landscape) and (hover: none) and (pointer: coarse) {
       body::before {
         content: '세로 모드로 회전해주세요';
         position: fixed; inset: 0; display: flex;
