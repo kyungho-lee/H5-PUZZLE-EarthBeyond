@@ -51,15 +51,17 @@
     },
   };
 
-  // SG.CG stub — crazygames.js 제거 대체. 모든 호출이 try/catch 안이지만 명시적으로 정의.
+  // SG.CG stub — crazygames.js 제거 대체.
   global.SG.CG = {
     isAvailable:   function () { return false; },
     init:          function () { return Promise.resolve(); },
+    loadingStart:  function () {},
+    loadingStop:   function () {},
     gameplayStart: function () {},
     gameplayStop:  function () {},
     showBanner:    function () {},
     hideBanner:    function () {},
-    requestRewardedAd:    function () { return Promise.resolve({ success: false }); },
+    requestRewardedAd:     function () { return Promise.resolve({ success: false }); },
     requestInterstitialAd: function () { return Promise.resolve({ success: false }); },
   };
 
