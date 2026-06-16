@@ -48,7 +48,10 @@
       const img = new Image();
       img.src = path;
       img.onerror = () => { _collImgCache[key] = null; };
-      img.onload = () => { _collImgCache[key] = img; };
+      img.onload = () => {
+        _collImgCache[key] = img;
+        if (_skinRendererRef && _skinRendererRef.grid) _skinRendererRef.drawGrid(_skinRendererRef.grid);
+      };
       _collImgCache[key] = img;
       entry = img;
     }
