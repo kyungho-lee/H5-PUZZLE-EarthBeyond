@@ -482,7 +482,7 @@
         this.pops.set(m.at[0] + ',' + m.at[1], { life: POP_MS, scale: 1.2 + Math.min(step * 0.06, 0.25) });
         const fscale = Math.min(1 + Math.log2(m.size), 3.5);
         const pts = m.points != null ? m.points : m.size;
-        this.floats.push(new global.SG.FloatText(cx, cy, '+' + pts, pal.fill, fscale));
+        this.floats.push(new global.SG.FloatText(cx, cy, '+' + pts, '#ffffff', fscale));
         if (m.mult > 1) {
           const gold = { fill: '#ffd23f', glow: '#ffe98a' };
           const teal = { fill: '#00f5c8', glow: '#7dffe6' };

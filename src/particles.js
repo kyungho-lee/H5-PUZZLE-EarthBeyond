@@ -68,6 +68,11 @@
       ctx.globalAlpha = alpha;
       ctx.font = `bold ${fontSize}px 'Rajdhani', sans-serif`;
       ctx.textAlign = 'center';
+      // Dark outline first so the text reads over same-coloured tiles and busy theme art.
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(3, fontSize * 0.2);
+      ctx.strokeStyle = 'rgba(5,7,13,0.9)';
+      ctx.strokeText(this.text, this.x, this.y);
       if (this.scale >= 2) { ctx.shadowColor = this.color; ctx.shadowBlur = 6 + this.scale * 3; }
       ctx.fillStyle = this.color;
       ctx.fillText(this.text, this.x, this.y);
