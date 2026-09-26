@@ -19,7 +19,9 @@
         { "id": "retry_reward" },
         { "id": "collection_double_stars" },
         { "id": "collection_theme_double" },
-        { "id": "collection_continue" }
+        { "id": "collection_continue" },
+        { "id": "endless_double" },
+        { "id": "chapter_double" }
       ]
     },
     "banner": {
@@ -30,9 +32,7 @@
   },
   "payments": [],
   "leaderboards": [
-    {
-      "id": "cmqd5z0xw0503lc0hz6onlzt1",
-      "isMain": true
-    }
+    { "id": "kevin-PEB", "isMain": true },
+    { "id": "Kevin-PEB2" }
   ]
 }

@@ -105,7 +105,8 @@
       try { _bridge.advertisement.setMinimumDelayBetweenInterstitial(_interDelay); } catch (e) {}
 
       try {
-        _bridge.platform.on('audioStateChanged', function (isEnabled) {
+        var _evAudio = (_bridge.EVENT_NAME && _bridge.EVENT_NAME.AUDIO_STATE_CHANGED) || 'audioStateChanged';
+        _bridge.platform.on(_evAudio, function (isEnabled) {
           SG.PG._audioEnabled = isEnabled;
           if (typeof SG.PG._onAudioStateChanged === 'function') SG.PG._onAudioStateChanged(isEnabled);
         });
@@ -120,7 +121,8 @@
       } catch (e) {}
 
       try {
-        _bridge.platform.on('pauseStateChanged', function (isPaused) {
+        var _evPause = (_bridge.EVENT_NAME && _bridge.EVENT_NAME.PAUSE_STATE_CHANGED) || 'pauseStateChanged';
+        _bridge.platform.on(_evPause, function (isPaused) {
           if (typeof SG.PG._onPauseStateChanged === 'function') SG.PG._onPauseStateChanged(isPaused);
         });
       } catch (e) {}
@@ -262,9 +264,14 @@
     if (!_ready || !_bridge) return {};
     try { return await _bridge.storage.get(keys); } catch (e) { return {}; }
   }
+  // data: { key: value, ... } → Bridge v2 storage.set(keys[], values[]).
+  // (예전 set(data) 한 인자 호출은 v1·v2 어느 쪽 형식에도 맞지 않았다.)
   async function storageSet(data) {
     if (!_ready || !_bridge) return false;
-    try { await _bridge.storage.set(data); return true; } catch (e) { return false; }
+    var keys = Object.keys(data || {});
+    if (!keys.length) return false;
+    var values = keys.map(function (k) { return data[k]; });
+    try { await _bridge.storage.set(keys, values); return true; } catch (e) { return false; }
   }
 
   function platformId()       { return (_ready && _bridge) ? _bridge.platform.id : 'unknown'; }
@@ -272,7 +279,7 @@
 
   // ── Leaderboard IDs (Earth & Beyond) ────────────────────────────
   var _LB_DAILY   = 'kevin-PEB';   // daily_leaderboard
-  var _LB_ENDLESS = 'kevin-PEB2';  // Endless-Leaderboard
+  var _LB_ENDLESS = 'Kevin-PEB2';  // Endless-Leaderboard — 캐비닛에 등록된 id 그대로(대문자 K)
 
   function lbGetType() {
     if (!_ready || !_bridge || !_bridge.leaderboards) return 'not_available';
