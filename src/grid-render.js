@@ -172,6 +172,14 @@
       this.tween = null;
       this.pops.clear();
       this.observatory = null;
+      // Clear transient FX so a previous mode's floats/particles/rings/flash
+      // (e.g. a lingering "+24 ×6") don't carry over into the next mode.
+      // ParticleSystem has no reset() — deactivate its pool directly.
+      this.particles.pool.forEach(p => { p.active = false; });
+      this.floats.length = 0;
+      this.rings.length = 0;
+      this.flash = null;
+      this.edge = null;
       this.resize();
     }
 
@@ -331,24 +339,47 @@
         ctx.globalAlpha = 0.18; ctx.fillStyle = '#1e2235';
         ctx.fillRect(x, y, sz, sz);
       }
-      const obs = this.observatory;
-      if (obs && obs[0] === r && obs[1] === c) {
-        const pulse = Math.max(0, 1 - (performance.now() - this._obsPulseStart) / 700);
-        ctx.globalAlpha = 0.55 + 0.45 * pulse;
-        ctx.strokeStyle = '#00f5c8';
-        ctx.lineWidth = Math.max(1.5, this.cell * 0.035);
-        ctx.shadowColor = '#00f5c8';
-        ctx.shadowBlur = 10 + 14 * pulse;
-        ctx.beginPath();
-        ctx.arc(cx, cy, sz * 0.40, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 0.85;
-        ctx.font = `${Math.round(this.cell * 0.20)}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🔭', x + sz * 0.80, y + sz * 0.82);
-      }
+      ctx.restore();
+    }
+
+    // Observatory overlay — drawn AFTER tiles (see _drawBoard / tick) so the
+    // teal cell-edge glow + 🔭 badge stay visible even when a tile sits on the
+    // cell (spec §2.2: "타일이 올라가도 칸 테두리 글로우는 보인다"). Traces the
+    // same rounded-rect the tile is drawn with (0.86-cell bounds) so the glow
+    // reads as a frame right at the tile's edge, not a circle hidden under it.
+    _drawObservatoryOverlay(cx, cy) {
+      const ctx = this.ctx;
+      const pulse = Math.max(0, 1 - (performance.now() - this._obsPulseStart) / 700);
+      const sz = this.cell * 0.86;
+      const x = cx - sz / 2, y = cy - sz / 2, rad = sz * 0.18;
+      ctx.save();
+      ctx.globalAlpha = 0.55 + 0.45 * pulse;
+      ctx.strokeStyle = '#00f5c8';
+      ctx.lineWidth = Math.max(1.5, this.cell * 0.035);
+      ctx.shadowColor = '#00f5c8';
+      ctx.shadowBlur = 10 + 14 * pulse;
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.arcTo(x + sz, y, x + sz, y + sz, rad);
+      ctx.arcTo(x + sz, y + sz, x, y + sz, rad);
+      ctx.arcTo(x, y + sz, x, y, rad);
+      ctx.arcTo(x, y, x + sz, y, rad);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      // Corner badge (top-left — comet's ttl badge uses bottom-left, the
+      // collection step badge uses top-right, so this stays clear of both).
+      ctx.globalAlpha = 0.9;
+      const br = this.cell * 0.14;
+      const bx = x + br * 0.95, by = y + br * 0.95;
+      ctx.fillStyle = 'rgba(6,8,16,0.85)';
+      ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#00f5c8';
+      ctx.lineWidth = Math.max(0.8, br * 0.14);
+      ctx.stroke();
+      ctx.font = `${Math.round(br * 1.3)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🔭', bx, by);
       ctx.restore();
     }
 
@@ -411,6 +442,9 @@
           const pop = this.pops.get(r + ',' + c);
           this.drawTile(cx, cy, grid[r][c], 1, pop ? pop.scale : 1);
         }
+      }
+      if (this.observatory) {
+        this._drawObservatoryOverlay(...this.cellXY(this.observatory[0], this.observatory[1]));
       }
     }
 
@@ -569,6 +603,11 @@
           const [txp, typ] = this.cellXY(tr, tc);
           const tile = this.tween.from[fr][fc];
           if (tile) this.drawTile(fx + (txp - fx) * k, fy + (typ - fy) * k, tile);
+        }
+        // t>=1: the settled-board branch below (_drawBoard) draws the overlay
+        // itself, so skip here to avoid a doubled-up stroke on this frame.
+        if (this.observatory && t < 1) {
+          this._drawObservatoryOverlay(...this.cellXY(this.observatory[0], this.observatory[1]));
         }
         if (t >= 1) {
           const done = this.tween.onDone;
