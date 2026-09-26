@@ -107,6 +107,8 @@
       this.floats = [];
       this.rings = [];                  // expanding glow rings (merge FX)
       this.pops = new Map();            // key "r,c" → {t, life} scale-pop on merged tiles
+      this.observatory = null;        // [r,c] | null — Daily/Endless only
+      this._obsPulseStart = 0;
       this.flash = null;                // { life, maxLife, color } screen flash on big merges
       this.edge = null;                 // { dir, life, maxLife } directional board-edge glow
       this.grid = null;                 // last known static grid (drawn every frame)
@@ -169,7 +171,14 @@
       this.grid = null;
       this.tween = null;
       this.pops.clear();
+      this.observatory = null;
       this.resize();
+    }
+
+    // Observatory cell (×2 merges). null hides it. Re-seating pulses once.
+    setObservatory(cell) {
+      this.observatory = cell ? [cell[0], cell[1]] : null;
+      this._obsPulseStart = performance.now();
     }
 
     cellXY(r, c) {
@@ -194,6 +203,20 @@
       const x = cx - s / 2, y = cy - s / 2, rad = s * 0.18;
       ctx.save();
       ctx.globalAlpha = alpha;
+      if (tile.comet) {
+        const g = ctx.createLinearGradient(x + s, y, x + s * 1.35, y - s * 0.35);
+        g.addColorStop(0, 'rgba(255,210,63,0.75)');
+        g.addColorStop(1, 'rgba(255,210,63,0)');
+        ctx.save();
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(x + s * 0.70, y);
+        ctx.lineTo(x + s * 1.40, y - s * 0.40);
+        ctx.lineTo(x + s, y + s * 0.30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.shadowColor = pal.glow;
       ctx.shadowBlur = 12;
 
@@ -260,6 +283,35 @@
         }
       }
 
+      if (tile.comet) {
+        const t = performance.now();
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = '#ffe98a';
+        ctx.shadowBlur = 8 + 6 * (0.5 + 0.5 * Math.sin(t / 220));
+        ctx.strokeStyle = '#ffd23f';
+        ctx.lineWidth = Math.max(2, this.cell * 0.05);
+        ctx.beginPath();
+        ctx.moveTo(x + rad, y);
+        ctx.arcTo(x + s, y, x + s, y + s, rad);
+        ctx.arcTo(x + s, y + s, x, y + s, rad);
+        ctx.arcTo(x, y + s, x, y, rad);
+        ctx.arcTo(x, y, x + s, y, rad);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        const ttl = tile.comet.ttl;
+        const urgent = ttl <= 2;
+        const br = this.cell * 0.14;
+        const bx = x + br * 0.95, by = y + s - br * 0.95;   // bottom-left
+        ctx.globalAlpha = urgent ? (0.55 + 0.45 * (Math.sin(t / 90) > 0 ? 1 : 0)) : 1;
+        ctx.fillStyle = urgent ? '#e0314b' : 'rgba(6,8,16,0.88)';
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = Math.max(0.8, br * 0.14); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(br * 1.15)}px 'Rajdhani','Share Tech Mono',monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(ttl), bx, by);
+      }
+
       ctx.restore();
     }
 
@@ -278,6 +330,24 @@
       } else {
         ctx.globalAlpha = 0.18; ctx.fillStyle = '#1e2235';
         ctx.fillRect(x, y, sz, sz);
+      }
+      const obs = this.observatory;
+      if (obs && obs[0] === r && obs[1] === c) {
+        const pulse = Math.max(0, 1 - (performance.now() - this._obsPulseStart) / 700);
+        ctx.globalAlpha = 0.55 + 0.45 * pulse;
+        ctx.strokeStyle = '#00f5c8';
+        ctx.lineWidth = Math.max(1.5, this.cell * 0.035);
+        ctx.shadowColor = '#00f5c8';
+        ctx.shadowBlur = 10 + 14 * pulse;
+        ctx.beginPath();
+        ctx.arc(cx, cy, sz * 0.40, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 0.85;
+        ctx.font = `${Math.round(this.cell * 0.20)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔭', x + sz * 0.80, y + sz * 0.82);
       }
       ctx.restore();
     }
@@ -377,7 +447,18 @@
         // Scale-pop grows slightly with size (bigger merges feel weightier).
         this.pops.set(m.at[0] + ',' + m.at[1], { life: POP_MS, scale: 1.2 + Math.min(step * 0.06, 0.25) });
         const fscale = Math.min(1 + Math.log2(m.size), 3.5);
-        this.floats.push(new global.SG.FloatText(cx, cy, '+' + m.size, pal.fill, fscale));
+        const pts = m.points != null ? m.points : m.size;
+        this.floats.push(new global.SG.FloatText(cx, cy, '+' + pts, pal.fill, fscale));
+        if (m.mult > 1) {
+          const gold = { fill: '#ffd23f', glow: '#ffe98a' };
+          const teal = { fill: '#00f5c8', glow: '#7dffe6' };
+          const big = m.mult >= 6;
+          const label = big ? '×' + m.mult : (m.comet ? '☄️×' + m.mult : '×' + m.mult);
+          const col = (m.comet || big) ? gold : teal;
+          this.floats.push(new global.SG.FloatText(cx + this.cell * 0.28, cy - this.cell * 0.22, label, col.fill, big ? 2.6 : 1.8));
+          this.particles.emit(cx, cy, col, big ? 26 : (m.comet ? 18 : 8));
+          if (big) this.flash = { life: 260, maxLife: 260, color: gold.glow, peak: 0.22 };
+        }
       }
       // Screen flash for sizable merges (step >= 3, i.e. size >= 8). Stronger
       // with bigger maxStep but always subtle (cap alpha).
@@ -404,6 +485,13 @@
           this.flash = { life: 260, maxLife: 260, color: gold.glow,
                          peak: Math.min(0.14 + cinfo.stars * 0.02, 0.30) };
         }
+      }
+
+      for (const e of (result.expired || [])) {
+        const [cx, cy] = this.cellXY(e.at[0], e.at[1]);
+        const gold = { fill: '#ffd23f', glow: '#ffe98a' };
+        this.particles.emit(cx, cy, gold, 12);
+        this.floats.push(new global.SG.FloatText(cx, cy, '☄️', gold.fill, 1.6));
       }
     }
 
