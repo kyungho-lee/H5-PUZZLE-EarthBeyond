@@ -232,6 +232,17 @@
     return Array.from({ length: sz }, () => Array(sz).fill(null));
   }
 
+  // Any comet tile currently on the board?
+  function hasComet(grid) {
+    for (const row of grid) for (const t of row) if (t && t.comet) return true;
+    return false;
+  }
+
+  // Observatory cell for an n×n board. Two rng draws: row, then column.
+  function pickObservatory(rng, n) {
+    return [Math.floor(rng() * n), Math.floor(rng() * n)];
+  }
+
   // Full-grid push. opts: { n=8, mergeRule, targets=[], bias, clampThreshold, colors, spawnFourProb, daily }.
   function applyMove(grid, dir, rng, opts) {
     opts = opts || {};
@@ -244,6 +255,8 @@
     let chain = 0;
     let scoreGained = 0;
     let moved = false;
+    const comet = opts.comet || null;
+    const obs = opts.observatory || null;
 
     for (let k = 0; k < n; k++) {
       const src = readLine(grid, dir, k, n);
@@ -270,10 +283,15 @@
       }
 
       for (const m of res.merges) {
-        merges.push({ at: invMap(dir, k, m.index, n), size: m.size });
+        const at = invMap(dir, k, m.index, n);
+        const onObs = !!(obs && at[0] === obs[0] && at[1] === obs[1]);
+        const isComet = !!(comet && m.comet);
+        const mult = (isComet ? comet.mult : 1) * (onObs ? 2 : 1);
+        const points = m.size * mult;
+        merges.push({ at, size: m.size, mult, points, comet: isComet, observatory: onObs });
+        scoreGained += points;
       }
       chain += res.merges.length;
-      for (const m of res.merges) scoreGained += m.size;
     }
 
     scoreGained *= chainMultiplier(chain);
@@ -307,13 +325,35 @@
     const won = (mergeRule === 'sizeOnly' || (opts && opts.noColorWin))
       ? false : checkWin(next);
 
+    // Comet lifetime: one valid move = one turn. Merges already happened above,
+    // so a comet merged on its last move scored before it could expire.
+    const expired = [];
+    if (moved && !collapse) {
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+        const t = next[r][c];
+        if (!t || !t.comet) continue;
+        t.comet.ttl -= 1;
+        if (t.comet.ttl <= 0) { expired.push({ at: [r, c], size: t.size }); next[r][c] = null; }
+      }
+    }
+
     let spawned = null;
     if (moved && !won && !collapse) {
       const s = spawnTile(next, rng, opts);
-      if (s) { next[s.at[0]][s.at[1]] = { color: s.color, size: s.size }; spawned = s; }
+      if (s) {
+        const tile = { color: s.color, size: s.size };
+        s.comet = false;
+        if (comet && (opts.turn || 0) >= comet.minTurn && !hasComet(next) && rng() < comet.chance) {
+          tile.comet = { ttl: comet.ttl };
+          s.comet = true;
+        }
+        next[s.at[0]][s.at[1]] = tile;
+        spawned = s;
+      }
     }
 
-    return { grid: next, moves, merges, chain, scoreGained, moved, won, spawned, starsGained, completed, collapse };
+    const cometCaught = merges.some(m => m.comet);
+    return { grid: next, moves, merges, chain, scoreGained, moved, won, spawned, starsGained, completed, collapse, expired, cometCaught };
   }
 
   // Level-up: increment level; colors are clamped inside difficulty() at 6.
@@ -368,5 +408,5 @@
     return TYPES[((dayOfWeek % 7) + 7) % 7];
   }
 
-  return { N, sameLine, slideLine, chainMultiplier, checkWin, canMove, checkGameOver, difficulty, spawnTile, gradedSpawnSize, maxSize, maxSizeByColor, emptyCells, colorStats, applyMove, invMap, readLine, emptyGrid, nextLevel, cloneGrid, initGrid, dateSeed, dailyType, copyTile };
+  return { N, sameLine, slideLine, chainMultiplier, checkWin, canMove, checkGameOver, difficulty, spawnTile, gradedSpawnSize, maxSize, maxSizeByColor, emptyCells, colorStats, applyMove, invMap, readLine, emptyGrid, nextLevel, cloneGrid, initGrid, dateSeed, dailyType, copyTile, hasComet, pickObservatory };
 });
