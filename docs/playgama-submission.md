@@ -26,6 +26,8 @@ Earth & Beyond is a slide-and-merge puzzle built around a curated cosmic journey
 
 **Daily Challenge** brings a fresh seeded board every 24 hours. Earn stars by hitting tile milestones, compare your score on the leaderboard, and retry for a higher best — one run at a time.
 
+**Comets & Observatory (new in 1.2).** A comet streaks onto the board now and then — merge it within 6 moves for ×3 points before it flies away. One cell on every board is an Observatory: merges that land there score ×2, and a comet caught on the Observatory scores ×6. Every Daily player gets the same observatory cell, so the leaderboard stays fair.
+
 **Practice Mode** is a pressure-free sandbox. Merge freely, trigger the 1024 Collapse to reset the board and keep your momentum going, and experiment without any ranking pressure.
 
 Art direction draws from NASA, ESA, Hubble, JWST, Cassini, Voyager, and Apollo photography — reinterpreted and sequenced by hand into a progression that doubles as a timeline of the universe.
@@ -60,6 +62,8 @@ _(player-facing instructions)_
 - Each milestone can be earned multiple times per run
 - Up to 3 retries per day (watch a rewarded ad to unlock each retry)
 - Your best run score is submitted to today's leaderboard
+- ☄️ Comet tiles show a countdown; merge them before it reaches 0 for ×3 points
+- 🔭 The Observatory cell doubles the points of any merge that lands on it
 
 **Practice Mode:**
 - Unlimited play, no leaderboard pressure
