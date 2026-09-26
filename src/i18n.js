@@ -78,6 +78,8 @@
         notEnoughStars: '별이 부족합니다 (⭐{{cost}} 필요)',
         themeUnlocked: '🔓 테마 해금! −⭐{{cost}}',
         claimed:      '⭐ +{{n}} CLAIMED',
+        cometTip:       '☄️ 혜성이다! 6번 안에 합치면 점수 ×3 — 놓치면 날아가요.',
+        observatoryTip: '🔭 관측소 — 여기서 합치면 점수 ×2.',
       },
     },
 
@@ -227,6 +229,8 @@
         notEnoughStars: 'Not enough stars (need ⭐{{cost}})',
         themeUnlocked: '🔓 Theme unlocked! −⭐{{cost}}',
         claimed:      '⭐ +{{n}} CLAIMED',
+        cometTip:       '☄️ A comet! Merge it within 6 moves for ×3 points — or it flies away.',
+        observatoryTip: '🔭 Observatory — merges that land here score ×2.',
       },
     },
 

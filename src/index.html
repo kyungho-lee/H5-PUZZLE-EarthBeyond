@@ -1314,6 +1314,41 @@ let dailyOpts = null;      // applyMove opts for daily
 let mainOpts = null;       // applyMove opts for main game (START Dev)
 let dailyTheme = null;     // 현재 Daily 세션에 선택된 테마 (null = 숫자 모드)
 
+// ── Comet · Observatory (Daily · Endless only — spec 2026-09-26) ──
+const COMET_OPTS = { chance: 0.08, ttl: 6, minTurn: 5, mult: 3 };
+var moveTurn = 0;            // valid moves since run start / last collapse
+var observatoryCell = null;  // [r,c] | null
+let _obsRng = null;          // Daily: dailySeededRng(date+':obs'), Endless: makeRng()
+
+// Adds comet/observatory to a Daily/Endless opts object. NEVER call from
+// buildDailyOpts — Chronicles derives its opts from it.
+function applyCosmicOpts(opts, obsRng) {
+  _obsRng = obsRng;
+  moveTurn = 0;
+  opts.comet = COMET_OPTS;
+  opts.turn = 0;
+  observatoryCell = SG.ND.pickObservatory(_obsRng, opts.n || 4);
+  opts.observatory = observatoryCell;
+  renderer.setObservatory(observatoryCell);
+  showCosmicTip('observatory');
+}
+
+function reseatObservatory() {
+  if (!dailyOpts || !dailyOpts.comet || !_obsRng) return;
+  moveTurn = 0;
+  dailyOpts.turn = 0;
+  observatoryCell = SG.ND.pickObservatory(_obsRng, dailyOpts.n || 4);
+  dailyOpts.observatory = observatoryCell;
+  renderer.setObservatory(observatoryCell);
+}
+
+function showCosmicTip(kind) {
+  const key = kind === 'comet' ? 'earthbeyond_tut_comet' : 'earthbeyond_tut_observatory';
+  try { if (localStorage.getItem(key) === '1') return; localStorage.setItem(key, '1'); } catch (_) {}
+  const msg = SG.i18n ? SG.i18n.t(kind === 'comet' ? 'ui.toast.cometTip' : 'ui.toast.observatoryTip') : '';
+  if (msg) showGameToast(msg, 4000);
+}
+
 function utcDateStr() {
   const d = new Date();
   return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
@@ -1444,8 +1479,13 @@ function doMove(dir) {
   flashBoardEdge(dir);
   const opts = dailyMode ? dailyOpts : mainOpts;
   const before = ND.cloneGrid(grid);
+  if (opts && opts.comet) opts.turn = moveTurn;
   const result = ND.applyMove(grid, dir, rng, opts);
   if (!result.moved) return;
+  if (opts && opts.comet) {
+    moveTurn++;
+    if (result.spawned && result.spawned.comet) showCosmicTip('comet');
+  }
   devCheatPatchSpawn(result);
   grid = result.grid;
   if (dailyMode) {
@@ -1471,7 +1511,7 @@ function doMove(dir) {
     isAnimating = false;
     if (dailyMode) {
       if (endlessMode) {
-        endlessScore += result.merges.reduce(function (acc, m) { return acc + m.size; }, 0);
+        endlessScore += result.merges.reduce(function (acc, m) { return acc + (m.points != null ? m.points : m.size); }, 0);
         updateEndlessHud();
         if (result.collapse) { endlessCollapse(result.collapse); return; }
         if (ND.checkGameOver(grid, 'sizeOnly')) { endlessGameOver(); }
@@ -1687,13 +1727,13 @@ var _DTUT_CONTENT = {
   daily: {
     en: {
       s0: { icon: '🌍', title: 'DAILY CHALLENGE',
-            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.' },
+            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.<br>☄️ <strong>Comets</strong> give ×3 · 🔭 <strong>Observatory</strong> gives ×2!' },
       s2: { icon: '🏆', title: 'COMPETE DAILY',
             desc: 'Your <strong>best run</strong> is posted to today\'s leaderboard.<br>You get <strong>3 attempts</strong> per day — use them wisely!' },
     },
     ko: {
       s0: { icon: '🌍', title: '데일리 챌린지',
-            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.' },
+            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.<br>☄️ <strong>혜성</strong> ×3 · 🔭 <strong>관측소</strong> ×2!' },
       s2: { icon: '🏆', title: '리더보드 경쟁',
             desc: '오늘의 <strong>최고 기록</strong>이 리더보드에 등록돼요.<br>하루에 <strong>3번</strong> 도전할 수 있으니 신중하게!' },
     },
@@ -2046,6 +2086,7 @@ function startDailyRun() {
   document.getElementById('chronicles-progress').classList.remove('visible');
   document.getElementById('chronicles-narration').classList.remove('visible');
   renderer.setMode('daily');
+  applyCosmicOpts(dailyOpts, _devDailyAllThemes ? makeRng() : dailySeededRng(date + ':obs'));
   // 테마가 있으면 이미지 타일 렌더링 — colorBySize(숫자) 모드 해제
   if (dailyTheme) renderer.colorBySize = false;
   // 보드 배경 = 현재 보드의 최고 타일 step 배경으로 초기화
@@ -2223,6 +2264,7 @@ async function _collapseShared(collapseInfo) {
 async function dailyCollapse(collapseInfo) {
   gameRunning = false;
   await _collapseShared(collapseInfo);
+  reseatObservatory();
   updateDailyHud();
   renderer.drawGrid(grid);
 }
@@ -2656,6 +2698,7 @@ function startEndless(skinTheme) {
   }
 
   renderer.setMode('daily', 4);
+  applyCosmicOpts(dailyOpts, makeRng());
   renderer.clearStepBg();
   // 갤러리에서 선택한 테마 스킨 적용 (없으면 스킨 없음)
   renderer.setCollectionTheme(skinTheme || null);
@@ -2679,6 +2722,7 @@ async function endlessCollapse(collapseInfo) {
   if (!gameRunning) return;
   gameRunning = false;
   await _collapseShared(collapseInfo);
+  reseatObservatory();
   updateEndlessHud();
   renderer.drawGrid(grid);
   gameRunning = true;
