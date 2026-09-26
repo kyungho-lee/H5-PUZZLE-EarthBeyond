@@ -138,6 +138,18 @@
 
 ## 5. 출시
 
+### 5.1 제출 zip 경로 문제 수정 (선행)
+
+- 증상: 2026-06-16 에 올린 빌드에서 타일 · 시작 화면 이미지가 안 나오고 숫자 타일만 보였다.
+- 원인: `CLAUDE.md` 가 안내하는 `Compress-Archive`(Windows PowerShell 5.1)는 zip 항목 이름을 역슬래시로 적는다(`themes\human-civilization\bg-step-01.webp` — 재현 확인). zip 규격의 구분자는 `/` 라, Linux 에서 풀면 `themes/` 폴더가 생기지 않는다. 최상위 파일(`index.html`, JS)은 정상이라 게임은 돌지만 `themes/**` 요청이 모두 실패하고, `grid-render.js` 의 `onerror` 폴백이 숫자 타일을 그린다.
+- 수정
+  - `scripts/build-playgama.mjs` 추가: `src/` 를 .NET `ZipFile` 로 묶되 항목 이름을 `/` 로 적는다. 만든 뒤 항목에 `\` 가 없는지, `index.html` 이 루트에 있는지, `themes/` 아래 이미지 수가 `src/themes` 와 같은지 검사하고 하나라도 어긋나면 실패로 멈춘다. `firebase-config.js` 처럼 제출에 넣지 않을 파일은 빼는 목록으로 관리한다. 파일명에 버전 · 짧은 커밋 해시를 넣는다.
+  - `CLAUDE.md` 의 `Compress-Archive` 안내를 이 스크립트로 바꾼다.
+  - 업로드 뒤 QA Tool 에서 이미지가 보이는지 확인하는 단계를 출시 절차에 넣는다.
+- 템플릿(`h5-puzzle-template`) 과 다른 프로젝트의 같은 안내는 이 작업 범위 밖이다(사용자 결정 대기).
+
+### 5.2 문서 · 제출
+
 - `docs/devLog/Release_Note_v1.2.0.md`, `docs/playgama-submission.md` 설명 갱신.
 - Playgama: 새 빌드 zip 업로드, 개발자 코멘트는 **실제로 바뀐 것만** 적는다. 제목 "Kevin-Puzzle-Earth&Beyond" → "Earth & Beyond".
 
