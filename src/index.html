@@ -4433,8 +4433,14 @@ function devCheatPatchSpawn(result) {
   const s = result.spawned;
   const size = CHEAT_SEQ[cheatIdx % CHEAT_SEQ.length];
   cheatIdx++;
-  result.grid[s.at[0]][s.at[1]] = { color: s.color, size: size };
-  result.spawned = { at: s.at, color: s.color, size: size };
+  // Preserve a comet spawn: showCosmicTip('comet') already fired off
+  // result.spawned.comet above (doMove), so the board must keep matching it —
+  // otherwise the tip says "a comet!" but the rewritten tile shows no ttl badge.
+  const original = result.grid[s.at[0]][s.at[1]];
+  const tile = { color: s.color, size: size };
+  if (s.comet && original && original.comet) tile.comet = { ttl: original.comet.ttl };
+  result.grid[s.at[0]][s.at[1]] = tile;
+  result.spawned = { at: s.at, color: s.color, size: size, comet: s.comet };
 }
 
 // ── DEV BAR ───────────────────────────────────────────────────────

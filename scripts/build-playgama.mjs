@@ -13,7 +13,7 @@ const { writeZip, listZip } = require('./zip-writer.js');
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
 const OUT_DIR = path.join(ROOT, 'build');
-const EXCLUDE = [/^\./, /\.example\.js$/];
+const EXCLUDE = [/^\./, /\.example\.js$/, /^firebase-config\.js$/];
 
 const git = (...a) => spawnSync('git', a, { cwd: ROOT, encoding: 'utf8' }).stdout.trim();
 if (git('status', '--porcelain') && !process.argv.includes('--force')) {
