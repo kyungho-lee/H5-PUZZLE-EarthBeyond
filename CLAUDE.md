@@ -88,12 +88,11 @@ Dev bar에서 테마 선택 + UNLOCK 버튼으로 즉시 테스트 가능
 
 ## Playgama 제출 zip
 
-```powershell
-$src = 'src'
-$out = 'earthbeyond.zip'
-if (Test-Path $out) { Remove-Item $out -Force }
-Compress-Archive -Path "$src\*" -DestinationPath $out -CompressionLevel Optimal
 ```
+npm run build:playgama        # → build/earth-and-beyond-<version>-<hash>.zip
+```
+
+Compress-Archive 는 쓰지 않는다 — PowerShell 5.1 이 zip 경로를 '\' 로 적어 Playgama(Linux)에서 테마 이미지가 전혀 안 나온다(2026-06-16 빌드).
 
 ---
 
