@@ -183,6 +183,12 @@
         rgba(5,8,16,.97) 100%
       );
     }
+    /* 하늘 연출 캔버스 — 배경과 타이틀·버튼 사이. 클릭은 통과시킨다 */
+    #start-sky {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
     /* 타이틀 블록 — 히어로 이미지 위에 띄움 */
     #start-title-block {
       position: relative; z-index: 1;
@@ -842,6 +848,8 @@
     <div class="start-hero-slice" style="background-image:url('themes/human-civilization/bg-step-11.webp')"></div>
     <div class="start-hero-slice" style="background-image:url('themes/solar-system/bg-step-11.webp')"></div>
   </div>
+  <!-- 하늘 연출: 사선 유성 + 배경 별 (start-sky.js) -->
+  <canvas id="start-sky" aria-hidden="true"></canvas>
 
   <!-- 타이틀 -->
   <div id="start-title-block">
@@ -1271,6 +1279,7 @@
 <!-- ── 게임 모듈 (의존성 순서) ──────────────────────────────────── -->
 <script src="palette.js"></script>
 <script src="particles.js"></script>
+<script src="start-sky.js"></script>
 <script src="star-fly.js"></script>
 <script src="neon-drift.js"></script>
 <script src="grid-render.js"></script>
