@@ -23,9 +23,17 @@
     return true;
   }
 
+  // Deep copy of one tile, keeping optional comet state. null stays null.
+  function copyTile(t) {
+    if (!t) return null;
+    const out = { color: t.color, size: t.size };
+    if (t.comet) out.comet = { ttl: t.comet.ttl };
+    return out;
+  }
+
   // Slide a line left, merging adjacent same-size pairs. Pads back to input length.
   // mergeRule: 'colorAndSize' (default) requires same color too; 'sizeOnly' ignores color.
-  // Returns { line, merges: [{index, size}], moved }.
+  // Returns { line, merges: [{index, size, comet}], moved }.
   function slideLine(input, mergeRule) {
     const len = input.length;
     const tiles = input.filter(t => t != null);
@@ -40,10 +48,10 @@
       if (i + 1 < tiles.length && canMerge) {
         const size = a.size * 2;
         out.push({ color: a.color, size });
-        merges.push({ index: out.length - 1, size });
+        merges.push({ index: out.length - 1, size, comet: !!(a.comet || b.comet) });
         i += 2;
       } else {
-        out.push({ color: a.color, size: a.size });
+        out.push(copyTile(a));
         i += 1;
       }
     }
@@ -313,9 +321,9 @@
     return level + 1;
   }
 
-  // Deep clone an 8x8 grid (tiles are plain {color,size}).
+  // Deep clone an 8x8 grid (tiles are plain {color,size} or with optional {comet}).
   function cloneGrid(grid) {
-    return grid.map(row => row.map(t => t ? { color: t.color, size: t.size } : null));
+    return grid.map(row => row.map(copyTile));
   }
 
   // Build starting grid for a level. Pure (rng injected). FR-1.
@@ -360,5 +368,5 @@
     return TYPES[((dayOfWeek % 7) + 7) % 7];
   }
 
-  return { N, sameLine, slideLine, chainMultiplier, checkWin, canMove, checkGameOver, difficulty, spawnTile, gradedSpawnSize, maxSize, maxSizeByColor, emptyCells, colorStats, applyMove, invMap, readLine, emptyGrid, nextLevel, cloneGrid, initGrid, dateSeed, dailyType };
+  return { N, sameLine, slideLine, chainMultiplier, checkWin, canMove, checkGameOver, difficulty, spawnTile, gradedSpawnSize, maxSize, maxSizeByColor, emptyCells, colorStats, applyMove, invMap, readLine, emptyGrid, nextLevel, cloneGrid, initGrid, dateSeed, dailyType, copyTile };
 });
