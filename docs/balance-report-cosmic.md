@@ -109,3 +109,13 @@ comet's cell, so it cannot lower the measured rate below what "always merge ever
 you can, every turn" produces. Recommend either revisiting the acceptance bound for this
 particular bot shape, or building a bot variant that sometimes declines an available merge,
 before drawing conclusions from this metric alone.
+
+## Endless
+
+Endless wallet stars are `score / 100` (`ENDLESS_STARS_PER` in `src/index.html`), and
+`score` now includes multiplied merge points (comet ×3, Observatory ×2, both ×6), where it
+previously summed raw tile size. A separate final-review sim (greedy bot, N=500, collapse
+re-seat modelled) measured average Endless score going from 2173 to 2490 with cosmic
+options on (+14.6%), i.e. roughly **+15% more Endless stars** for the same play. Whether
+that's an acceptable increase — or whether `ENDLESS_STARS_PER` should be raised to
+compensate — is a pending tuning decision, not something changed in this pass.

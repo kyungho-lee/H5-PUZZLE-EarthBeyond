@@ -94,6 +94,8 @@ npm run build:playgama        # → build/earth-and-beyond-<version>-<hash>.zip
 
 Compress-Archive 는 쓰지 않는다 — PowerShell 5.1 이 zip 경로를 '\' 로 적어 Playgama(Linux)에서 테마 이미지가 전혀 안 나온다(2026-06-16 빌드).
 
+업로드 뒤에는 QA Tool 링크를 열어 테마 이미지가 실제로 렌더링되는지(숫자 타일이 아닌지) 확인한다.
+
 ---
 
 ## 에셋 현황

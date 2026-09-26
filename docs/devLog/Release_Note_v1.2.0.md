@@ -5,7 +5,7 @@
 
 ## Overview
 
-New mechanics: Comet tiles (merge within 6 moves for ×3), Observatory cells (×2 per merge, ×6 for caught comets), and stacking (×6 multiplier). Daily board placement is now seeded per day. First-appearance tips added (EN/KO). Playgama submission zip no longer uses backslash separators — theme images now load correctly.
+New mechanics: Comet tiles (merge within 6 moves for ×3), Observatory cells (×2 per merge, ×6 for caught comets), and stacking (×6 multiplier). Observatory cell placement is now seeded per day. First-appearance tips added (EN/KO). Playgama submission zip no longer uses backslash separators — theme images now load correctly.
 
 ## New Mechanics
 
@@ -13,7 +13,7 @@ New mechanics: Comet tiles (merge within 6 moves for ×3), Observatory cells (×
 
 **Observatory Cells:** One cell on every Daily and Endless board acts as an Observatory. Merges that land there score ×2 points. If you catch a comet on the Observatory, it scores ×6 instead. Daily players all see the same Observatory cell, keeping the leaderboard fair. Chronicles is unchanged.
 
-**Stacking:** Stacking multipliers now reach ×6 (up from ×4) in Daily and Endless modes.
+**Stacking:** Stacking multipliers now reach ×6 in Daily and Endless modes.
 
 **Daily Seeded Placement:** Observatory cell location is seeded per day, ensuring consistency across all players.
 
