@@ -15,7 +15,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 420, height: 760 } });
 const errors = [];
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
-page.on('console', m => { if (m.type() === 'error' && !/firebase/i.test(m.text()) && !/firebase/i.test(m.location().url || '')) errors.push('console.error: ' + m.text()); });
+page.on('console', m => { if (m.type() === 'error' && !/firebase-config\.js/i.test(m.text()) && !/firebase-config\.js/i.test(m.location().url || '')) errors.push('console.error: ' + m.text()); });
 const fail = (msg) => { console.error('FAIL', msg); process.exitCode = 1; };
 
 await page.goto(url);
@@ -30,7 +30,8 @@ if (!st.obs || !st.hasComet) fail('Daily: no observatory/comet opts ' + JSON.str
 await page.evaluate(() => { dailyOpts.comet = Object.assign({}, dailyOpts.comet, { chance: 1, minTurn: 0 }); });
 const dirs = ['left', 'up', 'right', 'down'];
 let sawComet = false, sawExpire = false;
-for (let i = 0; i < 40 && !(sawComet && sawExpire); i++) {
+const MOVE_BUDGET = 60; // generous margin over ttl:6 post-sighting so expiry isn't flaky
+for (let i = 0; i < MOVE_BUDGET && !(sawComet && sawExpire); i++) {
   const r = await page.evaluate((d) => {
     const before = JSON.stringify(grid);
     window.doMove(d);
@@ -51,6 +52,7 @@ for (let i = 0; i < 40 && !(sawComet && sawExpire); i++) {
   if (i === 3) await page.screenshot({ path: path.join(shots, 'cosmic-daily.png') });
 }
 if (!sawComet) fail('Daily: comet never appeared');
+if (!sawExpire) fail('Daily: comet never expired');
 
 // Endless
 await page.evaluate(() => { try { localStorage.setItem('sg_dev', '1'); } catch (_) {} });
