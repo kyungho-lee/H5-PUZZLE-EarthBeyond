@@ -2355,8 +2355,15 @@ function chapterIndexOf(themeId) {
   return SG.CollectionThemes.findIndex(function (t) { return t.id === themeId; }) + 1;
 }
 let _lbSyncing = false;
+let _lbSyncPending = false;
+function escHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
 async function lbSyncNow() {
-  if (_lbSyncing || !SG.PG.isAvailable() || SG.PG.leaderboard.getType() === 'not_available') return;
+  // dev/치트 런은 영구 기록(되돌릴 수 없는 chN_clear=1 등)을 남기지 않는다
+  if (cheatActive || new URLSearchParams(location.search).has('dev') || SG.Store.getItem('sg_dev') === '1') return;
+  if (_lbSyncing) { _lbSyncPending = true; return; }
+  if (!SG.PG.isAvailable() || SG.PG.leaderboard.getType() === 'not_available') return;
   _lbSyncing = true;
   try {
     const themes = SG.CollectionThemes;
@@ -2372,7 +2379,10 @@ async function lbSyncNow() {
     }
     SG.LbSync.save(SG.Store, sent);
   } catch (e) { console.warn('[lb] sync failed:', e); }
-  finally { _lbSyncing = false; }
+  finally {
+    _lbSyncing = false;
+    if (_lbSyncPending) { _lbSyncPending = false; lbSyncNow(); }
+  }
 }
 async function collectionCheckMerges(mergedSizes) {
   if (_checkMergesRunning) return;
@@ -2915,7 +2925,7 @@ async function renderEndlessLeaderboard() {
   box.innerHTML = rows.slice(0, 10).map(function (r, i) {
     const cc  = r.country || '';
     const fl  = cc ? flag(cc) : '🌐';
-    const id  = (r.playerId || 'player').slice(-6);
+    const id  = escHtml((r.playerId || 'player').slice(-6));
     const sc  = (r.score != null ? Number(r.score).toLocaleString() : '0');
     const isMe = r.playerId === myId;
     return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
@@ -3491,7 +3501,6 @@ function updateGalleryDot() {
 function openGalleryForEndless() {
   _galleryMode = 'endless';
   openGallery();
-  refreshRankingButton();
 }
 
 function openGallery(themeId) {
@@ -3538,8 +3547,8 @@ function openGallery(themeId) {
     }
   }
   document.getElementById('ol-gallery').classList.remove('hidden');
+  refreshRankingButton();   // openModalNav는 display:none 버튼을 건너뛰므로 먼저 갱신
   openModalNav('ol-gallery');
-  refreshRankingButton();
 }
 
 function closeGallery() {
@@ -3834,14 +3843,15 @@ function closeRanking() {
   document.getElementById('ol-ranking').classList.add('hidden');
   openModalNav('ol-gallery');   // 갤러리 위에서 열렸으므로 갤러리로 복귀
 }
+let _rkReq = 0;
 async function rankingShowTab(key) {
+  const my = ++_rkReq;
   document.querySelectorAll('#ranking-tabs [data-rk]').forEach(function (b) {
     b.setAttribute('aria-selected', String(b.dataset.rk === key));
   });
   const box = document.getElementById('ranking-rows');
   const me = document.getElementById('ranking-me');
   const t = (k, fb) => (SG.i18n && SG.i18n.t(k)) || fb;
-  const esc = (v) => String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const isGallery = key === 'gallery';
   const idx = isGallery ? -1 : parseInt(key, 10) - 1;
   const lbId = isGallery ? SG.PG.LB_GALLERY : SG.PG.LB_CHAPTER_CLEAR[idx];
@@ -3858,9 +3868,10 @@ async function rankingShowTab(key) {
   }
   box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
   const entries = await SG.PG.leaderboard.getEntries(lbId);
+  if (my !== _rkReq || document.getElementById('ol-ranking').classList.contains('hidden')) return;
   const rows = _normalizePgEntries(entries).slice(0, 10);
   box.innerHTML = rows.map(function (r, i) {
-    const who = esc((r.name || r.playerId || 'player').slice(-12));
+    const who = escHtml(r.name ? String(r.name).slice(0, 12) : (r.playerId || 'player').slice(-6));
     return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span><span class="lb-id">' + who +
       '</span><span class="lb-score">' + fmt(r.score) + '</span></div>';
   }).join('') || LB_EMPTY_HTML;
@@ -3923,7 +3934,7 @@ async function renderDailyLeaderboard() {
   function rowHtml(r, rank, isMe) {
     const cc = r.country || '';
     const fl = cc ? flag(cc) : '🌐';
-    const id = (r.playerId || 'player').slice(-6);
+    const id = escHtml((r.playerId || 'player').slice(-6));
     const pts = Number(r.score || 0).toLocaleString();
     return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
       '<span class="lb-rank">' + rank + '</span>' +
