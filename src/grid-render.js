@@ -8,6 +8,12 @@
   const BLOCK_TYPES = global.SG.BLOCK_TYPES || [];
 
   const TWEEN_MS = 120;                 // total slide tween (NFR-1)
+  // Merge FX colours over themed (image) tiles, by size step: cool → warm.
+  const THEMED_FX = [
+    { fill: '#bfe6ff', glow: '#7cc8ff' }, { fill: '#bfe6ff', glow: '#7cc8ff' },
+    { fill: '#9ffcff', glow: '#3de0ff' }, { fill: '#b8ffe0', glow: '#52f5b0' },
+    { fill: '#fff3b0', glow: '#ffd23f' }, { fill: '#ffd9a0', glow: '#ffa640' },
+  ];
   const POP_MS = 140;                   // merged-tile scale-pop duration
 
   // ── Image placeholder cache (main mode: BLOCK_TYPES by color index) ─
@@ -103,7 +109,7 @@
       this.n = 8;                 // board size; setMode('daily') → 4
       this.colorBySize = false;   // daily: color tiles by size + draw numbers
       this.ctx = canvas.getContext('2d');
-      this.particles = new global.SG.ParticleSystem(600);
+      this.particles = new global.SG.ParticleSystem(1500);
       this.floats = [];
       this.rings = [];                  // expanding glow rings (merge FX)
       this.pops = new Map();            // key "r,c" → {t, life} scale-pop on merged tiles
@@ -470,8 +476,11 @@
         // Sync FX color to the MERGED tile (daily: by size, main: by color) so
         // the ring reads as a translucent ripple over the same-colored tile.
         // On a 2048 target the tile is removed → fall back to its merge size.
-        const pal = tile ? this._tilePal(tile) : (this._tilePal({ color: 0, size: m.size }));
         const step = Math.max(1, Math.round(Math.log2(m.size)));   // size→intensity step
+        // Themed tiles are images: the size palette starts at near-black navy,
+        // which vanishes over the dark board — use a bright FX ramp instead.
+        const pal = this.collectionTheme ? THEMED_FX[Math.min(step, THEMED_FX.length) - 1]
+          : (tile ? this._tilePal(tile) : (this._tilePal({ color: 0, size: m.size })));
         if (step > maxStep) { maxStep = step; flashColor = pal.glow; }
         // Intensity by size: more particles + bigger ring the higher the step.
         const count = Math.min(5 + step * 3, 22);
@@ -640,13 +649,13 @@
         if (this.edge.life <= 0) this.edge = null;
       }
 
-      // (4) Overlays: rings, particles, float texts.
+      // (4) Overlays: rings, float texts, then particles on top of everything.
       this.rings = this.rings.filter(r => r.alive);
       this.rings.forEach(r => { r.update(dt); r.draw(ctx); });
-      this.particles.update(dt);
-      this.particles.draw(ctx);
       this.floats = this.floats.filter(f => f.alive);
       this.floats.forEach(f => { f.update(dt); f.draw(ctx); });
+      this.particles.update(dt);
+      this.particles.draw(ctx);
     }
   }
 

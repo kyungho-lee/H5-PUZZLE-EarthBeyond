@@ -4,52 +4,74 @@
 (function (global) {
   'use strict';
 
+  const TRAIL_LEN = 8;       // afterimage samples kept per particle
+  const COUNT_SCALE = 2;     // every emit() call spreads this many times more particles
+
   class Particle {
-    constructor() { this.active = false; }
+    constructor() { this.active = false; this.trail = []; }
     spawn(x, y, color, vx, vy, life, size) {
       Object.assign(this, { x, y, color, vx, vy, life, maxLife: life, size, active: true });
+      this.trail.length = 0;
     }
     update(dt) {
       if (!this.active) return;
+      this.trail.push(this.x, this.y);
+      if (this.trail.length > TRAIL_LEN * 2) this.trail.splice(0, 2);
       this.x += this.vx * dt;
       this.y += (this.vy + 40 * (1 - this.life / this.maxLife)) * dt;  // gentle drift
       this.vx *= 0.97;
+      this.vy *= 0.97;
       this.life -= dt * 1000;
       if (this.life <= 0) this.active = false;
     }
     draw(ctx) {
       if (!this.active) return;
       const alpha = Math.max(0, this.life / this.maxLife);
-      ctx.globalAlpha = alpha * .9;
+      // Shrinks only to 40% so the spark stays readable while it fades.
+      const s = this.size * (0.4 + 0.6 * alpha);
       ctx.fillStyle = this.color;
-      const s = this.size * alpha;
+      // Afterimage: older samples fainter and smaller.
+      const n = this.trail.length / 2;
+      for (let i = 0; i < n; i++) {
+        const k = (i + 1) / (n + 1);
+        const ts = s * (0.35 + 0.65 * k);
+        ctx.globalAlpha = alpha * 0.45 * k;
+        ctx.fillRect(this.trail[i * 2] - ts / 2, this.trail[i * 2 + 1] - ts / 2, ts, ts);
+      }
+      ctx.globalAlpha = Math.min(1, alpha * 1.2);
       ctx.fillRect(this.x - s / 2, this.y - s / 2, s, s);
       ctx.globalAlpha = 1;
     }
   }
 
   class ParticleSystem {
-    constructor(maxParticles = 600) {
+    constructor(maxParticles = 1500) {
       this.pool = Array.from({ length: maxParticles }, () => new Particle());
     }
-    // Subtle preset: few particles, low speed, short life, near-zero upward drift.
+    // Bold preset: big sparks, long life with afterimage trails.
     emit(x, y, colorObj, count = 6) {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count * COUNT_SCALE; i++) {
         const p = this.pool.find(p => !p.active);
         if (!p) break;
         const angle = Math.random() * Math.PI * 2;
-        const spd = 40 + Math.random() * 70;
+        const spd = 70 + Math.random() * 130;
         p.spawn(x, y,
           Math.random() < .5 ? colorObj.fill : colorObj.glow,
           Math.cos(angle) * spd,
           Math.sin(angle) * spd - 10,
-          260 + Math.random() * 180,
-          2 + Math.random() * 3
+          750 + Math.random() * 450,
+          5 + Math.random() * 5
         );
       }
     }
     update(dt) { this.pool.forEach(p => p.update(dt)); }
-    draw(ctx) { this.pool.forEach(p => p.draw(ctx)); }
+    // Additive blend so sparks brighten whatever art they cross.
+    draw(ctx) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      this.pool.forEach(p => p.draw(ctx));
+      ctx.restore();
+    }
   }
 
   class FloatText {
