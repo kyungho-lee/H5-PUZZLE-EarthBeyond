@@ -771,9 +771,11 @@
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    /* 부팅(SDK 초기화 · 저장 복원) 중에는 메뉴를 누를 수 없다 — 렌더러 생성 전 진입 방지 */
+    body.booting #ol-start button { pointer-events: none; opacity: .45; }
   </style>
 </head>
-<body>
+<body class="booting">
 
 <!-- ── DEV BAR (?dev 파라미터 시 표시) ──────────────────────────── -->
 <div id="dev-bar" style="display:none">
@@ -4545,19 +4547,34 @@ window.addEventListener('pagehide', pgSyncStorage);
 
 (async function boot() {
   // ── 1) SDK 초기화 → 2) Storage 복원: 저장 데이터를 읽는 모든 코드보다 먼저 ──
-  SG.CG.loadingStart();
-  if (window.bridge && typeof window.bridge.initialize === 'function') {
-    await SG.PG.init();
-  } else {
-    await SG.CG.init();
-    if (!SG.CG.isAvailable() && SG.PG) {
-      await SG.PG.init();
-    }
-  }
-  const _bs = SG.PG.bridgeStorage();
-  if (_bs) {
-    const _attached = await SG.Store.attachBridge(_bs);
-    console.log('[boot] Bridge storage', _attached ? 'restored' : 'unavailable — local only');
+  // 이 단계의 실패·지연이 게임 전체를 막으면 안 된다 (렌더러가 안 만들어져 모든 모드가 먹통).
+  // 실패하거나 BOOT_SDK_TIMEOUT_MS 안에 끝나지 않으면 로컬 저장으로 계속 부팅한다.
+  const BOOT_SDK_TIMEOUT_MS = 10000;
+  let _bootTimedOut = false;   // 늦게 끝난 init이 게임 도중 저장소를 갈아끼우지 않게
+  try {
+    await Promise.race([
+      (async function () {
+        SG.CG.loadingStart();
+        if (window.bridge && typeof window.bridge.initialize === 'function') {
+          await SG.PG.init();
+        } else {
+          await SG.CG.init();
+          if (!SG.CG.isAvailable() && SG.PG) {
+            await SG.PG.init();
+          }
+        }
+        const _bs = typeof SG.PG.bridgeStorage === 'function' ? SG.PG.bridgeStorage() : null;
+        if (_bs && !_bootTimedOut) {
+          const _attached = await SG.Store.attachBridge(_bs);
+          console.log('[boot] Bridge storage', _attached ? 'restored' : 'unavailable — local only');
+        }
+      })(),
+      new Promise(function (_, reject) {
+        setTimeout(function () { _bootTimedOut = true; reject(new Error('SDK/storage init timed out')); }, BOOT_SDK_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (e) {
+    console.warn('[boot] SDK/storage step failed — continuing with local storage:', e);
   }
   // 스크립트 로드 시점에 읽은 값은 복원 전이라 다시 읽는다.
   bestScore = parseInt(SG.Store.getItem(STORAGE_KEY_BEST) || '0', 10);
@@ -4605,6 +4622,7 @@ window.addEventListener('pagehide', pgSyncStorage);
 
   // 초기 UI: 누적 재화 칩 노출 (스탯은 모드 진입 시 채워짐)
   updateWalletChip();
+  document.body.classList.remove('booting');
 
   // 첫 플레이 가능한 화면이 떴다 → game_ready (Firebase 연결은 기다리지 않는다)
   SG.CG.loadingStop();
@@ -4617,6 +4635,7 @@ window.addEventListener('pagehide', pgSyncStorage);
 
 })().catch(function (e) {
   console.error('[boot] failed:', e);
+  document.body.classList.remove('booting');
   if (SG.Notify) SG.Notify.error('SDK_INIT');
 });
 </script>
