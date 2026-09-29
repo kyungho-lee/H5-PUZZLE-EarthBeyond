@@ -1185,9 +1185,8 @@
     <!-- 2단계: 이번 판 스타 정산 (x2 광고) -->
     <div id="co-phase-settle" class="hidden">
       <div class="ol-label" style="margin-bottom:2px"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
-      <button class="btn-ad ad-gold modal-btn" id="btn-double-stars" onclick="collectionDoubleStars()">
-        📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
-      </button>
+      <!-- 리워드 = 다음 한 판 동안 획득 별 ×2 (버프). 무료 PLAY AGAIN도 항상 제공 — 광고는 선택. -->
+      <button class="btn-ad ad-gold modal-btn" id="btn-boost-start" onclick="collectionBoostedStart()" data-i18n="ui.btn.boostStart">📺 START WITH ⭐×2 (AD)</button>
       <button class="btn-primary modal-btn" id="btn-collection-again" onclick="collectionPlayAgain()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
     </div>
 
@@ -1505,7 +1504,7 @@ function doMove(dir) {
   devCheatPatchSpawn(result);
   grid = result.grid;
   if (dailyMode) {
-    dailyRunStars += result.starsGained || 0;
+    dailyRunStars += (result.starsGained || 0) * (collectionMode ? collectionStarMult : 1);
     dailyRunScore += result.scoreGained || 0;  // 리더보드 동점 분리용
     // Fly earned stars into the HUD counter (ticks dailyStarsShown as they land).
     // No completed targets → just sync the displayed count immediately.
@@ -2197,7 +2196,7 @@ function flyStarsToHud(completed) {
     SG.StarFly.burst({
       from: { x: rect.left + cssX * scaleX, y: rect.top + cssY * scaleX },
       to: hud,
-      count: c.stars,
+      count: c.stars * (collectionMode ? collectionStarMult : 1),   // ×2 버프면 두 배로 날아간다
       // 표시값은 실제값(dailyRunStars)을 넘지 않도록 clamp — fly 중첩 시 6→4 감소 버그 방지.
       onArrive: function () {
         if (dailyStarsShown < dailyRunStars) dailyStarsShown++;
@@ -2628,6 +2627,7 @@ function startCollection() {
   collectionMode = true;
   collectionCollapseCount = 0;
   collectionContinueCount = 0;
+  collectionStarMult = 1;   // 버프는 광고로 시작한 한 판만
   SG.Daily.resetAdQuota(SG.Store);  // 새 판마다 광고 3회 리셋
 
   dailyMode = true;
@@ -2887,7 +2887,8 @@ function updateCollectionHud() {
   const total = SG.Collection.getThemeStepCount(theme || null);
   // 제목엔 테마명만. 콜렉션 핵심=단계 → STEP 먼저, 이번 판 ⭐는 보조. (누적 ⭐는 칩)
   document.getElementById('game-title').textContent = 'COLLECTION · ' + themeLabel;
-  setStats('STEP', acquired + '/' + total, 'THIS RUN', '+⭐' + dailyStarsShown);
+  setStats('STEP', acquired + '/' + total,
+           collectionStarMult > 1 ? 'THIS RUN ×' + collectionStarMult : 'THIS RUN', '+⭐' + dailyStarsShown);
   updateWalletChip();
   updateGalleryDot();   // 헤더 설정 아이콘 NEW 레드닷
   chroniclesUpdateProgress(theme, acquired, total);
@@ -3121,8 +3122,8 @@ function chroniclesNextChapter() {
   startNextTheme();
 }
 
-// 이번 판 x2 스타를 이미 받았는지 (게임오버 1회당 1번만)
-let _gameoverStarsDoubled = false;
+// 이번 판 별 배수 — 리워드 버프(START WITH ⭐×2)로 시작한 판만 2. 판이 새로 시작되면 1로.
+let collectionStarMult = 1;
 // 이번 판(dailyRunStars)을 지갑에 정산했는지. CONTINUE는 정산 안 함(이어감).
 let _runSettled = false;
 
@@ -3142,7 +3143,6 @@ async function collectionGameOver() {
   // (스타는 누적 재화: 게임오버/CONTINUE로 사라지지 않음)
   const runStars = dailyRunStars;
   dailyStarsShown = runStars;
-  _gameoverStarsDoubled = false;
   _runSettled = false;   // 이번 판이 아직 지갑에 정산되지 않음
 
   // 게임오버 시 전체광고 노출 → 그 다음 팝업
@@ -3155,14 +3155,8 @@ async function collectionGameOver() {
     acquired + '/' + SG.Collection.getThemeStepCount(_activeThemeObj) + ' STEPS';
 
   // 정산 단계 데이터 준비 (2단계에서 사용)
-  document.getElementById('gameover-run-stars').textContent = '⭐' + runStars;
-  const dblBtn = document.getElementById('btn-double-stars');
-  if (dblBtn) {
-    dblBtn.style.display = runStars > 0 ? '' : 'none';
-    dblBtn.disabled = false;
-    dblBtn.style.opacity = '';
-    dblBtn.dataset.runStars = String(runStars);
-  }
+  document.getElementById('gameover-run-stars').textContent =
+    '⭐' + runStars + (collectionStarMult > 1 ? ' (×' + collectionStarMult + ')' : '');
 
   // CONTINUE 가능 여부 = 상위 3종 외 제거할 블록이 있을 때.
   const canContinue = continueRemovableCells(grid).length > 0;
@@ -3190,8 +3184,8 @@ async function collectionGameOver() {
   collectionSetOverPhase(canContinue ? 'continue' : 'settle');
 
   // btn-continue-ad는 스타 결제도 가능 — 광고 쿼터와 무관하게 노출 유지
-  // btn-double-stars만 광고 쿼터 체크 (runStars > 0인 경우만 보임)
-  syncAdButtons(['btn-double-stars']);
+  // btn-boost-start만 광고 쿼터 체크 (소진 시 숨김 — 무료 PLAY AGAIN은 항상 있음)
+  syncAdButtons(['btn-boost-start']);
   document.getElementById('ol-collection-over').classList.remove('hidden');
   openModalNav('ol-collection-over');
 }
@@ -3211,41 +3205,25 @@ function collectionShowSettle() {
   settleRunStars();
   updateCollectionHud();   // BEST(지갑) 갱신
   collectionSetOverPhase('settle');
-  // settle 단계 진입 시 btn-double-stars 광고 쿼터 재체크
-  // (runStars=0이면 이미 display:none이므로 syncAdButtons가 덮어써도 무해)
-  const dblBtn = document.getElementById('btn-double-stars');
-  if (dblBtn && dblBtn.style.display !== 'none') {
-    syncAdButtons(['btn-double-stars']);
-  }
+  syncAdButtons(['btn-boost-start']);   // settle 진입 시 광고 쿼터 재체크
 }
 
-// 게임오버 x2 스타: 리워드 광고 시청 시 이번 판 획득 스타만큼 추가 적립 (1배 더)
-async function collectionDoubleStars() {
-  const dblBtn = document.getElementById('btn-double-stars');
-  if (_gameoverStarsDoubled) return;
-  const runStars = dblBtn ? parseInt(dblBtn.dataset.runStars || '0', 10) : 0;
-  if (runStars <= 0) return;
-
-  if (dblBtn) { dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
+// START WITH ⭐×2: 리워드 광고 → 같은 챕터 새 판, 그 판에서 얻는 별 ×2 (버프, 한 판).
+// 광고 실패 시 버프 없이 머무름 — 무료 PLAY AGAIN으로 그냥 시작할 수 있다.
+async function collectionBoostedStart() {
+  const btn = document.getElementById('btn-boost-start');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   let granted = false;
-  try { const res = await requestRewardedAdWithQuota('collection_double_stars'); granted = !res || res.granted !== false; } catch (_) { granted = false; }
-
+  try { const res = await requestRewardedAdWithQuota('collection_double_stars'); granted = res && res.granted !== false; } catch (_) { granted = false; }
   if (!granted) {
-    // 광고 실패/거부 → 보상 없음, 버튼 복구 (재시도 가능)
-    if (dblBtn) { dblBtn.disabled = false; dblBtn.style.opacity = ''; }
+    syncAdButtons(['btn-boost-start']);   // 복구 (쿼터 소진이면 숨김)
     showGameToast('Ad failed to load. Please try again.', 2200);
     return;
   }
-
-  // 추가 1배 적립 (settle 진입 시 1배 이미 정산됨 → 총 x2)
-  SG.Daily.earnStarsToWallet(runStars, 'collection', SG.Store);
-  _gameoverStarsDoubled = true;
-  dailyStarsShown = runStars * 2;
-  if (dblBtn) { dblBtn.style.display = 'none'; }
-  if (_modal && _modal.id === 'ol-collection-over') openModalNav('ol-collection-over');
-  document.getElementById('gameover-run-stars').textContent = '⭐' + (runStars * 2) + ' (x2!)';
-  updateCollectionHud();   // 지갑 갱신
-  showGameToast('⭐ x2 CLAIMED! +' + runStars, 2000);
+  collectionPlayAgain();
+  collectionStarMult = 2;   // startCollection()이 1로 리셋한 뒤에 건다
+  updateCollectionHud();
+  showGameToast('⭐×2 for this run!', 2000);
 }
 
 // CONTINUE 대상: 보드에 존재하는 size 중 상위 3종을 제외한 나머지 셀 좌표 목록.
