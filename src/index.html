@@ -156,6 +156,7 @@
     #ol-gallery { z-index: 20; }
     #ol-gallery-detail { z-index: 30; }
     #ol-ranking { z-index: 30; }
+    #ol-lbstats { z-index: 40; }
 
     /* ── START 히어로 화면 ───────────────────────────────────────── */
     #ol-start {
@@ -787,6 +788,7 @@
   <label style="font-size:.75rem;color:#aaa">THEME:</label>
   <select id="dev-theme-select" onchange="devSetTheme(this.value)" style="background:#111;color:#fff;border:1px solid #444;font-size:.75rem;padding:1px 4px"></select>
   <button onclick="devUnlockActiveTheme()">UNLOCK</button>
+  <button onclick="openLbStats()">LB STATS</button>
 </div>
 
 <!-- ── 앱 루트 ──────────────────────────────────────────────────── -->
@@ -1183,6 +1185,13 @@
   </div>
 </div>
 
+<div id="ol-lbstats" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title">LB STATS</div>
+    <pre id="lbstats-body" style="text-align:left;font-size:.72rem;white-space:pre-wrap;max-height:60vh;overflow:auto"></pre>
+    <button class="btn-secondary modal-btn" onclick="closeLbStats()">CLOSE</button>
+  </div>
+</div>
 
 <!-- ── Collection: 게임오버 ─────────────────────────────────────────── -->
 <!-- 2단계: (1) CONTINUE 권유 → (2) 거절 시 DOUBLE STARS 정산. 광고 버튼 동시 노출 금지. -->
@@ -3855,6 +3864,40 @@ async function rankingShowTab(key) {
     return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span><span class="lb-id">' + who +
       '</span><span class="lb-score">' + fmt(r.score) + '</span></div>';
   }).join('') || LB_EMPTY_HTML;
+}
+
+// ── 운영자 집계 (?dev=1) — getEntries 반환 목록 기준. 반환 인원이 고정되면 조회 한도(N)로 잘리는 중.
+function lbStatsSummary(lbId, rows) {
+  const n = rows.length;
+  if (lbId === SG.PG.LB_GALLERY) {
+    const hist = {};
+    rows.forEach(function (r) { hist[r.score] = (hist[r.score] || 0) + 1; });
+    const lines = Object.keys(hist).map(Number).sort(function (a, b) { return b - a; })
+      .map(function (s) { return '  ' + String(s).padStart(2) + ' scenes: ' + hist[s]; });
+    return lbId + ' — returned ' + n + ' (may be capped)\n' + (lines.join('\n') || '  (none)');
+  }
+  const runs = rows.map(function (r) { return r.score; }).sort(function (a, b) { return a - b; });
+  const med = n ? (n % 2 ? runs[(n - 1) / 2] : (runs[n / 2 - 1] + runs[n / 2]) / 2) : '-';
+  return lbId + ' — cleared ' + n + ' (may be capped)' +
+    (n ? '\n  runs min ' + runs[0] + ' · median ' + med + ' · max ' + runs[n - 1] : '');
+}
+async function openLbStats() {
+  const body = document.getElementById('lbstats-body');
+  document.getElementById('ol-lbstats').classList.remove('hidden');
+  openModalNav('ol-lbstats');
+  if (!(SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game')) {
+    body.textContent = 'Leaderboards not available on this platform (' + (SG.PG ? SG.PG.platformId() : '?') + ').';
+    return;
+  }
+  body.textContent = 'Loading…';
+  const ids = [SG.PG.LB_GALLERY].concat(SG.PG.LB_CHAPTER_CLEAR);
+  const parts = [];
+  for (const id of ids) parts.push(lbStatsSummary(id, _normalizePgEntries(await SG.PG.leaderboard.getEntries(id))));
+  body.textContent = parts.join('\n\n');
+}
+function closeLbStats() {
+  document.getElementById('ol-lbstats').classList.add('hidden');
+  closeModalNav();
 }
 
 // Render the daily leaderboard rows.
