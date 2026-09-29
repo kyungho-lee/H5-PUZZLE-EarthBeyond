@@ -26,6 +26,8 @@ Platform compliance: player data is saved and restored through Bridge Storage, t
 - **Daily:** ranked by the day's best game score (was stars × 10000 + score). A lower retry never overwrites the day's best. Endless follows the same rule.
 - **Playgama SaaS leaderboards** enabled (`playgama`, `qa_tool`).
 - **No dummy rows:** the ranking is hidden without a backend and shows "No scores yet — be the first!" when empty.
+- **Gallery & chapter-clear leaderboards:** `gallery_total` ranks players by scenes collected (0–33); `ch1_clear`–`ch3_clear` rank the fewest runs taken to clear each chapter. Open them from the gallery (🏆 RANKING, shown only where leaderboards are available).
+- Progress events: `level_started` / `level_failed` / `level_completed` and a custom message per new scene (`ch1_step05` …).
 
 ## Chronicles
 

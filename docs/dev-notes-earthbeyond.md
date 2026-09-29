@@ -12,7 +12,7 @@
 
 | 버전 | 날짜 | 요약 |
 |------|------|------|
-| v0.9 | 2026-09-29 | Playgama 심사 제출본 — 혜성 · 관측소, Bridge Storage · Platform 필수 항목, 점수 기준 리더보드(SaaS), 별 ×2 버프, 파티클 · BGM · 광고 사운드 수정 ([릴리스 노트](devLog/Release_Note_v0.9.0.md)) |
+| v0.9 | 2026-09-29 | Playgama 심사 제출본 — 혜성 · 관측소, Bridge Storage · Platform 필수 항목, 점수 기준 리더보드(SaaS), 별 ×2 버프, 파티클 · BGM · 광고 사운드 수정, 갤러리 · 챕터 클리어 리더보드 ([릴리스 노트](devLog/Release_Note_v0.9.0.md)) |
 | v0.3 | 2026-06-15 | Chronicles MVP Phase 1 완성 — Chapter Intro, Step Toast, Progress Bar, Chapter Complete + Epoch Stamp |
 | v0.2 | 2026-06-15 | Chronicles 스토리 모드 MVP 착수 — chapter/stepDescriptions 데이터, Daily 테마 랜덤화 |
 | v0.1 | 2026-06-15 | 초기 스캐폴드 — NeonDrift 코어 이식, 브랜딩, Era 1~3 테마 정의, WebP 에셋 일괄 크롭 |
