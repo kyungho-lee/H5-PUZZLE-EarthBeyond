@@ -295,11 +295,12 @@
     return _bridge.leaderboards.type || 'not_available';
   }
   function lbSubmit(score, lbId) {
-    if (!_ready || !_bridge || !_bridge.leaderboards) return Promise.resolve();
-    if (lbGetType() === 'not_available') return Promise.resolve();
+    if (!_ready || !_bridge || !_bridge.leaderboards) return Promise.resolve(false);
+    if (lbGetType() === 'not_available') return Promise.resolve(false);
     var id = lbId || _LB_DAILY;
     return Promise.resolve(_bridge.leaderboards.setScore(id, score))
-      .catch(function (e) { console.warn('[SG.PG.lb] setScore failed:', e); });
+      .then(function () { return true; })
+      .catch(function (e) { console.warn('[SG.PG.lb] setScore failed:', e); return false; });
   }
   function lbGetEntries(lbId) {
     if (!_ready || !_bridge || !_bridge.leaderboards) return Promise.resolve(null);
@@ -307,6 +308,19 @@
     var id = lbId || _LB_DAILY;
     return Promise.resolve(_bridge.leaderboards.getEntries(id))
       .catch(function (e) { console.warn('[SG.PG.lb] getEntries failed:', e); return null; });
+  }
+
+  var _LB_GALLERY = 'gallery_total';
+  var _LB_CHAPTER_CLEAR = ['ch1_clear', 'ch2_clear', 'ch3_clear'];
+
+  // 진행 이벤트 — 실패해도 게임에 영향 없음.
+  function sendMessage(name, data) {
+    if (!_ready || !_bridge || !_bridge.platform) return;
+    try { Promise.resolve(_bridge.platform.sendMessage(name, data)).catch(function () {}); } catch (e) {}
+  }
+  function sendCustomMessage(id) {
+    if (!_ready || !_bridge || !_bridge.platform || typeof _bridge.platform.sendCustomMessage !== 'function') return;
+    try { Promise.resolve(_bridge.platform.sendCustomMessage(id)).catch(function () {}); } catch (e) {}
   }
 
   SG.PG = {
@@ -319,11 +333,15 @@
     platformLanguage,
     LB_DAILY:   _LB_DAILY,
     LB_ENDLESS: _LB_ENDLESS,
+    LB_GALLERY: _LB_GALLERY,
+    LB_CHAPTER_CLEAR: _LB_CHAPTER_CLEAR,
     leaderboard: {
       getType:    lbGetType,
       submit:     lbSubmit,
       getEntries: lbGetEntries,
     },
+    sendMessage,
+    sendCustomMessage,
     _audioEnabled: true,
     _onAudioStateChanged: null,
     _onPauseStateChanged: null,

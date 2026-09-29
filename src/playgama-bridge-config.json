@@ -39,6 +39,10 @@
   "payments": [],
   "leaderboards": [
     { "id": "kevin-PEB", "isMain": true },
-    { "id": "Kevin-PEB2" }
+    { "id": "Kevin-PEB2" },
+    { "id": "gallery_total" },
+    { "id": "ch1_clear" },
+    { "id": "ch2_clear" },
+    { "id": "ch3_clear" }
   ]
 }
