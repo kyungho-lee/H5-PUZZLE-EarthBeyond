@@ -2323,6 +2323,30 @@ async function dailyCollapse(collapseInfo) {
 let _checkMergesRunning = false;   // async 중복 진입 방지
 // 이번 세션에서 이미 나레이션을 표시한 step 번호 (재시작마다 초기화)
 let _narratedStepsThisSession = new Set();
+// ── 갤러리 · 챕터 클리어 리더보드 동기화 ─────────────────────────────
+function chapterIndexOf(themeId) {
+  return SG.CollectionThemes.findIndex(function (t) { return t.id === themeId; }) + 1;
+}
+let _lbSyncing = false;
+async function lbSyncNow() {
+  if (_lbSyncing || !SG.PG.isAvailable() || SG.PG.leaderboard.getType() === 'not_available') return;
+  _lbSyncing = true;
+  try {
+    const themes = SG.CollectionThemes;
+    const cur = {
+      galleryTotal: SG.Collection.totalAcquired(SG.Store, themes),
+      clears: themes.slice(0, SG.PG.LB_CHAPTER_CLEAR.length).map(function (t, i) {
+        return { lbId: SG.PG.LB_CHAPTER_CLEAR[i], themeId: t.id, clearRuns: SG.Collection.loadTheme(t.id, SG.Store, t).clearRuns };
+      }),
+    };
+    let sent = SG.LbSync.load(SG.Store);
+    for (const item of SG.LbSync.plan(cur, sent)) {
+      if (await SG.PG.leaderboard.submit(item.score, item.lbId)) sent = SG.LbSync.markSent(sent, item);
+    }
+    SG.LbSync.save(SG.Store, sent);
+  } catch (e) { console.warn('[lb] sync failed:', e); }
+  finally { _lbSyncing = false; }
+}
 async function collectionCheckMerges(mergedSizes) {
   if (_checkMergesRunning) return;
   _checkMergesRunning = true;
@@ -2336,6 +2360,14 @@ async function _collectionCheckMergesInner(mergedSizes) {
   const themes = SG.CollectionThemes;
   const activeThemeObj = themes.find(function (t) { return t.id === activeThemeId; }) || null;
   const rec = SG.Collection.recordMerges(activeThemeId, mergedSizes, SG.Store, themes, activeThemeObj);
+  if (rec.newSteps.length) {
+    const _ch = chapterIndexOf(activeThemeId);
+    rec.newSteps.forEach(function (it) {
+      SG.PG.sendCustomMessage('ch' + _ch + '_step' + String(it.step).padStart(2, '0'));
+    });
+    if (rec.isComplete) SG.PG.sendMessage('level_completed', { world: activeThemeId });
+    lbSyncNow();
+  }
 
   // 신규 획득 없고 완성도 아닌 경우:
   // 이미 획득된 스텝 중 이번 세션에 아직 나레이션 미표시 항목 확인 (Chronicles 전용)
@@ -2621,7 +2653,14 @@ function startCollection() {
   }
   const activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   // step-01(size 1) 자동 획득 — 팝업 없이 조용히, NEW 마크만 (갤러리 확인 시 스타)
-  SG.Collection.grantStartStep(activeThemeId, SG.Store, activeThemeObj);
+  const _startGranted = SG.Collection.grantStartStep(activeThemeId, SG.Store, activeThemeObj);
+  SG.Collection.bumpRuns(activeThemeId, SG.Store, activeThemeObj);   // 새 판 = 1판 (CONTINUE는 같은 판)
+  const _stepsNow = SG.Collection.loadTheme(activeThemeId, SG.Store, activeThemeObj).acquiredSteps.length;
+  SG.PG.sendMessage('level_started', { world: activeThemeId, level: String(_stepsNow) });
+  if (_startGranted) {
+    SG.PG.sendCustomMessage('ch' + chapterIndexOf(activeThemeId) + '_step01');
+    lbSyncNow();
+  }
   const dow = utcDayOfWeek();
   dailyTypeCfg = SG.ND.dailyType(dow);
   const base = buildDailyOpts(dailyTypeCfg);
@@ -3170,6 +3209,11 @@ async function collectionGameOver() {
   const runStars = dailyRunStars;
   dailyStarsShown = runStars;
   _runSettled = false;   // 이번 판이 아직 지갑에 정산되지 않음
+  try {
+    const _t = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
+    const _lv = SG.Collection.loadTheme(activeThemeId, SG.Store, _t).acquiredSteps.length;
+    SG.PG.sendMessage('level_failed', { world: activeThemeId, level: String(_lv) });
+  } catch (_) {}
 
   // 게임오버 시 전체광고 노출 → 그 다음 팝업
   await showInterstitial();
@@ -4650,6 +4694,7 @@ window.addEventListener('pagehide', pgSyncStorage);
   SG.CG.showBanner();
 
   // Firebase (Playgama 빌드에는 설정 파일이 없어 즉시 false)
+  lbSyncNow();
   await SG.FB.init();
 
 })().catch(function (e) {
