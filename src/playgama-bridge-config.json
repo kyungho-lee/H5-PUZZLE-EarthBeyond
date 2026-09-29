@@ -30,6 +30,12 @@
       ]
     }
   },
+  "saas": {
+    "publicToken": "cmqf9ib9y009rlr0hzzxkr4hw",
+    "leaderboards": {
+      "platforms": ["playgama", "qa_tool"]
+    }
+  },
   "payments": [],
   "leaderboards": [
     { "id": "kevin-PEB", "isMain": true },

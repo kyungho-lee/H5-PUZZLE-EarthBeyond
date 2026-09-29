@@ -36,7 +36,7 @@
   function isConnected() { return !!db; }
 
   function getPlayerId() {
-    let id = localStorage.getItem('puzzle_player_id');
+    let id = global.SG.Store.getItem('puzzle_player_id');
     if (!id) {
       try {
         const arr = new Uint8Array(8);
@@ -45,7 +45,7 @@
       } catch (e) {
         id = 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
       }
-      localStorage.setItem('puzzle_player_id', id);
+      global.SG.Store.setItem('puzzle_player_id', id);
     }
     return id;
   }
@@ -136,9 +136,9 @@
   // ── 리더보드 조회 ─────────────────────────────────────────────────
   // opts.mode : 'daily' | 'collection' | undefined → 해당 모드만 필터
   // opts.limit: 조회 건수 (기본 20)
-  // 연결 없으면 _demoLeaderboard() 반환 (DEMO 배지 표시용).
+  // 연결 없음·조회 실패 → null (가짜 행 없음). 빈 배열 = 아직 기록 없음.
   async function fetchLeaderboard(date, opts) {
-    if (!db) return _demoLeaderboard();
+    if (!db) return null;
     const mode  = opts && opts.mode;
     const top   = (opts && opts.limit) || 20;
     const day   = date || new Date().toISOString().slice(0, 10);
@@ -150,7 +150,7 @@
     } catch (e) {
       console.warn('[SG.FB] fetchLeaderboard failed:', e);
       if (SG.Notify) SG.Notify.error('FB_FETCH', { retry: () => fetchLeaderboard(date, opts) });
-      return _demoLeaderboard();
+      return null;
     }
   }
 
@@ -227,17 +227,7 @@
     } catch (_) { return '🌐'; }
   }
 
-  function _demoLeaderboard() {
-    return [
-      { playerId: 'demo_1', score: 9800, country: 'KR' },
-      { playerId: 'demo_2', score: 7200, country: 'US' },
-      { playerId: 'demo_3', score: 5100, country: 'JP' },
-      { playerId: 'demo_4', score: 3400, country: 'DE' },
-      { playerId: 'demo_5', score: 1200, country: 'BR' },
-    ];
-  }
-
   SG.FB = { init, isConnected, getPlayerId, submitScore, fetchLeaderboard,
-            detectCountry, countryFlag, _demoRows: _demoLeaderboard };
+            detectCountry, countryFlag };
 
 })(typeof window !== 'undefined' ? window : global);

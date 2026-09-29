@@ -49,9 +49,11 @@
     const existing = _read(store, _key(dateStr));
     if (existing && existing.date === dateStr) {
       if (existing.claimedBest == null) existing.claimedBest = 0;   // 마이그레이션
+      if (existing.bestScore == null) existing.bestScore = 0;       // 마이그레이션
+      if (existing.endlessBest == null) existing.endlessBest = 0;   // 마이그레이션
       return existing;
     }
-    const fresh = { date: dateStr, retriesUsed: 0, stars: 0, bestRun: 0, claimedBest: 0 };
+    const fresh = { date: dateStr, retriesUsed: 0, stars: 0, bestRun: 0, claimedBest: 0, bestScore: 0, endlessBest: 0 };
     _write(store, _key(dateStr), fresh);
     return fresh;
   }
@@ -74,6 +76,15 @@
   function setBestRun(ds, runStars, store) {
     if (runStars > ds.bestRun) { ds.bestRun = runStars; _write(store, _key(ds.date), ds); }
     return ds.bestRun;
+  }
+  // 오늘 최고 점수(리더보드 기준). 날짜 키라 다음 날 0부터 — 반환: 이번이 새 최고인지.
+  // field: 'bestScore'(Daily) | 'endlessBest'(Endless).
+  function setBestScore(ds, runScore, store, field) {
+    const f = field || 'bestScore';
+    if (runScore <= (ds[f] || 0)) return false;
+    ds[f] = runScore;
+    _write(store, _key(ds.date), ds);
+    return true;
   }
   function canRetry(ds) { return true; }  // 무제한 리트라이
   function useRetry(ds, store) {
@@ -179,7 +190,7 @@
 
   return {
     N, MAX_RETRIES,
-    dailyBoard, loadDaily, addStars, setBestRun, canRetry, useRetry, retriesLeft,
+    dailyBoard, loadDaily, addStars, setBestRun, setBestScore, canRetry, useRetry, retriesLeft,
     claimBestToWallet, claimableBest,
     loadWallet, saveWallet, earnStarsToWallet, spendStars, getWalletStars,
     WALLET_KEY, WALLET_DAILY_CAP,

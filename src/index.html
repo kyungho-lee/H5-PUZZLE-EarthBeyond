@@ -8,9 +8,12 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23050810'/%3E%3Ccircle cx='16' cy='16' r='10' fill='%233a7bd5'/%3E%3Cellipse cx='14' cy='13' rx='4' ry='3' fill='%231a6b3c' opacity='.9'/%3E%3Ccircle cx='20' cy='18' r='2.5' fill='%2311998e' opacity='.8'/%3E%3C/svg%3E">
 
   <!-- Google Fonts: 톤앤매너 유지 (SameGame과 동일) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!-- Fonts ship inside the build (Playgama: no external resources). Latin subset, SIL OFL. -->
+  <style>
+    @font-face { font-family: 'Rajdhani'; font-weight: 600; font-display: swap; src: url(fonts/rajdhani-600.woff2) format('woff2'); }
+    @font-face { font-family: 'Rajdhani'; font-weight: 700; font-display: swap; src: url(fonts/rajdhani-700.woff2) format('woff2'); }
+    @font-face { font-family: 'Share Tech Mono'; font-weight: 400; font-display: swap; src: url(fonts/share-tech-mono-400.woff2) format('woff2'); }
+  </style>
 
   <!-- Playgama Bridge SDK: 정적 태그 필수 (QA Tool 인식 요건) -->
   <script src="https://bridge.playgama.com/v2/stable/playgama-bridge.js"></script>
@@ -964,9 +967,9 @@
   <div class="ol-panel">
     <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
     <div class="ol-label"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="daily-run-stars">⭐0</span> · <span data-i18n="ui.label.todayBest">TODAY BEST</span> <span id="daily-total-stars">⭐0</span></div>
-    <!-- 더미 리더보드: QA 통과 후 Playgama public token 연결 전까지 DEMO 표시 -->
-    <div id="daily-lb">
-      <div class="lb-title"><span data-i18n="ui.label.todayRanking">TODAY'S RANKING</span> <span id="daily-lb-badge" class="lb-badge">DEMO</span></div>
+    <!-- 리더보드: 백엔드(Playgama SaaS / Firebase)가 있을 때만 표시. 더미 데이터 없음. -->
+    <div id="daily-lb" style="display:none">
+      <div class="lb-title"><span id="daily-lb-title" data-i18n="ui.label.todayRanking">TODAY'S RANKING</span></div>
       <div id="daily-lb-rows"></div>
     </div>
 
@@ -1110,9 +1113,9 @@
     <div style="font-size:.62rem;color:var(--textdim);letter-spacing:2px;margin-bottom:4px">SCORE</div>
     <div id="endless-run-meta" style="font-size:.72rem;color:var(--textdim);margin-bottom:14px"></div>
     <!-- 리더보드 -->
-    <div id="endless-lb">
+    <div id="endless-lb" style="display:none">
       <div class="lb-title" style="color:var(--textdim);font-size:.68rem;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:6px">
-        RANKING <span id="endless-lb-badge" class="lb-badge">DEMO</span>
+        RANKING
       </div>
       <div id="endless-lb-rows"></div>
     </div>
@@ -1139,7 +1142,7 @@
       </button>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(58,123,213,0.2)">
         <div style="font-size:.6rem;color:var(--accent);letter-spacing:2px;margin-bottom:8px">NEW MODE UNLOCKED</div>
-        <button class="btn-primary modal-btn" onclick="startEndless()">ENDLESS MODE ∞</button>
+        <button class="btn-primary modal-btn" onclick="startEndless(SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }))">ENDLESS MODE ∞</button>
         <div style="font-size:.65rem;color:var(--textdim);margin-top:4px;line-height:1.4">Merge freely — no story, no limits.<br>Farm stars as long as you survive.</div>
       </div>
       <button class="btn-secondary modal-btn" onclick="collectionToMenu()" style="margin-top:10px">MENU</button>
@@ -1269,6 +1272,7 @@
 </div>
 
 <!-- ── 플랫폼 SDK ─────────────────────────────────────────────────── -->
+<script src="save-store.js"></script>
 <script src="firebase-config.js"></script>
 <script src="notify.js"></script>
 <script src="crazygames.js"></script>
@@ -1300,7 +1304,7 @@ const APP_VERSION = 'v0.1';
 // ── 상태 ──────────────────────────────────────────────────────────
 const ND = SG.ND;
 let score = 0;
-let bestScore = parseInt(localStorage.getItem(STORAGE_KEY_BEST) || '0', 10);
+let bestScore = parseInt(SG.Store.getItem(STORAGE_KEY_BEST) || '0', 10);
 var gameRunning = false;
 
 var renderer = null;
@@ -1353,7 +1357,7 @@ function reseatObservatory() {
 
 function showCosmicTip(kind) {
   const key = kind === 'comet' ? 'earthbeyond_tut_comet' : 'earthbeyond_tut_observatory';
-  try { if (localStorage.getItem(key) === '1') return; localStorage.setItem(key, '1'); } catch (_) {}
+  try { if (SG.Store.getItem(key) === '1') return; SG.Store.setItem(key, '1'); } catch (_) {}
   const msg = SG.i18n ? SG.i18n.t(kind === 'comet' ? 'ui.toast.cometTip' : 'ui.toast.observatoryTip') : '';
   if (msg) showGameToast(msg, 4000);
 }
@@ -1403,7 +1407,7 @@ let _walletShown = -1;
 function updateWalletChip() {
   const el = document.getElementById('wallet-balance');
   if (!el) return;
-  const v = SG.Daily.getWalletStars(localStorage);
+  const v = SG.Daily.getWalletStars(SG.Store);
   if (v !== _walletShown) {
     el.textContent = v;
     if (v > _walletShown && _walletShown >= 0) {
@@ -1417,7 +1421,7 @@ function updateWalletChip() {
 // 리워드 광고 버튼 상태 갱신 — 쿼터 소진 시 버튼 숨김
 // ids: 광고 버튼 element id 목록
 function syncAdButtons(ids) {
-  const left = SG.Daily.rewardedAdsLeft(localStorage);
+  const left = SG.Daily.rewardedAdsLeft(SG.Store);
   const exhausted = left <= 0;
   ids.forEach(function (id) {
     const btn = document.getElementById(id);
@@ -1503,7 +1507,8 @@ function doMove(dir) {
     // Fly earned stars into the HUD counter (ticks dailyStarsShown as they land).
     // No completed targets → just sync the displayed count immediately.
     if (result.completed && result.completed.length) flyStarsToHud(result.completed);
-    else { dailyStarsShown = dailyRunStars; collectionMode ? updateCollectionHud() : updateDailyHud(); }
+    else dailyStarsShown = dailyRunStars;
+    collectionMode ? updateCollectionHud() : updateDailyHud();   // SCORE는 즉시, ⭐은 도착하며 증가
   } else {
     score += result.scoreGained;
     if (result.chain > maxChain) maxChain = result.chain;
@@ -1572,10 +1577,10 @@ function loop(ts) {
 // ── 온보딩 (첫 접속) ─────────────────────────────────────────────
 const ONBOARD_KEY = 'earthbeyond_onboarded';
 function isFirstVisit() {
-  try { return !localStorage.getItem(ONBOARD_KEY); } catch (_) { return false; }
+  try { return !SG.Store.getItem(ONBOARD_KEY); } catch (_) { return false; }
 }
 function markOnboarded() {
-  try { localStorage.setItem(ONBOARD_KEY, '1'); } catch (_) {}
+  try { SG.Store.setItem(ONBOARD_KEY, '1'); } catch (_) {}
 }
 
 function showStart() {
@@ -1604,13 +1609,13 @@ function _refreshMenuDots() {
       if (endlessLabel) endlessLabel.textContent = 'ENDLESS ∞';
       if (endlessSub) {
         var best = 0;
-        try { best = parseInt(localStorage.getItem('earthbeyond_endless_best') || '0', 10) || 0; } catch (_) {}
+        try { best = parseInt(SG.Store.getItem('earthbeyond_endless_best') || '0', 10) || 0; } catch (_) {}
         endlessSub.textContent = best > 0 ? 'BEST  ' + best : '';
       }
       endlessBtn.style.opacity = '';
     } else {
       if (endlessLabel) endlessLabel.textContent = '🔒  ENDLESS ∞';
-      var meta0 = SG.Collection.loadMeta(localStorage);
+      var meta0 = SG.Collection.loadMeta(SG.Store);
       var total0 = SG.CollectionThemes ? SG.CollectionThemes.length : 0;
       var done0  = (meta0.completedThemes && meta0.completedThemes.length) || 0;
       if (endlessSub) endlessSub.textContent = _ko
@@ -1621,7 +1626,7 @@ function _refreshMenuDots() {
   }
 
   // ── DAILY CHALLENGE 버튼 ───────────────────────────────────────
-  var ds = SG.Daily.loadDaily(utcDateStr(), localStorage);
+  var ds = SG.Daily.loadDaily(utcDateStr(), SG.Store);
   var dailyLabel = document.getElementById('daily-menu-label');
   var dailySub   = document.getElementById('daily-menu-sub');
   if (dailyLabel) dailyLabel.textContent = _t('ui.btn.dailyChallenge');
@@ -1637,10 +1642,10 @@ function _refreshMenuDots() {
 
   // ── GALLERY 레드닷 ─────────────────────────────────────────────
   var hasNew = false;
-  var meta1 = SG.Collection.loadMeta(localStorage);
+  var meta1 = SG.Collection.loadMeta(SG.Store);
   (SG.CollectionThemes || []).forEach(function (t) {
     if (meta1.unlockedThemes.indexOf(t.id) !== -1) {
-      if (SG.Collection.hasNew(t.id, localStorage, t)) hasNew = true;
+      if (SG.Collection.hasNew(t.id, SG.Store, t)) hasNew = true;
     }
   });
   var galDot = document.getElementById('menu-gallery-dot');
@@ -1663,8 +1668,8 @@ function menuEndlessClick() {
 // 메인 메뉴 DAILY CHALLENGE 버튼 → Daily 상태 팝업
 function openDailyMenu() {
   const date = utcDateStr();
-  const ds = SG.Daily.loadDaily(date, localStorage);
-  const isDev = localStorage.getItem('sg_dev') === '1' ||
+  const ds = SG.Daily.loadDaily(date, SG.Store);
+  const isDev = SG.Store.getItem('sg_dev') === '1' ||
                 new URLSearchParams(location.search).has('dev');
   const t = SG.ND.dailyType(utcDayOfWeek());
 
@@ -1714,10 +1719,10 @@ function openDailyMenuPlay() {
   document.getElementById('ol-daily-menu').classList.add('hidden');
   closeModalNav();
   const date = utcDateStr();
-  dailyState = SG.Daily.loadDaily(date, localStorage);
+  dailyState = SG.Daily.loadDaily(date, SG.Store);
   document.getElementById('ol-start').classList.add('hidden');
 
-  const seen = localStorage.getItem('earthbeyond_tutorial_seen');
+  const seen = SG.Store.getItem('earthbeyond_tutorial_seen');
   if (!seen) {
     _dtutOnDone = function () { startDailyRun(); };
     _showTutorial('daily');
@@ -1811,7 +1816,7 @@ function nextDailyTutorial() {
 }
 
 function closeDailyTutorial() {
-  localStorage.setItem('earthbeyond_tutorial_seen', '1');
+  SG.Store.setItem('earthbeyond_tutorial_seen', '1');
   document.getElementById('ol-daily-tutorial').classList.add('hidden');
   if (typeof _dtutOnDone === 'function') { var fn = _dtutOnDone; _dtutOnDone = null; fn(); }
 }
@@ -1844,7 +1849,7 @@ function openGalleryFromMenu() {
 function _checkOnboarding() {
   if (!isFirstVisit()) return;
   markOnboarded();
-  dailyState = SG.Daily.loadDaily(utcDateStr(), window.localStorage);
+  dailyState = SG.Daily.loadDaily(utcDateStr(), SG.Store);
   _pendingOnboard = true;
   startDailyRun();
 }
@@ -1877,7 +1882,7 @@ function _updateDailyOverPanel(claimable) {
 // "START YOUR JOURNEY →" 클릭: 스타 정산 + Chronicles 진입
 function onboardToChronicles() {
   _pendingOnboard = false;
-  if (dailyState) SG.Daily.claimBestToWallet(dailyState, window.localStorage);
+  if (dailyState) SG.Daily.claimBestToWallet(dailyState, SG.Store);
   pgSyncStorage();
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
@@ -1967,7 +1972,7 @@ function startEndlessFromGallery() {
 }
 
 function startCollectionFromGallery() {
-  const seen = localStorage.getItem('earthbeyond_tutorial_seen');
+  const seen = SG.Store.getItem('earthbeyond_tutorial_seen');
   if (!seen) {
     // 갤러리 닫기 + 튜토리얼 → startCollection
     document.getElementById('ol-gallery').classList.add('hidden');
@@ -1980,7 +1985,7 @@ function startCollectionFromGallery() {
 }
 
 function _doStartCollectionFromGallery() {
-  const activeMeta = SG.Collection.loadMeta(localStorage);
+  const activeMeta = SG.Collection.loadMeta(SG.Store);
   const activeTab = document.querySelector('.gallery-tab.active');
   if (activeTab) {
     const tabTheme = SG.CollectionThemes.find(function (t) {
@@ -1991,7 +1996,7 @@ function _doStartCollectionFromGallery() {
     if (tabTheme && activeMeta.unlockedThemes.indexOf(tabTheme.id) !== -1 &&
         activeMeta.completedThemes.indexOf(tabTheme.id) === -1) {
       activeMeta.activeThemeId = tabTheme.id;
-      SG.Collection.saveMeta(localStorage, activeMeta);
+      SG.Collection.saveMeta(SG.Store, activeMeta);
     }
   }
   document.getElementById('ol-gallery').classList.add('hidden');
@@ -2002,7 +2007,7 @@ function _doStartCollectionFromGallery() {
 // Settings에서 Daily EVENT 진입
 function openDailyFromSettings() {
   const date = utcDateStr();
-  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  dailyState = SG.Daily.loadDaily(date, SG.Store);
   // ol-start를 먼저 숨겨서 closeSettings의 nav 복원이 발동하지 않도록
   document.getElementById('ol-start').classList.add('hidden');
   closeSettings();
@@ -2011,7 +2016,7 @@ function openDailyFromSettings() {
 
 function openDaily() {
   const date = utcDateStr();
-  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  dailyState = SG.Daily.loadDaily(date, SG.Store);
   startDailyRun();
 }
 
@@ -2065,10 +2070,10 @@ function startDailyRun() {
   rng = _devDailyAllThemes ? makeRng() : dailySeededRng(date);
   grid = SG.Daily.dailyBoard(date, dow, rng);
   // 판 시작 시 retry 1회 소모 (dev 모드 제외)
-  const _isDev = localStorage.getItem('sg_dev') === '1' ||
+  const _isDev = SG.Store.getItem('sg_dev') === '1' ||
                  new URLSearchParams(location.search).has('dev');
   if (!_isDev && !_devDailyAllThemes) {
-    SG.Daily.useRetry(dailyState, window.localStorage);
+    SG.Daily.useRetry(dailyState, SG.Store);
   }
 
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0; dailyRunScore = 0;
@@ -2082,7 +2087,7 @@ function startDailyRun() {
   if (_devDailyAllThemes && _allThemes.length > 0) {
     dailyTheme = _allThemes[Math.floor(makeRng()() * _allThemes.length)];
   } else {
-    const _collMeta = SG.Collection.loadMeta(window.localStorage);
+    const _collMeta = SG.Collection.loadMeta(SG.Store);
     const _unlocked = _allThemes.filter(function (t) {
       return !t.unlockCondition || _collMeta.unlockedThemes.indexOf(t.id) !== -1;
     });
@@ -2113,6 +2118,7 @@ function startDailyRun() {
 // ── Endless mode state ────────────────────────────────────────────
 let endlessMode = false;
 let endlessScore = 0;       // 이번 판 누적 점수 (머지 크기 합산)
+let endlessSkin = null;     // 이번 판 테마 스킨 (AGAIN이 이어받음)
 let endlessStarsDoubled = false;
 const ENDLESS_STARS_PER = 100;  // 100점당 ⭐1
 
@@ -2140,7 +2146,7 @@ async function showInterstitial() {
 }
 
 async function requestRewardedAdWithQuota(placement) {
-  if (!SG.Daily.useRewardedAd(localStorage)) {
+  if (!SG.Daily.useRewardedAd(SG.Store)) {
     showGameToast('Daily ad limit reached (' + SG.Daily.REWARDED_DAILY_LIMIT + '/' + SG.Daily.REWARDED_DAILY_LIMIT + '). Come back tomorrow!', 2500);
     return { granted: false };
   }
@@ -2151,7 +2157,7 @@ async function requestRewardedAdWithQuota(placement) {
     return res || { granted: true };
   } catch (_) {
     try { SG.CG.showBanner(); } catch (_e) {}
-    SG.Daily.refundRewardedAd(localStorage);
+    SG.Daily.refundRewardedAd(SG.Store);
     return { granted: false };
   } finally {
     // 광고 완료 후 플랫폼이 pauseStateChanged(false)를 보내지 않는 경우 대비
@@ -2164,8 +2170,10 @@ function updateDailyHud() {
   const label = dailyTypeCfg ? dailyTypeCfg.label : '';
   document.getElementById('game-title').textContent = 'DAILY · ' + label;
   const _played = dailyState ? SG.Daily.retriesLeft(dailyState) : 0;
-  setStats('THIS RUN', '⭐' + dailyStarsShown,
-           'PLAYED', '#' + _played);
+  if (_played) document.getElementById('game-title').textContent += ' · #' + _played;
+  // SCORE = 리더보드 기준 점수. 별은 둘째 칸(flyStarsToHud 도착지).
+  setStats('SCORE', dailyRunScore.toLocaleString(),
+           'THIS RUN', '⭐' + dailyStarsShown);
   updateWalletChip();
   updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
 }
@@ -2174,8 +2182,8 @@ function updateDailyHud() {
 // dailyStarsShown ticks up as stars land (dailyRunStars already holds the truth).
 // Falls back to an instant count if StarFly/renderer geometry is unavailable.
 function flyStarsToHud(completed) {
-  // daily: THIS RUN(첫 칸=stat-score). collection: THIS RUN이 둘째 칸(stat-best).
-  const hud = document.getElementById(collectionMode ? 'stat-best' : 'stat-score');
+  // daily · collection 모두 THIS RUN(⭐)이 둘째 칸(stat-best).
+  const hud = document.getElementById('stat-best');
   const canFly = hud && SG.StarFly && renderer && typeof renderer.cellXY === 'function';
   if (!canFly) { dailyStarsShown = dailyRunStars; updateDailyHud(); return; }
   const rect = canvas.getBoundingClientRect();   // canvas viewport box (CSS px)
@@ -2199,18 +2207,22 @@ function flyStarsToHud(completed) {
 async function dailyGameOver() {
   gameRunning = false;
   try { SG.CG.gameplayStop(); } catch (_) {}
-  SG.Daily.addStars(dailyState, dailyRunStars, window.localStorage);
+  SG.Daily.addStars(dailyState, dailyRunStars, SG.Store);
   // best 갱신만 (지갑 적립은 세션 종료 CLAIM 시점에 1회). bestRun = ⭐별 수 (CLAIM 계산 기준).
-  SG.Daily.setBestRun(dailyState, dailyRunStars, window.localStorage);
+  SG.Daily.setBestRun(dailyState, dailyRunStars, SG.Store);
   pgSyncStorage();
-  // 리더보드 점수 = 별 × 10000 + 게임점수 (별이 주 기준, 동점 시 게임점수로 구분).
-  // CLAIM 이후에도 더 높은 점수 달성 시 리더보드 갱신 가능.
-  const _lbScore = (dailyRunStars * 10000) + dailyRunScore;
-  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(_lbScore); } catch (_) {}
-  try { if (SG.FB.isConnected()) await SG.FB.submitScore(_lbScore, { mode: 'daily' }); } catch (_) {}
+  // 리더보드 = 오늘(UTC) 최고 게임 점수. Firebase 문서가 날짜 키라 매일 0시(UTC)에 리셋.
+  // submitScore는 덮어쓰기라 오늘 최고를 넘을 때만 제출 — 낮은 리트라이가 기록을 지우지 않게.
+  if (SG.Daily.setBestScore(dailyState, dailyRunScore, SG.Store)) {
+    try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(dailyRunScore); } catch (_) {}
+    try { if (SG.FB.isConnected()) await SG.FB.submitScore(dailyRunScore, { mode: 'daily' }); } catch (_) {}
+  }
 
-  document.getElementById('daily-run-stars').textContent = '⭐' + dailyRunStars;
-  document.getElementById('daily-total-stars').textContent = '⭐' + (dailyState.bestRun || 0);
+  // 점수(리더보드 기준) 먼저, 별(지갑 정산 기준)은 보조.
+  document.getElementById('daily-run-stars').textContent =
+    dailyRunScore.toLocaleString() + ' ⭐' + dailyRunStars;
+  document.getElementById('daily-total-stars').textContent =
+    (dailyState.bestScore || 0).toLocaleString() + ' ⭐' + (dailyState.bestRun || 0);
 
   const claimable = SG.Daily.claimableBest(dailyState);
   renderDailyLeaderboard();
@@ -2224,7 +2236,7 @@ async function dailyGameOver() {
 // Daily 세션 종료 = 오늘 best 미정산분을 지갑에 1회 정산 후 메뉴로.
 // (RETRY로 best를 올린 만큼만 추가 수령 — 광고 보고 도전한 가치가 보장됨)
 function claimDailyAndExit() {
-  const earned = SG.Daily.claimBestToWallet(dailyState, window.localStorage);
+  const earned = SG.Daily.claimBestToWallet(dailyState, SG.Store);
   pgSyncStorage();
   updateWalletChip();
   if (earned > 0) showGameToast('⭐ +' + earned + ' CLAIMED', 1800);
@@ -2295,14 +2307,14 @@ async function collectionCheckMerges(mergedSizes) {
 async function _collectionCheckMergesInner(mergedSizes) {
   const themes = SG.CollectionThemes;
   const activeThemeObj = themes.find(function (t) { return t.id === activeThemeId; }) || null;
-  const rec = SG.Collection.recordMerges(activeThemeId, mergedSizes, localStorage, themes, activeThemeObj);
+  const rec = SG.Collection.recordMerges(activeThemeId, mergedSizes, SG.Store, themes, activeThemeObj);
 
   // 신규 획득 없고 완성도 아닌 경우:
   // 이미 획득된 스텝 중 이번 세션에 아직 나레이션 미표시 항목 확인 (Chronicles 전용)
   if (rec.newSteps.length === 0 && !rec.isComplete) {
     if (collectionMode) {
       const sizeToStep = SG.Collection.SIZE_TO_STEP;
-      const themeState = SG.Collection.loadTheme(activeThemeId, localStorage, activeThemeObj);
+      const themeState = SG.Collection.loadTheme(activeThemeId, SG.Store, activeThemeObj);
       const sizeMap = {};
       (SG.Collection.getThemeSizes(activeThemeObj) || []).forEach(function (sz, i) { sizeMap[sz] = i + 1; });
       let narrateStep = null;
@@ -2486,20 +2498,10 @@ async function collectionThemeComplete(themeId) {
   gameRunning = false;
   try { SG.CG.gameplayStop(); } catch (_) {}
 
-  try {
-    if (SG.FB.isConnected()) {
-      await SG.FB.submitScore(10, {
-        mode: 'collection_' + themeId,
-        themeId: themeId,
-        date: utcDateStr(),
-      });
-    }
-  } catch (_) {}
-
   // 보상 적립
-  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', SG.Store);
   pgSyncStorage();
-  const nextId = SG.Collection.unlockNextTheme(themeId, localStorage, SG.CollectionThemes);
+  const nextId = SG.Collection.unlockNextTheme(themeId, SG.Store, SG.CollectionThemes);
 
   // Chapter Complete 모달 표시 (x2 광고 + NEXT 버튼)
   // showChapterClearFX가 이미 완료 연출을 담당했으므로 여기선 정산 패널만
@@ -2540,7 +2542,7 @@ async function themeCompleteDoubleStars() {
     return;
   }
 
-  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', SG.Store);
   pgSyncStorage();
   document.getElementById('theme-complete-reward').textContent = '⭐' + (THEME_COMPLETE_REWARD * 2) + ' (x2!)';
   if (dblBtn) { dblBtn.innerHTML = '⭐ ×2 CLAIMED'; dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
@@ -2568,14 +2570,14 @@ function collectionGradedTiers(progress) {
 }
 
 function startCollection() {
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   activeThemeId = meta.activeThemeId || 'primordial-earth';
   // 구버전 ID 복구
   if (!SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; })) {
     activeThemeId = SG.CollectionThemes[0].id;
     meta.activeThemeId = activeThemeId;
     if (meta.unlockedThemes.indexOf(activeThemeId) === -1) meta.unlockedThemes.push(activeThemeId);
-    SG.Collection.saveMeta(localStorage, meta);
+    SG.Collection.saveMeta(SG.Store, meta);
   }
   // 이미 완료된 테마로 시작하려는 경우 → 다음 미완료 테마로 자동 교정
   if (meta.completedThemes && meta.completedThemes.indexOf(activeThemeId) !== -1) {
@@ -2586,12 +2588,12 @@ function startCollection() {
     if (nextTheme) {
       activeThemeId = nextTheme.id;
       meta.activeThemeId = activeThemeId;
-      SG.Collection.saveMeta(localStorage, meta);
+      SG.Collection.saveMeta(SG.Store, meta);
     }
   }
   const activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   // step-01(size 1) 자동 획득 — 팝업 없이 조용히, NEW 마크만 (갤러리 확인 시 스타)
-  SG.Collection.grantStartStep(activeThemeId, localStorage, activeThemeObj);
+  SG.Collection.grantStartStep(activeThemeId, SG.Store, activeThemeObj);
   const dow = utcDayOfWeek();
   dailyTypeCfg = SG.ND.dailyType(dow);
   const base = buildDailyOpts(dailyTypeCfg);
@@ -2623,7 +2625,7 @@ function startCollection() {
   collectionMode = true;
   collectionCollapseCount = 0;
   collectionContinueCount = 0;
-  SG.Daily.resetAdQuota(localStorage);  // 새 판마다 광고 3회 리셋
+  SG.Daily.resetAdQuota(SG.Store);  // 새 판마다 광고 3회 리셋
 
   dailyMode = true;
   dailyRunStars = 0;
@@ -2648,13 +2650,13 @@ function startCollection() {
   // Chapter Intro 필요 여부를 먼저 확인 — 있으면 Intro가 닫힐 때 gameRunning=true
   const _introKey = 'earthbeyond_intro_seen_' + activeThemeId;
   const _needsIntro = activeThemeObj && activeThemeObj.chapter &&
-    !localStorage.getItem(_introKey);
+    !SG.Store.getItem(_introKey);
   gameRunning = !_needsIntro;   // Intro 있으면 일시 정지 상태로 시작
 
   if (_needsIntro) {
     // step-01 NEW 토스트는 Intro 닫은 후 보여줌 (closeChapterIntro에서 처리)
     setTimeout(function () { showChapterIntroIfNeeded(activeThemeId); }, 200);
-  } else if (SG.Collection.hasNew(activeThemeId, localStorage, activeThemeObj)) {
+  } else if (SG.Collection.hasNew(activeThemeId, SG.Store, activeThemeObj)) {
     setTimeout(function () { showGameToast('New block found! Check the gallery ⭐'); }, 500);
   }
 }
@@ -2662,10 +2664,10 @@ function startCollection() {
 // ── Endless Mode ──────────────────────────────────────────────────
 
 function isEndlessUnlocked() {
-  const isDev = localStorage.getItem('sg_dev') === '1' ||
+  const isDev = SG.Store.getItem('sg_dev') === '1' ||
                 new URLSearchParams(location.search).has('dev');
   if (isDev) return true;
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   // Chronicles 챕터를 1개 이상 완료하면 해금
   return meta.completedThemes && meta.completedThemes.length > 0;
 }
@@ -2710,7 +2712,8 @@ function startEndless(skinTheme) {
   applyCosmicOpts(dailyOpts, makeRng());
   renderer.clearStepBg();
   // 갤러리에서 선택한 테마 스킨 적용 (없으면 스킨 없음)
-  renderer.setCollectionTheme(skinTheme || null);
+  endlessSkin = skinTheme || null;
+  renderer.setCollectionTheme(endlessSkin);
   document.getElementById('chronicles-narration').classList.remove('visible');
   updateEndlessHud();
   renderer.drawGrid(grid);
@@ -2721,7 +2724,7 @@ function startEndless(skinTheme) {
 
 function updateEndlessHud() {
   let best = 0;
-  try { best = parseInt(localStorage.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
+  try { best = parseInt(SG.Store.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
   document.getElementById('game-title').textContent = 'ENDLESS ∞';
   setStats('SCORE', endlessScore, 'BEST', best);
   updateWalletChip();
@@ -2744,18 +2747,22 @@ async function endlessGameOver() {
 
   // 베스트 점수 갱신
   let prevBest = 0;
-  try { prevBest = parseInt(localStorage.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
+  try { prevBest = parseInt(SG.Store.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
   const isNewBest = endlessScore > prevBest;
   if (isNewBest) {
-    try { localStorage.setItem(ENDLESS_BEST_KEY, String(endlessScore)); } catch (_) {}
+    try { SG.Store.setItem(ENDLESS_BEST_KEY, String(endlessScore)); } catch (_) {}
   }
 
-  // 리더보드 제출
-  try {
-    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
-      await SG.FB.submitScore(endlessScore, { mode: 'endless', date: utcDateStr() });
-    }
-  } catch (_) {}
+  // 리더보드 제출 — Firebase는 날짜 키 덮어쓰기라 오늘 최고를 넘을 때만.
+  const _todayDs = (dailyState && dailyState.date === utcDateStr())
+    ? dailyState : SG.Daily.loadDaily(utcDateStr(), SG.Store);
+  if (SG.Daily.setBestScore(_todayDs, endlessScore, SG.Store, 'endlessBest')) {
+    try {
+      if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+        await SG.FB.submitScore(endlessScore, { mode: 'endless', date: utcDateStr() });
+      }
+    } catch (_) {}
+  }
   try {
     if (SG.PG && SG.PG.isAvailable && SG.PG.isAvailable()) {
       await SG.PG.leaderboard.submit(endlessScore, SG.PG.LB_ENDLESS);
@@ -2764,7 +2771,7 @@ async function endlessGameOver() {
 
   // 점수 → 스타 환산 후 지갑 적립 (daily 캡 공유)
   const rawStars = endlessScoreToStars(endlessScore);
-  const earnedStars = rawStars > 0 ? SG.Daily.earnStarsToWallet(rawStars, 'endless', localStorage) : 0;
+  const earnedStars = rawStars > 0 ? SG.Daily.earnStarsToWallet(rawStars, 'endless', SG.Store) : 0;
   const capReached = rawStars > earnedStars;
   if (earnedStars > 0) { pgSyncStorage(); updateWalletChip(); }
 
@@ -2798,33 +2805,14 @@ async function endlessGameOver() {
 
 async function renderEndlessLeaderboard() {
   const box   = document.getElementById('endless-lb-rows');
-  const badge = document.getElementById('endless-lb-badge');
+  const wrap  = document.getElementById('endless-lb');
   if (!box) return;
   box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
 
-  let rows = [];
-  let isDemo = true;
-  try {
-    // 1) Playgama Bridge 리더보드 우선
-    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
-      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_ENDLESS);
-      if (pgEntries && pgEntries.length) {
-        rows = _normalizePgEntries(pgEntries);
-        isDemo = false;
-      }
-    }
-    // 2) Firebase 폴백
-    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
-      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'endless', limit: 10 });
-      if (rows && rows.length) isDemo = false;
-    }
-    // 3) 데모 더미
-    if (isDemo || !rows || !rows.length) {
-      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
-      isDemo = true;
-    }
-  } catch (_) { rows = []; isDemo = true; }
-  if (badge) badge.style.display = isDemo ? '' : 'none';
+  const lb = await _loadLbRows(SG.PG.LB_ENDLESS, 'endless');
+  if (wrap) wrap.style.display = lb.source ? '' : 'none';
+  if (!lb.source) return;
+  const rows = lb.rows;
 
   const myId = SG.FB ? SG.FB.getPlayerId() : '';
   const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
@@ -2841,7 +2829,7 @@ async function renderEndlessLeaderboard() {
       '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
       '<span class="lb-score">' + sc + '</span>' +
       '</div>';
-  }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
+  }).join('') || LB_EMPTY_HTML;
 }
 
 async function endlessDoubleStars() {
@@ -2865,7 +2853,7 @@ async function endlessDoubleStars() {
 
   const bonusStars = parseInt((dblBtn && dblBtn.dataset.runStars) || '0', 10) || 0;
   // 광고 리워드는 캡 제외 ('collection' mode = 일회성 보상으로 처리)
-  SG.Daily.earnStarsToWallet(bonusStars, 'collection', localStorage);
+  SG.Daily.earnStarsToWallet(bonusStars, 'collection', SG.Store);
   pgSyncStorage(); updateWalletChip();
   if (dblBtn) { dblBtn.innerHTML = '⭐ ×2 CLAIMED'; dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
   showGameToast('⭐ ×2 CLAIMED! +' + bonusStars + ' bonus', 2000);
@@ -2874,7 +2862,7 @@ async function endlessDoubleStars() {
 function endlessAgain() {
   document.getElementById('ol-endless-over').classList.add('hidden');
   closeModalNav();
-  startEndless();
+  startEndless(endlessSkin);   // 직전 판의 테마 스킨 유지 — 없으면 숫자 타일로 떨어진다
 }
 
 function endlessToMenu() {
@@ -2891,7 +2879,7 @@ function endlessToMenu() {
 function updateCollectionHud() {
   const theme = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; });
   const themeLabel = theme ? theme.label : activeThemeId.toUpperCase();
-  const state = SG.Collection.loadTheme(activeThemeId, localStorage, theme || null);
+  const state = SG.Collection.loadTheme(activeThemeId, SG.Store, theme || null);
   const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
   const total = SG.Collection.getThemeStepCount(theme || null);
   // 제목엔 테마명만. 콜렉션 핵심=단계 → STEP 먼저, 이번 판 ⭐는 보조. (누적 ⭐는 칩)
@@ -2919,7 +2907,7 @@ function chroniclesUpdateProgress(theme, acquired, total) {
 // Chapter Intro 모달 — 첫 진입 1회만
 function showChapterIntroIfNeeded(themeId) {
   const key = 'earthbeyond_intro_seen_' + themeId;
-  try { if (localStorage.getItem(key)) return; } catch (_) {}
+  try { if (SG.Store.getItem(key)) return; } catch (_) {}
   const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
   if (!theme || !theme.chapter) return;
 
@@ -2937,7 +2925,7 @@ function showChapterIntroIfNeeded(themeId) {
 
 function closeChapterIntro() {
   const key = 'earthbeyond_intro_seen_' + activeThemeId;
-  try { localStorage.setItem(key, '1'); } catch (_) {}
+  try { SG.Store.setItem(key, '1'); } catch (_) {}
   document.getElementById('ol-chapter-intro').classList.add('hidden');
   closeModalNav();
   // 렌더러 준비 (canvas resize 대응)
@@ -3039,7 +3027,7 @@ function showChapterCompleteModal(themeId) {
   if (bgSrc) { bgEl.src = bgSrc; bgEl.style.display = 'block'; }
   else { bgEl.style.display = 'none'; }
 
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   const completedCount = (meta.completedThemes && meta.completedThemes.length) || 0;
   const totalThemes = SG.CollectionThemes.length;
   const nextTheme = SG.CollectionThemes.find(function (t) { return t.unlockCondition === themeId; });
@@ -3113,7 +3101,7 @@ async function chapterCompleteDoubleStars() {
     showGameToast('Ad failed. Try again.', 1800);
     return;
   }
-  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', localStorage);
+  SG.Daily.earnStarsToWallet(THEME_COMPLETE_REWARD, 'collection', SG.Store);
   pgSyncStorage();
   updateWalletChip();
   if (dblBtn) {
@@ -3139,7 +3127,7 @@ let _runSettled = false;
 function settleRunStars() {
   if (_runSettled) return;
   _runSettled = true;
-  if (dailyRunStars > 0) SG.Daily.earnStarsToWallet(dailyRunStars, 'collection', localStorage);
+  if (dailyRunStars > 0) SG.Daily.earnStarsToWallet(dailyRunStars, 'collection', SG.Store);
 }
 
 async function collectionGameOver() {
@@ -3158,7 +3146,7 @@ async function collectionGameOver() {
   await showInterstitial();
 
   const _activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
-  const state = SG.Collection.loadTheme(activeThemeId, localStorage, _activeThemeObj);
+  const state = SG.Collection.loadTheme(activeThemeId, SG.Store, _activeThemeObj);
   const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
   document.getElementById('collection-chain-display').textContent =
     acquired + '/' + SG.Collection.getThemeStepCount(_activeThemeObj) + ' STEPS';
@@ -3182,8 +3170,8 @@ async function collectionGameOver() {
     continueBtn.style.display = '';  // 쿼터 소진으로 숨겼다가 새 과부하 시 복원
     // 라벨: 스타 잔액 충분하면 비용(⭐N), 부족하면 광고(AD) / 쿼터 소진이면 비활성
     const cost = continueCost();
-    const wallet = SG.Daily.getWalletStars(localStorage);
-    const adsLeft = SG.Daily.rewardedAdsLeft(localStorage);
+    const wallet = SG.Daily.getWalletStars(SG.Store);
+    const adsLeft = SG.Daily.rewardedAdsLeft(SG.Store);
     if (wallet >= cost) {
       const tag = '⭐' + cost;
       continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(' + tag + ')</span>';
@@ -3247,7 +3235,7 @@ async function collectionDoubleStars() {
   }
 
   // 추가 1배 적립 (settle 진입 시 1배 이미 정산됨 → 총 x2)
-  SG.Daily.earnStarsToWallet(runStars, 'collection', localStorage);
+  SG.Daily.earnStarsToWallet(runStars, 'collection', SG.Store);
   _gameoverStarsDoubled = true;
   dailyStarsShown = runStars * 2;
   if (dblBtn) { dblBtn.style.display = 'none'; }
@@ -3289,15 +3277,15 @@ async function collectionContinueWithAd() {
   if (cells.length === 0) return;   // 제거할 게 없으면 무의미
 
   const cost = continueCost();
-  const wallet = SG.Daily.getWalletStars(localStorage);
+  const wallet = SG.Daily.getWalletStars(SG.Store);
   let paid = false;
 
   if (wallet >= cost) {
     // 스타로 결제
-    paid = SG.Daily.spendStars(cost, localStorage);
+    paid = SG.Daily.spendStars(cost, SG.Store);
   } else {
     // 잔액 부족 → 광고 대체
-    if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+    if (SG.Daily.rewardedAdsLeft(SG.Store) <= 0) {
       // 쿼터 소진: 버튼 숨기고 종료 유도
       if (btn) { btn.style.display = 'none'; }
       showGameToast('No more ads available. End run or come back tomorrow!', 2800);
@@ -3309,7 +3297,7 @@ async function collectionContinueWithAd() {
     if (!granted) {
       if (btn) { btn.disabled = false; btn.style.opacity = ''; }
       // 쿼터가 소진된 경우(requestRewardedAdWithQuota 내부에서 이미 토스트 표시됨)
-      if (SG.Daily.rewardedAdsLeft(localStorage) <= 0) {
+      if (SG.Daily.rewardedAdsLeft(SG.Store) <= 0) {
         if (btn) { btn.style.display = 'none'; }
       }
       return;
@@ -3391,7 +3379,7 @@ function startNextTheme() {
   ['ol-theme-complete', 'ol-chapter-complete'].forEach(function (id) {
     document.getElementById(id).classList.add('hidden');
   });
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   activeThemeId = meta.activeThemeId;
   startCollection();
 }
@@ -3410,7 +3398,7 @@ function openGalleryFromSettings() {
 function updateGalleryDot() {
   const dot = document.getElementById('header-settings-dot');
   if (!dot) return;
-  const show = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage);
+  const show = collectionMode && SG.Collection.hasNew(activeThemeId, SG.Store);
   dot.classList.toggle('hidden', !show);
 }
 
@@ -3434,7 +3422,7 @@ function openGallery(themeId) {
     }
   }
 
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   const viewThemeId = themeId || (collectionMode ? activeThemeId : null) || meta.activeThemeId || 'primordial-earth';
   renderGalleryTabs(meta, viewThemeId);
   renderGalleryCells(viewThemeId);
@@ -3455,7 +3443,7 @@ function openGallery(themeId) {
       if (fromMenu) {
         const playThemeId = meta.activeThemeId || 'primordial-earth';
         const playTheme = SG.CollectionThemes.find(function (t) { return t.id === playThemeId; });
-        const st = SG.Collection.loadTheme(playThemeId, localStorage, playTheme || null);
+        const st = SG.Collection.loadTheme(playThemeId, SG.Store, playTheme || null);
         const hasProgress = st.acquiredSteps && st.acquiredSteps.length > 0;
         const chapterLabel = playTheme && playTheme.chapter ? playTheme.chapter.title.toUpperCase() : playThemeId.toUpperCase();
         playBtn.textContent = (hasProgress ? 'CONTINUE: ' : 'BEGIN: ') + chapterLabel + ' ›';
@@ -3515,17 +3503,17 @@ function renderGalleryTabs(meta, activeId) {
 
 // 잠긴 테마를 별로 즉시 해금.
 function unlockThemeWithStars(themeId) {
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   if (meta.unlockedThemes.indexOf(themeId) !== -1) return;   // 이미 해금
-  if (!SG.Daily.spendStars(THEME_UNLOCK_COST, localStorage)) {
+  if (!SG.Daily.spendStars(THEME_UNLOCK_COST, SG.Store)) {
     showGameToast('Not enough stars (need ⭐' + THEME_UNLOCK_COST + ')', 2000);
     return;
   }
-  SG.Collection.forceUnlockTheme(themeId, localStorage, SG.CollectionThemes);
+  SG.Collection.forceUnlockTheme(themeId, SG.Store, SG.CollectionThemes);
   updateWalletChip();
   showGameToast('🔓 Theme unlocked! −⭐' + THEME_UNLOCK_COST, 2000);
   // 갤러리 갱신
-  const m2 = SG.Collection.loadMeta(localStorage);
+  const m2 = SG.Collection.loadMeta(SG.Store);
   renderGalleryTabs(m2, themeId);
   renderGalleryCells(themeId);
 }
@@ -3535,11 +3523,11 @@ function renderGalleryCells(themeId) {
   if (!theme) return;
 
   // 잠긴 테마: 셀 대신 해금 패널 표시 (별로 즉시 해금)
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   if (meta.unlockedThemes.indexOf(themeId) === -1) {
     document.getElementById('gallery-progress').textContent = 'LOCKED';
     document.getElementById('gallery-bar').style.width = '0%';
-    const wallet = SG.Daily.getWalletStars(localStorage);
+    const wallet = SG.Daily.getWalletStars(SG.Store);
     const afford = wallet >= THEME_UNLOCK_COST;
     const gridEl0 = document.getElementById('gallery-grid');
     gridEl0.innerHTML =
@@ -3554,7 +3542,7 @@ function renderGalleryCells(themeId) {
     return;
   }
 
-  const state = SG.Collection.loadTheme(themeId, localStorage, theme);
+  const state = SG.Collection.loadTheme(themeId, SG.Store, theme);
   const acquiredSteps = state.acquiredSteps || [];
   const newSizes = state.newSizes || [];
   const SIZES = SG.Collection.getThemeSizes(theme);  // 테마별 단계 크기 배열
@@ -3592,14 +3580,14 @@ function renderGalleryCells(themeId) {
 // 갤러리 셀 클릭: NEW 해제 + (미수령이면) ⭐1 보상 → 상세 팝업
 function galleryClaimStep(themeId, step, size, cell) {
   const _claimTheme = SG.CollectionThemes.find(function (t) { return t.id === themeId; }) || null;
-  const res = SG.Collection.claimStep(themeId, size, localStorage, _claimTheme);
+  const res = SG.Collection.claimStep(themeId, size, SG.Store, _claimTheme);
   if (res.starAwarded) {
-    try { SG.Daily.earnStarsToWallet(1, 'collection', localStorage); } catch (_) {}
+    try { SG.Daily.earnStarsToWallet(1, 'collection', SG.Store); } catch (_) {}
     galleryStarBurst(cell);
   }
   if (res.wasNew || res.starAwarded) {
     renderGalleryCells(themeId);
-    const meta = SG.Collection.loadMeta(localStorage);
+    const meta = SG.Collection.loadMeta(SG.Store);
     renderGalleryTabs(meta, themeId);
     updateGalleryDot();
     if (collectionMode) updateCollectionHud();
@@ -3721,34 +3709,37 @@ function _normalizePgEntries(entries) {
   });
 }
 
+// 리더보드 행 로드. 우선순위: 1) Playgama in_game(SaaS 포함) → 2) Firebase.
+// 둘 다 없으면 source:null — 가짜 행은 절대 만들지 않는다(심사: 조작된 순위로 보임).
+// 빈 배열은 "아직 기록 없음"(백엔드는 있음)이라 null과 구분한다.
+async function _loadLbRows(pgLbId, fbMode) {
+  try {
+    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
+      const pgEntries = await SG.PG.leaderboard.getEntries(pgLbId);
+      if (Array.isArray(pgEntries)) return { source: 'pg', rows: _normalizePgEntries(pgEntries) };
+    }
+    if (SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
+      const fbRows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: fbMode, limit: 10 });
+      if (Array.isArray(fbRows)) return { source: 'fb', rows: fbRows };
+    }
+  } catch (_) {}
+  return { source: null, rows: [] };
+}
+
+const LB_EMPTY_HTML = '<div class="lb-row lb-empty">No scores yet — be the first!</div>';
+
 // Render the daily leaderboard rows.
-// 우선순위: 1) Playgama in_game 리더보드 → 2) Firebase → 3) 데모 더미
 async function renderDailyLeaderboard() {
   const box   = document.getElementById('daily-lb-rows');
-  const badge = document.getElementById('daily-lb-badge');
+  const wrap  = document.getElementById('daily-lb');
   if (!box) return;
-  let rows = [];
-  let isDemo = true;
-  try {
-    // 1) Playgama Bridge 리더보드 (in_game 타입일 때만 데이터 있음)
-    if (SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game') {
-      const pgEntries = await SG.PG.leaderboard.getEntries(SG.PG.LB_DAILY);
-      if (pgEntries && pgEntries.length) {
-        rows = _normalizePgEntries(pgEntries);
-        isDemo = false;
-      }
-    }
-    // 2) Firebase 폴백
-    if (isDemo && SG.FB && SG.FB.isConnected && SG.FB.isConnected()) {
-      rows = await SG.FB.fetchLeaderboard(utcDateStr(), { mode: 'daily', limit: 10 });
-      isDemo = false;
-    }
-    // 3) 데모 더미
-    if (isDemo) {
-      rows = SG.FB && SG.FB._demoRows ? SG.FB._demoRows() : [];
-    }
-  } catch (_) { rows = []; }
-  if (badge) badge.style.display = isDemo ? '' : 'none';
+  const lb = await _loadLbRows(SG.PG.LB_DAILY, 'daily');
+  if (wrap) wrap.style.display = lb.source ? '' : 'none';
+  if (!lb.source) return;
+  // Playgama SaaS 리더보드는 리셋이 없다 → 누적 순위. Firebase만 날짜별(오늘) 순위.
+  const title = document.getElementById('daily-lb-title');
+  if (title) title.textContent = lb.source === 'fb' ? "TODAY'S RANKING" : 'DAILY RANKING';
+  const rows = lb.rows;
 
   const myId = SG.FB ? SG.FB.getPlayerId() : '';
   const flag = SG.FB && SG.FB.countryFlag ? SG.FB.countryFlag : function () { return '🌐'; };
@@ -3756,29 +3747,28 @@ async function renderDailyLeaderboard() {
   const top10 = rows.slice(0, 10);
   const myTopIdx = top10.findIndex(function (r) { return r.playerId === myId; });
 
-  // 리더보드 점수 = stars*10000 + gameScore. 표시는 별 수(역산)만.
-  function _lbScoreToStars(raw) { return raw >= 10000 ? Math.floor(raw / 10000) : raw; }
-
+  // 리더보드 점수 = 오늘 최고 게임 점수.
   function rowHtml(r, rank, isMe) {
     const cc = r.country || '';
     const fl = cc ? flag(cc) : '🌐';
     const id = (r.playerId || 'player').slice(-6);
-    const stars = _lbScoreToStars(r.score != null ? r.score : 0);
+    const pts = Number(r.score || 0).toLocaleString();
     return '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">' +
       '<span class="lb-rank">' + rank + '</span>' +
       '<span class="lb-flag">' + fl + '</span>' +
       '<span class="lb-id">' + id + (isMe ? ' ◀' : '') + '</span>' +
-      '<span class="lb-score">⭐' + stars + '</span>' +
+      '<span class="lb-score">' + pts + '</span>' +
       '</div>';
   }
 
   let html = top10.map(function (r, i) {
     return rowHtml(r, i + 1, r.playerId === myId);
-  }).join('') || '<div class="lb-row lb-empty">No scores yet</div>';
+  }).join('') || LB_EMPTY_HTML;
 
-  // 내가 top-10 밖이면 구분선 + 내 항목을 맨 아래 추가
-  if (myTopIdx === -1 && myId) {
-    const myLbScore = (dailyRunStars * 10000) + dailyRunScore;
+  // 내가 top-10 밖이면 구분선 + 내 항목을 맨 아래 추가.
+  // Firebase만: Playgama 행의 id는 플랫폼 id라 내 로컬 id와 비교할 수 없다.
+  const myLbScore = (dailyState && dailyState.bestScore) || dailyRunScore;
+  if (lb.source === 'fb' && top10.length && myTopIdx === -1 && myId && myLbScore > 0) {
     const myCountry = SG.FB && SG.FB.detectCountry ? SG.FB.detectCountry() : '';
     const myRank = rows.filter(function (r) { return (r.score || 0) > myLbScore; }).length + 1;
     const myRow  = { playerId: myId, score: myLbScore, country: myCountry };
@@ -3799,7 +3789,7 @@ async function dailyRetry() {
 
 function dailyToMenu() {
   // 안전망: 미정산 best가 있으면 자동 정산 (claimBestToWallet은 idempotent).
-  if (dailyState) { SG.Daily.claimBestToWallet(dailyState, window.localStorage); }
+  if (dailyState) { SG.Daily.claimBestToWallet(dailyState, SG.Store); }
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
   dailyMode = false;
@@ -3845,12 +3835,9 @@ async function endGame() {
 
   if (score > bestScore) {
     bestScore = score;
-    localStorage.setItem(STORAGE_KEY_BEST, String(bestScore));
+    SG.Store.setItem(STORAGE_KEY_BEST, String(bestScore));
   }
   updateStats(0);
-
-  try { if (SG.FB.isConnected()) await SG.FB.submitScore(score, { level, maxChain }); } catch (_) {}
-  try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(score); } catch (_) {}
 
   document.getElementById('go-score').textContent = score.toLocaleString();
   document.getElementById('go-best').textContent = bestScore.toLocaleString();
@@ -3874,10 +3861,10 @@ window.addEventListener('keydown', function (e) {
 // 첫 탭/클릭/키 전에는 vibrate가 차단(콘솔 경고)되므로 게이트로 막는다.
 let _userInteracted = false;
 let _hapticEnabled = true;
-try { _hapticEnabled = localStorage.getItem('earthbeyond_haptic') !== 'off'; } catch (_) {}
+try { _hapticEnabled = SG.Store.getItem('earthbeyond_haptic') !== 'off'; } catch (_) {}
 function setHaptic(on) {
   _hapticEnabled = !!on;
-  try { localStorage.setItem('earthbeyond_haptic', on ? 'on' : 'off'); } catch (_) {}
+  try { SG.Store.setItem('earthbeyond_haptic', on ? 'on' : 'off'); } catch (_) {}
 }
 function haptic(ms) {
   if (!_hapticEnabled || !_userInteracted) return;
@@ -3993,16 +3980,17 @@ var _soundEnabled = true;
 
 function _loadSoundEnabled() {
   try {
-    var v = localStorage.getItem('earthbeyond_sound_enabled');
+    var v = SG.Store.getItem('earthbeyond_sound_enabled');
     _soundEnabled = (v === null) ? true : (v === '1');
   } catch (_) {}
 }
 function _saveSoundEnabled() {
-  try { localStorage.setItem('earthbeyond_sound_enabled', _soundEnabled ? '1' : '0'); } catch (_) {}
+  try { SG.Store.setItem('earthbeyond_sound_enabled', _soundEnabled ? '1' : '0'); } catch (_) {}
 }
 function _applySoundEnabled() {
   if (!SG.Sound) return;
-  SG.Sound.setMuted(!_soundEnabled);
+  // 유저 설정 AND 플랫폼 오디오 허용(platform.isAudioEnabled) AND 일시정지 아님.
+  SG.Sound.setMuted(!_soundEnabled || SG.PG._audioEnabled === false || isPlatformPaused);
   // BGM: 켜질 때만 재생, 꺼질 때는 setMuted가 gain=0으로 처리
   if (_soundEnabled && _bgmEnabled && _bgmActiveTheme) {
     if (!SG.Sound.bgmRunning) SG.Sound.playBgm(_bgmActiveTheme);
@@ -4028,20 +4016,20 @@ var _bgmPreviewId = null;
 
 function _loadBgmPrefs() {
   try {
-    var s = localStorage.getItem('earthbeyond_bgm');
+    var s = SG.Store.getItem('earthbeyond_bgm');
     if (s) { var p = JSON.parse(s); _bgmEnabled = !!p.enabled; _bgmActiveTheme = p.theme || 'solar'; }
     else { _bgmEnabled = false; _bgmActiveTheme = 'solar'; }
-    var vol = localStorage.getItem('earthbeyond_bgm_vol');
+    var vol = SG.Store.getItem('earthbeyond_bgm_vol');
     if (vol !== null && SG.Sound) {
       var v = parseFloat(vol);
       if (!isNaN(v)) SG.Sound.setBgmVolume(v);
     }
-    var tone = localStorage.getItem('earthbeyond_bgm_tone');
+    var tone = SG.Store.getItem('earthbeyond_bgm_tone');
     if (tone && SG.Sound) SG.Sound.setBgmPack(tone);
   } catch (_) {}
 }
 function _saveBgmPrefs() {
-  try { localStorage.setItem('earthbeyond_bgm', JSON.stringify({ enabled: _bgmEnabled, theme: _bgmActiveTheme })); } catch (_) {}
+  try { SG.Store.setItem('earthbeyond_bgm', JSON.stringify({ enabled: _bgmEnabled, theme: _bgmActiveTheme })); } catch (_) {}
 }
 
 function buildBgmUI() {
@@ -4079,7 +4067,7 @@ function _buildBgmToneChips() {
 function selectBgmTone(id) {
   if (!SG.Sound) return;
   SG.Sound.setBgmPack(id);
-  try { localStorage.setItem('earthbeyond_bgm_tone', id); } catch (_) {}
+  try { SG.Store.setItem('earthbeyond_bgm_tone', id); } catch (_) {}
   document.querySelectorAll('.bgm-tone-chip').forEach(function (c) {
     c.setAttribute('aria-selected', String(c.dataset.tone === id));
   });
@@ -4193,7 +4181,7 @@ function toggleBgmEnabled() {
 function onBgmVolSlider(val) {
   var v = parseInt(val, 10) / 100;
   if (SG.Sound) SG.Sound.setBgmVolume(v);
-  try { localStorage.setItem('earthbeyond_bgm_vol', String(v)); } catch (_) {}
+  try { SG.Store.setItem('earthbeyond_bgm_vol', String(v)); } catch (_) {}
   var lbl = document.getElementById('bgm-vol-label');
   if (lbl) lbl.textContent = val;
 }
@@ -4296,16 +4284,20 @@ function _refreshLangChips() {
 function selectLang(lang) {
   if (!SG.i18n) return;
   SG.i18n.setLang(lang);
-  try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
+  try { SG.Store.setItem(LANG_KEY, lang); } catch (_) {}
   _refreshLangChips();
   applyLang();
   haptic(10);
 }
 
+// 언어: 플레이어가 설정에서 고른 값 > 플랫폼 언어(platform.language) > 기본(en).
 function _loadLang() {
   try {
-    var saved = localStorage.getItem(LANG_KEY);
-    if (saved && SG.i18n) SG.i18n.setLang(saved);
+    if (!SG.i18n) return;
+    var saved = SG.Store.getItem(LANG_KEY);
+    if (saved) { SG.i18n.setLang(saved); return; }
+    var pl = (SG.PG && SG.PG.isAvailable()) ? String(SG.PG.platformLanguage() || '').slice(0, 2).toLowerCase() : '';
+    if (pl) SG.i18n.setLang(pl === 'ko' ? 'ko' : 'en');
   } catch (_) {}
 }
 
@@ -4329,7 +4321,7 @@ function openSettings() {
     galBtn.style.display = collectionMode ? '' : 'none';
     const dot = document.getElementById('settings-gallery-dot');
     const _settingsTheme = collectionMode ? (SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null) : null;
-    const hasNew = collectionMode && SG.Collection.hasNew(activeThemeId, localStorage, _settingsTheme);
+    const hasNew = collectionMode && SG.Collection.hasNew(activeThemeId, SG.Store, _settingsTheme);
     if (dot) dot.classList.toggle('hidden', !hasNew);
   }
   document.getElementById('ol-settings').classList.remove('hidden');
@@ -4458,7 +4450,7 @@ function devStartDaily() {
   _devDailyAllThemes = true;
   _pendingOnboard = false;  // 온보딩 CTA 비활성
   const date = utcDateStr();
-  dailyState = SG.Daily.loadDaily(date, window.localStorage);
+  dailyState = SG.Daily.loadDaily(date, SG.Store);
   // retries 제한 무시 — dev용 강제 진입
   dailyState.retriesUsed = 0;
   startDailyRun();
@@ -4481,11 +4473,11 @@ function devPopulateThemeSelect() {
 // dev 모드: 드롭다운에서 테마를 선택하면 즉시 activeTheme 전환.
 // meta를 직접 수정하고 startCollection()을 재호출하여 반영.
 function devSetTheme(themeId) {
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   // 선택한 테마가 unlockedThemes에 없으면 자동 추가 (dev 편의)
   if (meta.unlockedThemes.indexOf(themeId) === -1) meta.unlockedThemes.push(themeId);
   meta.activeThemeId = themeId;
-  SG.Collection.saveMeta(localStorage, meta);
+  SG.Collection.saveMeta(SG.Store, meta);
   activeThemeId = themeId;
   // collection 모드 중이면 즉시 재시작, 아니면 메뉴에서 선택 시 반영됨
   if (collectionMode) startCollection();
@@ -4493,10 +4485,10 @@ function devSetTheme(themeId) {
 
 // dev 모드: 현재 선택된 테마를 해금 (기존 해금 여부 무관하게 meta에 추가).
 function devUnlockActiveTheme() {
-  const meta = SG.Collection.loadMeta(localStorage);
+  const meta = SG.Collection.loadMeta(SG.Store);
   const id = document.getElementById('dev-theme-select').value || activeThemeId;
   if (meta.unlockedThemes.indexOf(id) === -1) meta.unlockedThemes.push(id);
-  SG.Collection.saveMeta(localStorage, meta);
+  SG.Collection.saveMeta(SG.Store, meta);
   showGameToast('DEV: ' + id + ' unlocked');
 }
 
@@ -4507,19 +4499,20 @@ function devResetAll() {
   // player id. Keep sg_dev so the dev tools stay on after reload.
   try {
     const kill = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
+    for (let i = 0; i < SG.Store.length; i++) {
+      const k = SG.Store.key(i);
       if (k && k.indexOf('earthbeyond_') === 0) kill.push(k);
     }
     // collection 키도 정리
     try {
-      const collectionKeys = SG.Collection.getAllKeys(localStorage);
+      const collectionKeys = SG.Collection.getAllKeys(SG.Store);
       collectionKeys.forEach(function (k) { if (kill.indexOf(k) === -1) kill.push(k); });
     } catch (_) {}
-    kill.forEach(function (k) { localStorage.removeItem(k); });
-    localStorage.removeItem('puzzle_player_id');   // firebase.js getPlayerId()
+    kill.forEach(function (k) { SG.Store.removeItem(k); });
+    SG.Store.removeItem('puzzle_player_id');   // firebase.js getPlayerId()
   } catch (_) {}
-  location.reload();
+  // Bridge 저장이 끝난 뒤 새로고침 — 안 기다리면 지운 데이터가 복원된다.
+  Promise.resolve(SG.Store.flush()).finally(function () { location.reload(); });
 }
 
 // ── 부팅 IIFE ─────────────────────────────────────────────────────
@@ -4538,42 +4531,39 @@ window.addEventListener('unhandledrejection', function (e) {
   }
 });
 
-// ── Playgama Bridge storage mirror ────────────────────────────────────────
-// 게임 데이터는 localStorage에 저장되지만 Playgama QA는 SDK의 storage.set()
-// 호출을 요구한다. SDK init 직후 + 주요 저장 시점(game-over, claim)에 핵심
-// 키를 Bridge storage에 미러해 QA 저장 이벤트를 충족시킨다.
+// ── Bridge Storage 저장 ───────────────────────────────────────────────────
+// 모든 플레이어 데이터는 SG.Store(save-store.js)를 거쳐 Bridge storage에 저장된다.
+// 값이 바뀌면 자동 저장(디바운스)되고, 여기서는 의미 있는 시점(게임오버·정산)에 즉시 저장한다.
 function pgSyncStorage() {
-  if (!SG.PG.isAvailable()) return;
-  try {
-    const SYNC_KEYS = [
-      'earthbeyond_wallet',
-      'earthbeyond_collection_meta',
-    ];
-    const payload = {};
-    SYNC_KEYS.forEach(function (k) {
-      const v = localStorage.getItem(k);
-      if (v != null) payload[k] = v;
-    });
-    // 오늘 날짜 daily state도 포함
-    const today = (function () {
-      const d = new Date();
-      return d.getUTCFullYear() + '-' +
-             String(d.getUTCMonth()+1).padStart(2,'0') + '-' +
-             String(d.getUTCDate()).padStart(2,'0');
-    })();
-    const dk = 'earthbeyond_daily_' + today;
-    const dv = localStorage.getItem(dk);
-    if (dv != null) payload[dk] = dv;
-
-    if (Object.keys(payload).length > 0) {
-      SG.PG.storageSet(payload).catch(function () {});
-    }
-  } catch (_) {}
+  try { SG.Store.flush(); } catch (_) {}
 }
+// 탭 전환·종료 직전에 대기 중인 저장을 밀어낸다.
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') pgSyncStorage();
+});
+window.addEventListener('pagehide', pgSyncStorage);
 
 (async function boot() {
+  // ── 1) SDK 초기화 → 2) Storage 복원: 저장 데이터를 읽는 모든 코드보다 먼저 ──
+  SG.CG.loadingStart();
+  if (window.bridge && typeof window.bridge.initialize === 'function') {
+    await SG.PG.init();
+  } else {
+    await SG.CG.init();
+    if (!SG.CG.isAvailable() && SG.PG) {
+      await SG.PG.init();
+    }
+  }
+  const _bs = SG.PG.bridgeStorage();
+  if (_bs) {
+    const _attached = await SG.Store.attachBridge(_bs);
+    console.log('[boot] Bridge storage', _attached ? 'restored' : 'unavailable — local only');
+  }
+  // 스크립트 로드 시점에 읽은 값은 복원 전이라 다시 읽는다.
+  bestScore = parseInt(SG.Store.getItem(STORAGE_KEY_BEST) || '0', 10);
+
   const _isDev = new URLSearchParams(location.search).has('dev') ||
-      localStorage.getItem('sg_dev') === '1';
+      SG.Store.getItem('sg_dev') === '1';
   // 버전 표시 (START 화면). DEV 모드면 DEV 태그 부가.
   const _verEl = document.getElementById('app-version');
   if (_verEl) _verEl.textContent = 'EARTH & BEYOND ' + APP_VERSION + (_isDev ? ' · DEV' : '');
@@ -4613,34 +4603,17 @@ function pgSyncStorage() {
   } else { _checkOnboarding(); }
   setInterval(function () { if (!document.getElementById('ol-start').classList.contains('hidden')) refreshDailyMenu(); }, 1000);
 
-  // 로딩 시작 알림
-  SG.CG.loadingStart();
+  // 초기 UI: 누적 재화 칩 노출 (스탯은 모드 진입 시 채워짐)
+  updateWalletChip();
 
-  // SDK 초기화
-  if (window.bridge && typeof window.bridge.initialize === 'function') {
-    await SG.PG.init();
-  } else {
-    await SG.CG.init();
-    if (!SG.CG.isAvailable() && SG.PG) {
-      await SG.PG.init();
-    }
-  }
-
-  // Firebase
-  await SG.FB.init();
+  // 첫 플레이 가능한 화면이 떴다 → game_ready (Firebase 연결은 기다리지 않는다)
+  SG.CG.loadingStop();
 
   // 배너 광고 (시작 화면)
   SG.CG.showBanner();
 
-  // 로딩 완료
-  SG.CG.loadingStop();
-
-  // 초기 UI: 누적 재화 칩 노출 (스탯은 모드 진입 시 채워짐)
-  updateWalletChip();
-
-  // Playgama SDK storage sync — QA 요건: SDK init 후 storage.set() 최소 1회 호출.
-  // localStorage의 현재 상태를 Bridge storage에 미러해 QA 저장 이벤트를 트리거한다.
-  pgSyncStorage();
+  // Firebase (Playgama 빌드에는 설정 파일이 없어 즉시 false)
+  await SG.FB.init();
 
 })().catch(function (e) {
   console.error('[boot] failed:', e);

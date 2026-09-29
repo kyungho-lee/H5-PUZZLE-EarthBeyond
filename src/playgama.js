@@ -274,6 +274,15 @@
     try { await _bridge.storage.set(keys, values); return true; } catch (e) { return false; }
   }
 
+  // SG.Store.attachBridge() 용 — Bridge v2 storage의 get(keys[]) / set(keys[], values[]).
+  function bridgeStorage() {
+    if (!_ready || !_bridge || !_bridge.storage) return null;
+    return {
+      get: function (keys) { return _bridge.storage.get(keys); },
+      set: function (keys, values) { return _bridge.storage.set(keys, values); },
+    };
+  }
+
   function platformId()       { return (_ready && _bridge) ? _bridge.platform.id : 'unknown'; }
   function platformLanguage() { return (_ready && _bridge) ? (_bridge.platform.language || 'en') : 'en'; }
 
@@ -305,6 +314,7 @@
     isAvailable,
     storageGet,
     storageSet,
+    bridgeStorage,
     platformId,
     platformLanguage,
     LB_DAILY:   _LB_DAILY,

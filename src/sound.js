@@ -368,7 +368,7 @@
       this._ctx   = null;
       this._muted = false;
       let saved = null;
-      try { saved = localStorage.getItem('earthbeyond_soundpack'); } catch (_) {}
+      try { saved = SG.Store.getItem('earthbeyond_soundpack'); } catch (_) {}
       this._packId = (saved && SOUND_PACKS[saved]) ? saved : 'pad';
 
       // BGM state
@@ -412,7 +412,7 @@
     setPack(id) {
       if (!SOUND_PACKS[id]) return this._packId;
       this._packId = id;
-      try { localStorage.setItem('earthbeyond_soundpack', id); } catch (_) {}
+      try { SG.Store.setItem('earthbeyond_soundpack', id); } catch (_) {}
       return id;
     }
 
