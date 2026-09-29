@@ -4007,7 +4007,7 @@ function _loadBgmPrefs() {
   try {
     var s = SG.Store.getItem('earthbeyond_bgm');
     if (s) { var p = JSON.parse(s); _bgmEnabled = !!p.enabled; _bgmActiveTheme = p.theme || 'solar'; }
-    else { _bgmEnabled = false; _bgmActiveTheme = 'solar'; }
+    else { _bgmEnabled = true; _bgmActiveTheme = 'solar'; }   // 첫 플레이 = BGM ON (설정에서 끌 수 있음)
     var vol = SG.Store.getItem('earthbeyond_bgm_vol');
     if (vol !== null && SG.Sound) {
       var v = parseFloat(vol);
@@ -4591,9 +4591,20 @@ window.addEventListener('pagehide', pgSyncStorage);
 
   // 사운드 인스턴스 생성 (sound.js는 SG.SoundManager 클래스만 노출)
   try { SG.Sound = new SG.SoundManager(); } catch (_) { SG.Sound = null; }
-  // 저장된 sound ON/OFF 복원
+  // 저장된 sound ON/OFF · BGM 설정 복원 (BGM 설정은 예전엔 설정 창을 열 때만 읽혀서
+  // 그 세션에 설정을 안 열면 모드 진입 시 BGM이 재생되지 않았다)
   _loadSoundEnabled();
+  _loadBgmPrefs();
   _applySoundEnabled();
+  // 브라우저는 첫 사용자 입력 전 AudioContext를 suspended로 둔다 → 첫 입력에서 BGM 재개.
+  const _unlockBgm = function () {
+    try {
+      const ctx = SG.Sound && SG.Sound._bgmCtx;
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+    } catch (_) {}
+  };
+  document.addEventListener('pointerdown', _unlockBgm, { once: true, capture: true });
+  document.addEventListener('keydown', _unlockBgm, { once: true, capture: true });
 
   // 렌더러 + 루프 (게임 모듈 로드 후)
   renderer = new SG.Renderer(canvas);
