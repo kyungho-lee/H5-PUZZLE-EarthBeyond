@@ -57,10 +57,20 @@
 
   function _key(themeId) { return 'earthbeyond_collection_' + themeId; }
   function _read(store, k) {
-    try { return JSON.parse(store.getItem(k)); } catch (_) { return null; }
+    try {
+      var val = store.getItem ? store.getItem(k) : store[k];
+      return JSON.parse(val);
+    } catch (_) { return null; }
   }
   function _write(store, k, v) {
-    try { store.setItem(k, JSON.stringify(v)); } catch (_) {}
+    try {
+      var data = JSON.stringify(v);
+      if (store.setItem) {
+        store.setItem(k, data);
+      } else {
+        store[k] = data;
+      }
+    } catch (_) {}
   }
 
   // ── Meta ──────────────────────────────────────────────────────────
@@ -93,6 +103,9 @@
         claimedSizes: [],
         status: 'active',
         completedAt: null,
+        runs: 0,
+        runsUnknown: false,
+        clearRuns: null,
       };
     }
     // 구 포맷(chainCount/unlockedSteps) → 신 포맷 마이그레이션
@@ -105,6 +118,13 @@
     if (!saved.acquiredSizes) saved.acquiredSizes = [];
     if (!saved.newSizes) saved.newSizes = [];
     if (!saved.claimedSizes) saved.claimedSizes = [];
+    // 판 수 카운터(v0.9~). 카운터 이전에 step 1(무료)을 넘어 진행한 테마는 판 수를 알 수 없다.
+    if (saved.runs == null) {
+      saved.runs = 0;
+      saved.runsUnknown = saved.status === 'completed' || saved.acquiredSteps.some(function (s) { return s > 1; });
+    }
+    if (saved.runsUnknown == null) saved.runsUnknown = false;
+    if (saved.clearRuns === undefined) saved.clearRuns = null;
     // 완성된 테마는 갤러리 전 단계를 채워 표시 (단계 수 확장 시 빈 칸 방지).
     if (saved.status === 'completed') {
       for (var i = 0; i < sizes.length; i++) {
@@ -150,6 +170,21 @@
     return state.newSizes && state.newSizes.length > 0;
   }
 
+  // 새 판 시작 — startCollection()이 호출. 반환: 증가 후 판 수.
+  function bumpRuns(themeId, store, theme) {
+    var state = loadTheme(themeId, store, theme);
+    state.runs = (state.runs || 0) + 1;
+    saveTheme(store, state);
+    return state.runs;
+  }
+
+  // 모든 테마의 획득 장면 수 합 (gallery_total 리더보드 점수).
+  function totalAcquired(store, themes) {
+    return (themes || []).reduce(function (sum, t) {
+      return sum + loadTheme(t.id, store, t).acquiredSteps.length;
+    }, 0);
+  }
+
   // ── 머지 기록 ─────────────────────────────────────────────────────
   // theme: 현재 활성 테마 객체 (stepSizes 참조용)
   function recordMerges(themeId, mergedSizes, store, themes, theme) {
@@ -178,6 +213,7 @@
     if (isComplete) {
       state.status = 'completed';
       state.completedAt = new Date().toISOString();
+      state.clearRuns = state.runsUnknown ? null : Math.max(1, state.runs || 0);
     }
     saveTheme(store, state);
     return { newSteps: newSteps, isComplete: isComplete };
@@ -235,7 +271,7 @@
     getThemeSizes: _themeSizes,
     // CRUD
     loadMeta, saveMeta, loadTheme, saveTheme,
-    recordMerges, grantStartStep, claimStep, hasNew,
+    recordMerges, grantStartStep, claimStep, hasNew, bumpRuns, totalAcquired,
     unlockNextTheme, forceUnlockTheme, getAllKeys,
   };
 });
