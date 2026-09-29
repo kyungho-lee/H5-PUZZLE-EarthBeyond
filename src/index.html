@@ -155,6 +155,7 @@
     /* 갤러리·상세보기는 다른 오버레이 위에 표시 */
     #ol-gallery { z-index: 20; }
     #ol-gallery-detail { z-index: 30; }
+    #ol-ranking { z-index: 30; }
 
     /* ── START 히어로 화면 ───────────────────────────────────────── */
     #ol-start {
@@ -1161,7 +1162,24 @@
     <div id="gallery-bar-wrap"><div id="gallery-bar" style="width:0%"></div></div>
     <div id="gallery-grid"><!-- cells injected by JS --></div>
     <button class="btn-primary modal-btn" id="btn-gallery-play" onclick="startCollectionFromGallery()" data-i18n="ui.btn.playChapter">PLAY CHAPTER</button>
+    <button class="btn-secondary modal-btn" id="btn-gallery-ranking" onclick="openRanking()" data-i18n="ui.btn.ranking" style="display:none">🏆 RANKING</button>
     <button class="btn-secondary modal-btn" onclick="closeGallery()" data-i18n="ui.btn.close">CLOSE</button>
+  </div>
+</div>
+
+<div id="ol-ranking" class="overlay hidden">
+  <div class="ol-panel">
+    <div class="ol-title" data-i18n="ui.label.rankingTitle">RANKING</div>
+    <div id="ranking-tabs" style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="soundset-chip modal-btn" data-rk="gallery" onclick="rankingShowTab('gallery')" style="flex:1;justify-content:center">GALLERY</button>
+      <button class="soundset-chip modal-btn" data-rk="1" onclick="rankingShowTab('1')" style="flex:1;justify-content:center">CH 1</button>
+      <button class="soundset-chip modal-btn" data-rk="2" onclick="rankingShowTab('2')" style="flex:1;justify-content:center">CH 2</button>
+      <button class="soundset-chip modal-btn" data-rk="3" onclick="rankingShowTab('3')" style="flex:1;justify-content:center">CH 3</button>
+    </div>
+    <div id="ranking-rows"></div>
+    <div class="lb-sep">···</div>
+    <div id="ranking-me" class="lb-row lb-me"></div>
+    <button class="btn-secondary modal-btn" onclick="closeRanking()" data-i18n="ui.btn.close">CLOSE</button>
   </div>
 </div>
 
@@ -3464,6 +3482,7 @@ function updateGalleryDot() {
 function openGalleryForEndless() {
   _galleryMode = 'endless';
   openGallery();
+  refreshRankingButton();
 }
 
 function openGallery(themeId) {
@@ -3511,6 +3530,7 @@ function openGallery(themeId) {
   }
   document.getElementById('ol-gallery').classList.remove('hidden');
   openModalNav('ol-gallery');
+  refreshRankingButton();
 }
 
 function closeGallery() {
@@ -3764,6 +3784,7 @@ function _normalizePgEntries(entries) {
       playerId: String(e.id || e.playerId || e.name || ''),
       score:    Number(e.score || 0),
       country:  e.extraData && e.extraData.country ? e.extraData.country : '',
+      name:     e.name ? String(e.name) : '',
     };
   });
 }
@@ -3786,6 +3807,55 @@ async function _loadLbRows(pgLbId, fbMode) {
 }
 
 const LB_EMPTY_HTML = '<div class="lb-row lb-empty">No scores yet — be the first!</div>';
+
+// ── 랭킹 창 (갤러리 · 챕터 최단 클리어) ─────────────────────────────
+function rankingAvailable() {
+  return SG.PG && SG.PG.isAvailable() && SG.PG.leaderboard.getType() === 'in_game';
+}
+function refreshRankingButton() {
+  const b = document.getElementById('btn-gallery-ranking');
+  if (b) b.style.display = rankingAvailable() ? '' : 'none';
+}
+function openRanking() {
+  document.getElementById('ol-ranking').classList.remove('hidden');
+  openModalNav('ol-ranking');
+  rankingShowTab('gallery');
+}
+function closeRanking() {
+  document.getElementById('ol-ranking').classList.add('hidden');
+  openModalNav('ol-gallery');   // 갤러리 위에서 열렸으므로 갤러리로 복귀
+}
+async function rankingShowTab(key) {
+  document.querySelectorAll('#ranking-tabs [data-rk]').forEach(function (b) {
+    b.setAttribute('aria-selected', String(b.dataset.rk === key));
+  });
+  const box = document.getElementById('ranking-rows');
+  const me = document.getElementById('ranking-me');
+  const t = (k, fb) => (SG.i18n && SG.i18n.t(k)) || fb;
+  const esc = (v) => String(v).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const isGallery = key === 'gallery';
+  const idx = isGallery ? -1 : parseInt(key, 10) - 1;
+  const lbId = isGallery ? SG.PG.LB_GALLERY : SG.PG.LB_CHAPTER_CLEAR[idx];
+  const fmt = (score) => isGallery ? String(score) : score + ' ' + t('ui.label.runs', 'runs');
+  // 내 기록 (로컬)
+  if (isGallery) {
+    me.innerHTML = '<span class="lb-rank">·</span><span class="lb-id">' + t('ui.label.you', 'YOU') + '</span><span class="lb-score">' +
+      SG.Collection.totalAcquired(SG.Store, SG.CollectionThemes) + '</span>';
+  } else {
+    const th = SG.CollectionThemes[idx];
+    const cr = th ? SG.Collection.loadTheme(th.id, SG.Store, th).clearRuns : null;
+    me.innerHTML = '<span class="lb-rank">·</span><span class="lb-id">' + t('ui.label.you', 'YOU') + '</span><span class="lb-score">' +
+      (cr ? fmt(cr) : t('ui.label.notCleared', 'Not cleared yet')) + '</span>';
+  }
+  box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
+  const entries = await SG.PG.leaderboard.getEntries(lbId);
+  const rows = _normalizePgEntries(entries).slice(0, 10);
+  box.innerHTML = rows.map(function (r, i) {
+    const who = esc((r.name || r.playerId || 'player').slice(-12));
+    return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span><span class="lb-id">' + who +
+      '</span><span class="lb-score">' + fmt(r.score) + '</span></div>';
+  }).join('') || LB_EMPTY_HTML;
+}
 
 // Render the daily leaderboard rows.
 async function renderDailyLeaderboard() {
