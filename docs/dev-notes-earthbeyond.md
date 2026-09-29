@@ -2,9 +2,17 @@
 
 > H5 퍼즐 게임. NeonDrift v1 코어 이식. 모드: **Daily**, **Practice**, **Chronicles(스토리/컬렉션)**.
 > 플랫폼: Playgama / CrazyGames. 형식: 버전 = 기능 묶음 단위. 최신이 위.
+>
+> **버전 관리 (2026-09-29 재설정)**
+> - 현재 **v0.9** = Playgama 심사 제출본. 심사 통과 시 **v1.0**으로 올린다.
+> - 이후 리더보드 추가 · 기능 추가는 마이너(v1.1, v1.2 …), 버그 수정 패치는 패치(v1.0.1 …).
+> - 버전은 두 곳을 함께 바꾼다: `package.json` `version`(예: `0.9.0`) + `src/index.html` `APP_VERSION`(예: `'v0.9'`, 패치면 `'v1.0.1'`).
+>   `npm run build:playgama`가 둘이 어긋나면 빌드를 거부한다. zip 이름 = `earth-and-beyond-<version>-<commit>.zip`.
+> - 릴리스 노트: `docs/devLog/Release_Note_v<version>.md`. 재설정 전 반려 제출본 기록은 `docs/devLog/archive/`.
 
 | 버전 | 날짜 | 요약 |
 |------|------|------|
+| v0.9 | 2026-09-29 | Playgama 심사 제출본 — 혜성 · 관측소, Bridge Storage · Platform 필수 항목, 점수 기준 리더보드(SaaS), 별 ×2 버프, 파티클 · BGM · 광고 사운드 수정 ([릴리스 노트](devLog/Release_Note_v0.9.0.md)) |
 | v0.3 | 2026-06-15 | Chronicles MVP Phase 1 완성 — Chapter Intro, Step Toast, Progress Bar, Chapter Complete + Epoch Stamp |
 | v0.2 | 2026-06-15 | Chronicles 스토리 모드 MVP 착수 — chapter/stepDescriptions 데이터, Daily 테마 랜덤화 |
 | v0.1 | 2026-06-15 | 초기 스캐폴드 — NeonDrift 코어 이식, 브랜딩, Era 1~3 테마 정의, WebP 에셋 일괄 크롭 |

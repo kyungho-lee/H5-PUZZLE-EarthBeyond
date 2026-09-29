@@ -1,11 +1,43 @@
-# Earth & Beyond — Release Note v1.2.0
+# Earth & Beyond — Release Note v0.9.0
 
-**Date:** 2026-09-26
+**Date:** 2026-09-29
 **Platform:** Playgama
+
+> Versioning reset: this is the build submitted for Playgama review as **v0.9**. Once it passes,
+> the live build becomes **v1.0**; leaderboard additions and patches bump from there.
+> Earlier rejected submissions are kept in `archive/` (v1.0.0, v1.1.0 under the old numbering).
 
 ## Overview
 
 New mechanics: Comet tiles (merge within 6 moves for ×3), Observatory cells (×2 per merge, ×6 for caught comets), and stacking (×6 multiplier). Observatory cell placement is now seeded per day. First-appearance tips added (EN/KO). Playgama submission zip no longer uses backslash separators — theme images now load correctly.
+
+Platform compliance: player data is saved and restored through Bridge Storage, the platform language is applied, fonts ship inside the build, and game audio (including BGM) pauses during ads and platform pauses.
+
+## Platform & Storage
+
+- **Bridge Storage:** all progress is restored with one `storage.get` at boot and saved with one `storage.set` (debounced, flushed on game over and when the tab is hidden). Existing local progress is migrated once.
+- **Boot order:** SDK init → storage restore → menu → `game_ready`. A failing or hanging SDK step (10 s timeout) no longer blocks the game; menu buttons are disabled until boot completes.
+- **Language:** `platform.language` is applied when the player has not picked a language (ko → Korean, otherwise English).
+- **Audio:** sound = player setting AND `platform.isAudioEnabled` AND not paused AND no ad showing. BGM is suspended during ads / platform pauses and resumes where it stopped.
+- **No external resources:** Google Fonts replaced with bundled woff2 files (Rajdhani 600/700, Share Tech Mono — SIL OFL).
+
+## Leaderboards
+
+- **Daily:** ranked by the day's best game score (was stars × 10000 + score). A lower retry never overwrites the day's best. Endless follows the same rule.
+- **Playgama SaaS leaderboards** enabled (`playgama`, `qa_tool`).
+- **No dummy rows:** the ranking is hidden without a backend and shows "No scores yet — be the first!" when empty.
+
+## Chronicles
+
+- **START WITH ⭐×2 (AD):** the game-over reward is now a buff — watch an ad, start a new run of the chapter, and every star earned in that run counts double. A free **PLAY AGAIN** is always offered.
+- Fixed: after game over there was no way to start again (only GALLERY / MENU).
+
+## Visual & Audio
+
+- Merge particles are bigger, longer-lived, leave trails, draw on top, and use bright colours over themed tiles (they were dark navy and invisible on the board).
+- Daily HUD shows the run SCORE; the game-over line shows score and stars.
+- Fixed: BGM never played unless the settings panel had been opened that session; new players now start with BGM on.
+- Fixed: Endless AGAIN (and ENDLESS from chapter complete) lost the theme skin and showed number tiles.
 
 ## New Mechanics
 

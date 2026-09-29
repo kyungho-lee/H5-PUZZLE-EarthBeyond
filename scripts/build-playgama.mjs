@@ -45,7 +45,15 @@ if (bad.length || missing.length || !names.includes('index.html')) {
   process.exit(1);
 }
 
+// 버전 단일화: package.json version(0.9.0) ↔ 화면 표시 APP_VERSION('v0.9', 패치가 있으면 'v0.9.1').
 const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
+const [maj, min, pat] = version.split('.');
+const expectedAppVersion = 'v' + maj + '.' + min + (pat && pat !== '0' ? '.' + pat : '');
+const appVersionMatch = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8').match(/const APP_VERSION = '([^']+)'/);
+if (!appVersionMatch || appVersionMatch[1] !== expectedAppVersion) {
+  console.error(`version mismatch: package.json ${version} → expected APP_VERSION '${expectedAppVersion}', index.html has '${appVersionMatch && appVersionMatch[1]}'`);
+  process.exit(1);
+}
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const out = path.join(OUT_DIR, `earth-and-beyond-${version}-${git('rev-parse', '--short', 'HEAD')}.zip`);
 fs.writeFileSync(out, zip);

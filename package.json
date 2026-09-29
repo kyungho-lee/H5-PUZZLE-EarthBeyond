@@ -1,6 +1,6 @@
 {
   "name": "h5-puzzle-earthbeyond",
-  "version": "1.2.0",
+  "version": "0.9.0",
   "description": "Earth & Beyond — merge puzzle from Primordial Earth to the edge of the Universe",
   "private": true,
   "type": "commonjs",
