@@ -1188,6 +1188,7 @@
       <button class="btn-ad ad-gold modal-btn" id="btn-double-stars" onclick="collectionDoubleStars()">
         📺 DOUBLE STARS <span style="opacity:.8">(AD)</span>
       </button>
+      <button class="btn-primary modal-btn" id="btn-collection-again" onclick="collectionPlayAgain()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
     </div>
 
     <button class="btn-secondary modal-btn" onclick="openGallery()" data-i18n="ui.btn.gallery">GALLERY</button>
@@ -3360,6 +3361,14 @@ function playClearFx(cells) {
     } catch (e) { console.warn('[playClearFx] error:', e); }
     setTimeout(resolve, 650);   // 연출이 보일 시간 확보 후 제거
   });
+}
+
+// 정산 단계에서 같은 챕터를 새 보드로 다시 시작 (획득한 STEP은 유지).
+// 이 버튼이 없으면 DOUBLE STARS 광고 뒤에도 GAME OVER 화면에 GALLERY/MENU만 남았다.
+function collectionPlayAgain() {
+  settleRunStars();   // END RUN에서 이미 정산됐으면 no-op
+  closeModalNav();
+  startCollection();
 }
 
 function collectionToMenu() {
