@@ -242,7 +242,7 @@
     return themeId;
   }
 
-  // ── devResetAll 지원 ──────────────────────────────────────────────
+  // ── 개발용 전체 초기화(DEV RESET) 지원 ──────────────────────────────────────────────
   function getAllKeys(store) {
     var keys = [];
     try {

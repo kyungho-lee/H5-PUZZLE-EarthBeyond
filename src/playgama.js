@@ -30,12 +30,13 @@
     console.log('[SG.PG] overriding previous patch (platform: ' + _existingPlatform + ')');
   }
 
-  // ── 디버그 로그 게이트: ?dev 또는 localStorage('sg_dev') = '1' ────
-  const _DEV = ((typeof location !== 'undefined') &&
-                new URLSearchParams(location.search).has('dev'))
-            || ((typeof localStorage !== 'undefined') &&
-                localStorage.getItem('sg_dev') === '1');
-  function dlog() { if (_DEV) console.log.apply(console, arguments); }
+  // ── 디버그 로그 게이트: SG.DEV (index.html 이 ?dev 로 정한다 — Playgama 빌드에서는 항상 false) ────
+  function dlog() { if (SG.DEV) console.log.apply(console, arguments); }
+
+  // v0.9.1: 전면광고 최소 간격(초) — Bridge 기본값(2.3.0 에서 바뀐 것으로 보임)에 기대지 않고 명시한다.
+  // index.html 의 AD_RHYTHM.MIN_GAP_MS 와 같은 값(90초). 게임 쪽 규칙(첫 게임오버 · 메뉴 · 장면 공개 직후 제외)은 index.html.
+  var INTERSTITIAL_MIN_DELAY_SEC = 90;
+  var BRIDGE_URL = 'https://bridge.playgama.com/v2/stable/playgama-bridge.js';
 
   let _ready  = false;
   let _bridge = null;
@@ -44,7 +45,7 @@
 
   function _loadSdkScript() {
     return new Promise(function (resolve) {
-      var src = 'https://bridge.playgama.com/v1/stable/playgama-bridge.js';
+      var src = BRIDGE_URL;
       if (document.querySelector('script[src="' + src + '"]')) return resolve(true);
       var s    = document.createElement('script');
       s.src    = src;
@@ -101,7 +102,7 @@
       var isMockPlatform = _bridge.platform.id === 'mock' || _bridge.platform.id === 'qa_tool';
       console.log('[SG.PG] Bridge initialized · platform:', _bridge.platform.id);
 
-      var _interDelay = isMockPlatform ? 0 : 60;
+      var _interDelay = isMockPlatform ? 0 : INTERSTITIAL_MIN_DELAY_SEC;
       try { _bridge.advertisement.setMinimumDelayBetweenInterstitial(_interDelay); } catch (e) {}
 
       try {
@@ -128,6 +129,9 @@
       } catch (e) {}
 
       _patchCG();
+      // v0.9.1: 부팅 타임아웃(10초) 뒤에 늦게 붙은 Bridge — 게임이 이미 화면에 떴다면 game_ready 를 지금 1회 보낸다.
+      if (_gameShown) _sendGameReady();
+      _readyCbs.splice(0).forEach(function (fn) { try { fn(); } catch (e) {} });
       return true;
     } catch (e) {
       console.warn('[SG.PG] Bridge init failed:', e);
@@ -135,15 +139,25 @@
     }
   }
 
+  // ── game_ready: 세션당 정확히 1회. 게임 화면이 뜬 뒤 + Bridge 준비 뒤(순서 무관) ──
+  var _gameShown = false, _gameReadySent = false, _readyCbs = [];
+  function _sendGameReady() {
+    if (_gameReadySent || !_ready || !_bridge) return;
+    _gameReadySent = true;
+    try { Promise.resolve(_bridge.platform.sendMessage('game_ready')).catch(function () {}); } catch (e) {}
+  }
+  // 게임 셸이 첫 플레이 가능한 화면을 띄웠을 때 부른다. Bridge 가 아직이면 init 완료 때 보낸다.
+  function markGameShown() { _gameShown = true; _sendGameReady(); }
+  // Bridge 가 (늦게라도) 준비되면 1회 부른다 — 이미 준비됐으면 바로.
+  function onReady(fn) { if (_ready) { try { fn(); } catch (e) {} } else _readyCbs.push(fn); }
+
   function _patchCG() {
     if (!SG.CG) { console.warn('[SG.PG] SG.CG not found — patch skipped'); return; }
 
     var _pid = _bridge.platform.id;
 
     SG.CG.loadingStart = function () {};
-    SG.CG.loadingStop  = function () {
-      if (_bridge) try { _bridge.platform.sendMessage('game_ready'); } catch (e) {}
-    };
+    SG.CG.loadingStop  = function () { markGameShown(); };
     SG.CG.gameplayStart = function () {};
     SG.CG.gameplayStop  = function () {};
 
@@ -323,8 +337,28 @@
     try { Promise.resolve(_bridge.platform.sendCustomMessage(id)).catch(function () {}); } catch (e) {}
   }
 
+  // ── v0.9.1 계측: bridge.analytics.send 가 있을 때만(CDN v2/stable 이 2.3.0 을 준다). 없거나 실패해도 게임은 모른다.
+  // 공통 필드 gameVersion. 외부 분석 도구 없음 — Bridge 로만 보낸다.
+  var _gameVersion = '';
+  function setGameVersion(v) { _gameVersion = String(v || ''); }
+  function analyticsAvailable() {
+    return !!(_ready && _bridge && _bridge.analytics && typeof _bridge.analytics.send === 'function');
+  }
+  function track(name, data) {
+    var payload = Object.assign({ gameVersion: _gameVersion }, data || {});
+    dlog('[SG.PG.track]', name, payload);
+    if (!analyticsAvailable()) return false;
+    try { Promise.resolve(_bridge.analytics.send(name, payload)).catch(function () {}); return true; }
+    catch (e) { return false; }
+  }
+
   SG.PG = {
     init,
+    markGameShown,
+    onReady,
+    track,
+    setGameVersion,
+    analyticsAvailable,
     isAvailable,
     storageGet,
     storageSet,

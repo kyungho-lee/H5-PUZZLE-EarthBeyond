@@ -31,3 +31,26 @@ test('load/save round-trip and tolerate garbage', () => {
   assert.deepStrictEqual(L.load(st), { gallery: 3, clears: { a: 1 } });
   assert.deepStrictEqual(L.load({ earthbeyond_lb_sent: '{bad' }), empty);
 });
+
+// v0.9.1: 일일 · Endless 최고점 재전송 (playgama_sandbox SaaS LB 가 꺼져 있던 동안의 기록)
+test('v0.9.1: daily best is (re)sent once per date and again only when it grows', () => {
+  const cur = d => ({ galleryTotal: 0, clears: [], daily: { lbId: 'kevin-PEB', date: d.date, score: d.score } });
+  let items = L.plan(cur({ date: '2026-10-05', score: 900 }), empty);
+  assert.deepStrictEqual(items, [{ lbId: 'kevin-PEB', score: 900, kind: 'daily', date: '2026-10-05' }]);
+  let sent = L.markSent(empty, items[0]);
+  assert.deepStrictEqual(L.plan(cur({ date: '2026-10-05', score: 900 }), sent), []);
+  assert.strictEqual(L.plan(cur({ date: '2026-10-05', score: 1200 }), sent).length, 1);
+  assert.strictEqual(L.plan(cur({ date: '2026-10-06', score: 100 }), sent).length, 1, 'new day → send that day\'s best');
+  assert.deepStrictEqual(L.plan(cur({ date: '2026-10-06', score: 0 }), sent), [], 'nothing played today → nothing');
+});
+
+test('v0.9.1: endless best is sent when above what was sent; old saves (no daily/endless field) still load', () => {
+  const cur = { galleryTotal: 0, clears: [], endless: { lbId: 'Kevin-PEB2', score: 3000 } };
+  const old = { gallery: 4, clears: { a: 2 } };                 // v0.9.0 저장 형식
+  const items = L.plan(cur, old);
+  assert.deepStrictEqual(items, [{ lbId: 'Kevin-PEB2', score: 3000, kind: 'endless' }]);
+  const sent = L.markSent(old, items[0]);
+  assert.deepStrictEqual(sent, { gallery: 4, clears: { a: 2 }, endless: 3000 });
+  assert.deepStrictEqual(L.plan(cur, sent), []);
+  const st = {}; L.save(st, sent); assert.deepStrictEqual(L.load(st), sent);
+});

@@ -97,7 +97,7 @@
   }
   const DEV = (() => {
     try {
-      return /(\?|&)dev\b/.test(location.search) || localStorage.getItem('sg_dev') === '1';
+      return !!(global.SG && global.SG.DEV);   // v0.9.1: index.html 이 정한다(Playgama 빌드에서는 항상 false)
     } catch (_) { return false; }
   })();
 
@@ -113,6 +113,7 @@
       this.floats = [];
       this.rings = [];                  // expanding glow rings (merge FX)
       this.pops = new Map();            // key "r,c" → {t, life} scale-pop on merged tiles
+      this.outlines = new Map();        // v0.9.1 key "r,c" → {life, color} 동작 줄이기용 정지 강조 테두리
       this.observatory = null;        // [r,c] | null — Daily/Endless only
       this._obsPulseStart = 0;
       this.flash = null;                // { life, maxLife, color } screen flash on big merges
@@ -177,6 +178,7 @@
       this.grid = null;
       this.tween = null;
       this.pops.clear();
+      this.outlines.clear();
       this.observatory = null;
       // Clear transient FX so a previous mode's floats/particles/rings/flash
       // (e.g. a lingering "+24 ×6") don't carry over into the next mode.
@@ -448,6 +450,12 @@
           const pop = this.pops.get(r + ',' + c);
           this.drawTile(cx, cy, grid[r][c], 1, pop ? pop.scale : 1);
         }
+        const ol = this.outlines.size ? this.outlines.get(r + ',' + c) : null;
+        if (ol) {
+          const octx = this.ctx, h = this.cell * 0.46;
+          octx.save(); octx.strokeStyle = ol.color; octx.lineWidth = 2;
+          octx.strokeRect(cx - h, cy - h, h * 2, h * 2); octx.restore();
+        }
       }
       if (this.observatory) {
         this._drawObservatoryOverlay(...this.cellXY(this.observatory[0], this.observatory[1]));
@@ -592,9 +600,20 @@
         for (const [key, p] of this.pops) {
           p.life -= dt * 1000;
           if (p.life <= 0) { this.pops.delete(key); continue; }
-          const prog = 1 - p.life / POP_MS;        // 0→1
-          p.scale = 1.25 - 0.25 * easeOut(prog);   // 1.25 → 1.0
+          if (p.max) {
+            // v0.9.1 발견 팝(AD 규격): 0→rise ms 1.0→peak, 그 뒤 peak→1.0 (자기 max 를 들고 다닌다)
+            const el = p.max - p.life, rise = p.rise || 120, peak = p.peak || 1.32;
+            p.scale = el < rise ? 1 + (peak - 1) * easeOut(el / rise)
+                                : peak - (peak - 1) * easeOut(Math.min(1, (el - rise) / Math.max(1, p.max - rise)));
+          } else {
+            const prog = 1 - p.life / POP_MS;        // 0→1
+            p.scale = 1.25 - 0.25 * easeOut(prog);   // 1.25 → 1.0
+          }
         }
+      }
+
+      if (this.outlines.size) {
+        for (const [key, o] of this.outlines) { o.life -= dt * 1000; if (o.life <= 0) this.outlines.delete(key); }
       }
 
       // (3) Board: tween in progress → draw sliding tiles; else static grid.

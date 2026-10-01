@@ -28,7 +28,7 @@
     return grid;
   }
 
-  // ── DailyState — persistence injected (localStorage-like or plain {} map) ──
+  // ── DailyState — persistence injected (Storage-like getItem/setItem or plain {} map) ──
   function _key(dateStr) { return 'earthbeyond_daily_' + dateStr; }
   function _read(store, k) {
     if (store && typeof store.getItem === 'function') {

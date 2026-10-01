@@ -7,7 +7,7 @@
      game keys live in memory and are saved with one storage.set([SAVE_KEY], [json])
      (debounced). Bridge docs: never persist player data to localStorage directly.
    · A player with local progress but no Bridge save is migrated once.
-   · Non-game keys (sg_dev) stay in localStorage — they are not player progress.
+   · Non-game keys (dev switches) stay in localStorage — they are not player progress.
    UMD: module.exports for node tests, SG.Store in browser. */
 (function (root, factory) {
   const api = factory();

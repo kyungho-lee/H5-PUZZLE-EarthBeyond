@@ -1,0 +1,139 @@
+<!doctype html>
+<!-- cover-keyart.html — Earth & Beyond store key art (v0.9.1). Rendered by scripts/make-store-covers.mjs.
+     Composition only: uses EXISTING tile images from src/themes (no new generated images).
+     Layout follows viewport: 800x800 (square) · 1080x1920 (portrait) · 1920x1080 (landscape). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EB Cover Key Art</title>
+<style>
+  @font-face { font-family: 'Rajdhani'; font-weight: 700; src: url(../../src/fonts/rajdhani-700.woff2) format('woff2'); }
+  @font-face { font-family: 'Share Tech Mono'; font-weight: 400; src: url(../../src/fonts/share-tech-mono-400.woff2) format('woff2'); }
+  :root { --bg:#050810; --text:#dde8f6; --gold:#ffd23f; --gold2:#ffe98a; }
+  html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); }
+  #stage { position:relative; width:100vw; height:100vh; overflow:hidden; }
+  #sky { position:absolute; inset:0; }
+  .card { position:absolute; box-sizing:border-box; border-radius:14%; overflow:hidden;
+          box-shadow: 0 0 0 var(--bw) var(--rim), 0 calc(var(--u)*1.2) calc(var(--u)*3) rgba(0,0,0,.75), 0 0 calc(var(--u)*2.4) var(--rimglow); }
+  .card img { width:100%; height:100%; object-fit:cover; display:block; }
+  .card .badge { position:absolute; right:7%; bottom:6%; font-family:'Rajdhani'; font-weight:700; color:#fff;
+          background:rgba(5,8,16,.82); border:calc(var(--u)*.18) solid var(--rim); border-radius:999px;
+          padding:0 .5em; line-height:1.25; font-size:calc(var(--cs)*.15); }
+  .card.gold { --rim:#ffd23f; --rimglow:rgba(255,210,63,.75);
+          box-shadow: 0 0 0 var(--bw) #ffd23f, 0 0 0 calc(var(--bw)*2.2) #6b4a00, 0 0 0 calc(var(--bw)*2.9) #ffe98a,
+                      0 calc(var(--u)*1.2) calc(var(--u)*3) rgba(0,0,0,.75), 0 0 calc(var(--u)*6) rgba(255,210,63,.65); }
+  .card.gold .badge { color:#1a1000; background:linear-gradient(#ffe98a,#ffb800); border-color:#fff3c4; }
+  #logo { position:absolute; text-align:center; font-family:'Rajdhani'; font-weight:700; line-height:.82; }
+  #logo .l1, #logo .l2 { display:block; position:relative; letter-spacing:.02em; }
+  #logo .f { position:relative; z-index:1;
+          background:linear-gradient(180deg,#fff7d1 0%,#ffd23f 45%,#e08a00 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #logo .l1::before, #logo .l2::before { content:attr(data-t); position:absolute; left:0; right:0; top:0; z-index:0;
+          color:#1b0f00; -webkit-text-stroke:.13em #1b0f00;
+          filter: drop-shadow(0 calc(var(--u)*.6) 0 #000) drop-shadow(0 0 calc(var(--u)*2.2) rgba(255,190,40,.6)); }
+  #logo .l2 { font-size:.62em; }
+  #logo .amp { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#7aacff; }
+  #tag { position:absolute; text-align:center; font-family:'Share Tech Mono'; color:#bcd3f2; letter-spacing:.22em;
+          text-shadow:0 0 8px rgba(58,123,213,.8), 0 2px 3px #000; }
+  svg#chain, svg#chev { position:absolute; inset:0; width:100%; height:100%; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="sky"></canvas>
+  <svg id="chain"></svg>
+  <div id="cards"></div>
+  <svg id="chev"></svg>
+  <div id="logo"><span class="l1" data-t="EARTH"><span class="f">EARTH</span></span><span class="l2" data-t="&amp; BEYOND"><span class="f amp">&amp;</span><span class="f"> BEYOND</span></span></div>
+  <div id="tag">MERGE THROUGH 13.8 BILLION YEARS</div>
+</div>
+<script>
+(function () {
+  var W = innerWidth, H = innerHeight, u = Math.min(W, H) / 100;
+  var T = '../../src/themes/';
+  // Chain: dust cloud → magma-ocean Earth → blue ocean Earth → (gold) Moon landing.
+  // Badges are the real in-game tile values of those steps (step 1=1, 3=4, 5=16, 11=1024).
+  var CHAIN = [
+    { src: T + 'primordial-earth/step-01.webp',   n: '1',    rim: '#8e7bd8', glow: 'rgba(142,123,216,.45)' },
+    { src: T + 'primordial-earth/step-03.webp',   n: '4',    rim: '#ff8a2a', glow: 'rgba(255,138,42,.55)' },
+    { src: T + 'primordial-earth/step-05.webp',   n: '16',  rim: '#38b6ff', glow: 'rgba(56,182,255,.5)' },
+    { src: T + 'human-civilization/step-11.webp', n: '1024', gold: true }
+  ];
+  // Layouts: card centers (fractions), card size (fraction of min side), rotations, logo/tag boxes
+  var L;
+  if (W > H * 1.3) {            // landscape 16:9 — logo left, chain rising to the right
+    L = { cs: [.25,.26,.28,.36], pts: [[.484,.833],[.615,.704],[.75,.519],[.88,.278]], rot: [-6,4,-3,5],
+          logo: { cx: .24, top: .24, size: .25 }, tag: { cx: .24, top: .675, size: .026 } };
+  } else if (H > W * 1.3) {     // portrait 9:16 — logo top, chain zig-zags upward
+    L = { cs: [.33,.33,.35,.46], pts: [[.28,.83],[.70,.715],[.30,.595],[.62,.428]], rot: [-6,5,-4,4],
+          logo: { cx: .5, top: .055, size: .30 }, tag: { cx: .5, top: .965, size: .036 } };
+  } else {                      // square — logo top, diagonal chain bottom-left → top-right
+    L = { cs: [.20,.21,.23,.30], pts: [[.169,.8625],[.3625,.765],[.5625,.644],[.79,.469]], rot: [-6,4,-3,5],
+          logo: { cx: .5, top: .045, size: .19 }, tag: { right: .03, top: .955, size: .026 } };
+  }
+  var M = Math.min(W, H);
+  document.documentElement.style.setProperty('--u', u + 'px');
+
+  // Sky: code-drawn starfield + soft nebula glows (no image)
+  var c = document.getElementById('sky'); c.width = W; c.height = H; var g = c.getContext('2d');
+  var bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#060a1c'); bg.addColorStop(1, '#03050c');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  function neb(x, y, r, col) { var rg = g.createRadialGradient(x, y, 0, x, y, r); rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
+  neb(W * .15, H * .85, M * .7, 'rgba(110,70,200,.28)');
+  neb(W * .55, H * .6, M * .6, 'rgba(255,110,30,.12)');
+  neb(W * .85, H * .3, M * .7, 'rgba(255,200,60,.16)');
+  neb(W * .5, H * .1, M * .5, 'rgba(58,123,213,.18)');
+  var s = 7; function rnd() { s = (s * 16807) % 2147483647; return s / 2147483647; }
+  for (var i = 0; i < W * H / 1800; i++) {
+    var x = rnd() * W, y = rnd() * H, r = rnd() < .92 ? rnd() * u * .12 + .4 : rnd() * u * .25 + .8;
+    g.fillStyle = 'rgba(220,232,255,' + (.25 + rnd() * .7) + ')'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+
+  // Chain path: glowing line through centers + chevrons between cards
+  var pts = L.pts.map(function (p) { return [p[0] * W, p[1] * H]; });
+  var svg = document.getElementById('chain'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var d = 'M' + pts.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L');
+  svg.innerHTML =
+    '<defs><linearGradient id="lg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8e7bd8"/><stop offset=".4" stop-color="#ff8a2a"/><stop offset=".7" stop-color="#38b6ff"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>' +
+    '<filter id="bl"><feGaussianBlur stdDeviation="' + u * 1.2 + '"/></filter></defs>' +
+    '<path d="' + d + '" stroke="url(#lg)" stroke-width="' + u * 2.6 + '" fill="none" filter="url(#bl)" opacity=".9"/>' +
+    '<path d="' + d + '" stroke="url(#lg)" stroke-width="' + u * .7 + '" fill="none" stroke-linecap="round"/>';
+  // chevrons ("merges into") at midpoints
+  var chev = document.getElementById('chev'); chev.setAttribute('viewBox', '0 0 ' + W + ' ' + H); var ch = '';
+  for (var k = 0; k < pts.length - 1; k++) {
+    var a = pts[k], b = pts[k + 1], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    var ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI, z = u * 2.4;
+    ch += '<g transform="translate(' + mx + ' ' + my + ') rotate(' + ang + ')">' +
+      '<circle r="' + z * 1.25 + '" fill="#050810" stroke="#ffd23f" stroke-width="' + u * .35 + '"/>' +
+      '<path d="M' + (-z * .3) + ' ' + (-z * .62) + ' L' + (z * .42) + ' 0 L' + (-z * .3) + ' ' + (z * .62) + '" stroke="#fff" stroke-width="' + u * .9 + '" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>';
+  }
+  // chevrons dropped after review: a rotated '>' reads as '7' on the diagonal; the 2→8→128→2048 badges carry the chain
+  // chev.innerHTML = ch;
+
+  // Cards
+  var host = document.getElementById('cards');
+  CHAIN.forEach(function (it, i) {
+    var cs = L.cs[i] * M, el = document.createElement('div');
+    el.className = 'card' + (it.gold ? ' gold' : '');
+    el.style.cssText = 'width:' + cs + 'px;height:' + cs + 'px;left:' + (pts[i][0] - cs / 2) + 'px;top:' + (pts[i][1] - cs / 2) +
+      'px;transform:rotate(' + L.rot[i] + 'deg);--cs:' + cs + 'px;--bw:' + Math.max(3, cs * .028) + 'px;' +
+      (it.gold ? '' : '--rim:' + it.rim + ';--rimglow:' + it.glow + ';');
+    el.innerHTML = '<img src="' + it.src + '" alt=""><span class="badge">' + it.n + '</span>';
+    host.appendChild(el);
+  });
+
+  // Logo + tagline
+  var lg = document.getElementById('logo'), fs = L.logo.size * M;
+  lg.style.cssText = 'font-size:' + fs + 'px;width:' + W + 'px;left:' + (L.logo.cx * W - W / 2) + 'px;top:' + (L.logo.top * H) + 'px;--stroke:' + fs * .06 + 'px';
+  var tg = document.getElementById('tag'), ts = L.tag.size * M;
+  tg.style.cssText = 'font-size:' + ts + 'px;top:' + (L.tag.top * H - ts / 2) + 'px;' + (L.tag.right != null ? 'right:' + (L.tag.right * W) + 'px;text-align:right' : 'width:' + W + 'px;left:' + (L.tag.cx * W - W / 2) + 'px');
+  if (H > W * 1.3) tg.style.letterSpacing = '.12em';
+
+  document.fonts.ready.then(function () {
+    Promise.all([].map.call(document.images, function (im) { return im.complete ? 1 : new Promise(function (r) { im.onload = im.onerror = r; }); }))
+      .then(function () { document.body.dataset.ready = '1'; });
+  });
+})();
+</script>
+</body>
+</html>

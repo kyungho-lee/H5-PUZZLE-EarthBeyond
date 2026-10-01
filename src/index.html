@@ -150,6 +150,41 @@
       backdrop-filter: blur(4px);
     }
     .overlay.hidden { display: none; }
+    /* v0.9.1(discovery-fx-spec §4): 남은 공개 모달(step 1 · 마지막)은 덜 어둡게, 블러 없이 */
+    #ol-unlock { background: rgba(6,8,16,.6); backdrop-filter: none; }
+    /* v0.9.1 막지 않는 발견 — 장면 이름 · 연대 배너 (입력은 통과) */
+    #discovery-banner {
+      position: absolute; left: 50%; top: 8px; z-index: 5;
+      width: min(88%, 340px); text-align: center; pointer-events: none;
+      padding: 6px 18px 8px; opacity: 0;
+      transform: translateX(-50%) translateY(-6px) scale(.96);
+      background: linear-gradient(90deg, transparent, rgba(5,8,16,.78) 18%, rgba(5,8,16,.78) 82%, transparent);
+      --era: #7aacff;
+    }
+    #discovery-banner::before, #discovery-banner::after {
+      content: ''; position: absolute; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--era), transparent);
+    }
+    #discovery-banner::before { top: 0; }
+    #discovery-banner::after { bottom: 0; }
+    #discovery-banner.in {
+      opacity: 1; transform: translateX(-50%) translateY(0) scale(1);
+      transition: opacity .22s ease-out, transform .22s ease-out;
+    }
+    #discovery-banner.out {
+      opacity: 0; transform: translateX(-50%) translateY(-4px) scale(1);
+      transition: opacity .3s ease-in, transform .3s ease-in;
+    }
+    #discovery-banner.rm, #discovery-banner.rm.in, #discovery-banner.rm.out { transform: translateX(-50%); transition: opacity .15s linear; }
+    #discovery-banner .db-era {
+      font-family: 'Share Tech Mono', monospace; font-weight: 400; font-size: 10px;
+      letter-spacing: 3px; color: var(--era);
+    }
+    #discovery-banner .db-name {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: clamp(17px, 5.2vw, 22px);
+      letter-spacing: 1.5px; color: var(--text); text-transform: uppercase; line-height: 1.15;
+      text-shadow: 0 0 10px color-mix(in srgb, var(--era) 60%, transparent), 0 2px 4px #000c;
+    }
     /* 범용 숨김 (오버레이 내부 단계 전환 등). .overlay.hidden이 특정성 우위라 충돌 없음. */
     .hidden { display: none !important; }
     /* 갤러리·상세보기는 다른 오버레이 위에 표시 */
@@ -384,6 +419,14 @@
     .btn-ad:active { opacity: .75; }
     .btn-ad.ad-green  { color: #39ff14; border: 1px solid #39ff14; box-shadow: 0 0 12px rgba(57,255,20,.25); }
     .btn-ad.ad-gold   { color: #ffd23f; border: 1px solid #ffd23f; box-shadow: 0 0 12px rgba(255,210,63,.25); }
+    /* v0.9.1 게임오버 버튼 위계 */
+    .btn-primary.co-big { font-size: 1.05rem; padding: 16px 12px; letter-spacing: 3px; }
+    .btn-secondary.co-keep { color: var(--text); border-color: var(--accent); }
+    .btn-secondary.co-keep:disabled { color: var(--textdim); border-color: var(--border); cursor: default; opacity: .7; }
+    .btn-ad.co-bonus { background: transparent; box-shadow: none; font-size: .78rem; padding: 9px; }
+    #ol-collection-over .co-kept { font-size: 1.6rem; }
+    #ol-collection-over .co-next { color: var(--accent); margin-bottom: 4px; }
+    #ol-collection-over .co-next.close { color: #ffd23f; }
     .btn-secondary {
       display: block; width: 100%;
       padding: 10px;
@@ -779,6 +822,7 @@
 </head>
 <body class="booting">
 
+<!-- DEV-BEGIN -->
 <!-- ── DEV BAR (?dev 파라미터 시 표시) ──────────────────────────── -->
 <div id="dev-bar" style="display:none">
   <span style="color:#ff4060;font-weight:bold">DEV</span>
@@ -790,6 +834,7 @@
   <button onclick="devUnlockActiveTheme()">UNLOCK</button>
   <button onclick="openLbStats()">LB STATS</button>
 </div>
+<!-- DEV-END -->
 
 <!-- ── 앱 루트 ──────────────────────────────────────────────────── -->
 <div id="app">
@@ -823,6 +868,7 @@
   <div id="canvas-wrap">
     <canvas id="gameCanvas"></canvas>
     <div id="game-toast"></div>
+    <div id="discovery-banner" aria-live="polite"><div class="db-era"></div><div class="db-name"></div></div>
   </div>
 
   <!-- Chronicles: 나레이션 바 (보드 아래 · 컨트롤 위 고정) -->
@@ -881,9 +927,10 @@
       GALLERY <span id="menu-gallery-dot" class="reddot hidden"></span>
     </button>
     <button class="btn-secondary modal-btn" data-action="settings" onclick="openSettings()" data-i18n="ui.btn.settings">SETTINGS</button>
-    <!-- dev 전용 -->
+    <!-- DEV-BEGIN -->
     <button class="btn-secondary modal-btn" id="btn-story" data-action="story" onclick="startStory()" style="display:none">STORY (DEV)</button>
     <button class="btn-secondary modal-btn" id="btn-start" data-action="start" onclick="startGame()" style="display:none">START (DEV)</button>
+    <!-- DEV-END -->
     <div class="modal-hint" style="margin-top:4px">↑↓ Move · Enter Select</div>
     <div id="app-version" style="color:var(--textdim);font-size:.62rem;letter-spacing:1px;opacity:.6;font-family:'Share Tech Mono',monospace"></div>
   </div>
@@ -981,7 +1028,7 @@
     <!-- [A] 리트라이 (무제한): RETRY → 지금 받기 보조 -->
     <div id="daily-panel-retry" style="display:none">
       <div class="ol-label" style="font-size:.66rem;color:var(--textdim);margin:4px 0 10px"><span id="daily-retries"></span><span data-i18n="ui.label.higherBestTip"> higher BEST = bigger CLAIM</span></div>
-      <button class="btn-ad modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" style="background:var(--warn)" data-i18n="ui.btn.retryAd">📺 RETRY FOR HIGHER BEST</button>
+      <button class="btn-primary modal-btn" id="btn-daily-retry" data-action="retry" onclick="dailyRetry()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
       <button class="btn-secondary modal-btn" id="btn-daily-claim-now" onclick="claimDailyAndExit()" style="font-size:.78rem;opacity:.75;margin-top:2px"><span data-i18n="ui.btn.claimNow">CLAIM NOW</span> ⭐<span id="daily-claim-now-amt">0</span></button>
     </div>
 
@@ -1139,18 +1186,21 @@
     <div style="padding:20px 20px 18px">
       <div style="font-size:.6rem;color:var(--accent);letter-spacing:3px;margin-bottom:6px">ALL CHAPTERS COMPLETE</div>
       <div id="theme-complete-label" style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:1px;margin-bottom:8px"></div>
-      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:14px">
+      <div id="theme-complete-journey" style="font-size:.8rem;color:var(--text);line-height:1.5;margin-bottom:6px">Your journey through 13.8 billion years is complete</div>
+      <div id="theme-complete-runs" style="font-size:.66rem;color:var(--textdim);letter-spacing:1px;margin-bottom:10px"></div>
+      <div style="font-size:.7rem;color:var(--textdim);margin-bottom:4px">
         <span id="theme-complete-reward" style="color:#ffd23f;font-weight:700;font-size:.9rem">⭐20</span> EARNED
       </div>
-      <button class="btn-ad ad-gold modal-btn" id="btn-theme-double" onclick="themeCompleteDoubleStars()">
-        📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
-      </button>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(58,123,213,0.2)">
         <div style="font-size:.6rem;color:var(--accent);letter-spacing:2px;margin-bottom:8px">NEW MODE UNLOCKED</div>
         <button class="btn-primary modal-btn" onclick="startEndless(SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }))">ENDLESS MODE ∞</button>
         <div style="font-size:.65rem;color:var(--textdim);margin-top:4px;line-height:1.4">Merge freely — no story, no limits.<br>Farm stars as long as you survive.</div>
       </div>
       <button class="btn-secondary modal-btn" onclick="collectionToMenu()" style="margin-top:10px">MENU</button>
+      <!-- v0.9.1: 광고(보너스)는 맨 아래 -->
+      <button class="btn-ad ad-gold modal-btn co-bonus" id="btn-theme-double" onclick="themeCompleteDoubleStars()" style="margin-top:6px">
+        📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
+      </button>
     </div>
   </div>
 </div>
@@ -1194,29 +1244,19 @@
 </div>
 
 <!-- ── Collection: 게임오버 ─────────────────────────────────────────── -->
-<!-- 2단계: (1) CONTINUE 권유 → (2) 거절 시 DOUBLE STARS 정산. 광고 버튼 동시 노출 금지. -->
+<!-- v0.9.1(cont-pd-final §4): 한 화면. ① 무료 PLAY AGAIN(가장 크게 · 기본 포커스) ② KEEP GOING(첫 판 무료 / 별, 판당 1회)
+     ③ 📺 ⭐×2 는 외곽선 보너스 버튼으로 아래 ④ GALLERY · MENU. 타이머 없음. 전면광고는 PLAY AGAIN 을 누른 뒤에만. -->
 <div id="ol-collection-over" class="overlay hidden">
   <div class="ol-panel">
     <div class="ol-title" data-i18n="ui.label.gameOver">GAME OVER</div>
-    <div class="ol-score" id="collection-chain-display">3/10</div>
-
-    <!-- 1단계: 이어하기 권유 -->
-    <div id="co-phase-continue">
-      <div class="ol-label" id="continue-info" style="font-size:0.72rem;margin-bottom:6px;color:var(--textdim)" data-i18n="ui.label.clearAllBut">Clear all but the top 3 tiers and keep going</div>
-      <button class="btn-ad ad-green modal-btn" id="btn-continue-ad" onclick="collectionContinueWithAd()">
-        📺 CONTINUE <span style="opacity:.8">(AD)</span>
-      </button>
-      <button class="btn-secondary modal-btn" id="btn-end-run" onclick="collectionShowSettle()" data-i18n="ui.btn.endRun">END RUN ▸</button>
-    </div>
-
-    <!-- 2단계: 이번 판 스타 정산 (x2 광고) -->
-    <div id="co-phase-settle" class="hidden">
-      <div class="ol-label" style="margin-bottom:2px"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
-      <!-- 리워드 = 다음 한 판 동안 획득 별 ×2 (버프). 무료 PLAY AGAIN도 항상 제공 — 광고는 선택. -->
-      <button class="btn-ad ad-gold modal-btn" id="btn-boost-start" onclick="collectionBoostedStart()" data-i18n="ui.btn.boostStart">📺 START WITH ⭐×2 (AD)</button>
-      <button class="btn-primary modal-btn" id="btn-collection-again" onclick="collectionPlayAgain()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
-    </div>
-
+    <div class="ol-score co-kept" id="collection-chain-display">0 of 11 kept</div>
+    <div class="ol-label co-next" id="co-next-line"></div>
+    <div class="ol-label" style="margin-bottom:10px"><span data-i18n="ui.label.thisRun">THIS RUN</span> <span id="gameover-run-stars" style="color:#ffd23f;font-weight:700">⭐0</span></div>
+    <button class="btn-primary modal-btn co-big" id="btn-collection-again" onclick="collectionPlayAgain()" data-i18n="ui.btn.playAgain">PLAY AGAIN</button>
+    <button class="btn-secondary modal-btn co-keep" id="btn-continue-ad" onclick="collectionContinueWithAd()">KEEP GOING (⭐5)</button>
+    <div class="ol-label" id="continue-info" style="font-size:0.66rem;margin:-4px 0 10px;color:var(--textdim)" data-i18n="ui.label.clearAllBut">Clear all but the top 3 tiers and keep going</div>
+    <!-- 리워드 = 다음 한 판 동안 획득 별 ×2 (보너스). 이어하기 조건이 아니다(#10). -->
+    <button class="btn-ad ad-gold modal-btn co-bonus" id="btn-boost-start" onclick="collectionBoostedStart()" data-i18n="ui.btn.boostStart">📺 START WITH ⭐×2 (AD)</button>
     <button class="btn-secondary modal-btn" onclick="openGallery()" data-i18n="ui.btn.gallery">GALLERY</button>
     <button class="btn-secondary modal-btn" onclick="collectionToMenu()" data-i18n="ui.btn.menu">MENU</button>
   </div>
@@ -1302,6 +1342,14 @@
 
 <!-- ── 플랫폼 SDK ─────────────────────────────────────────────────── -->
 <script src="save-store.js"></script>
+<script>
+// v0.9.1: DEV 스위치 — 다른 스크립트(grid-render · playgama)가 읽기 전에 정한다. Playgama 빌드는 아래 블록을 지워 항상 false.
+window.SG = window.SG || {};
+SG.DEV = false;
+// DEV-BEGIN
+try { SG.DEV = new URLSearchParams(location.search).has('dev') || SG.Store.getItem('sg_dev') === '1'; } catch (_) {}
+// DEV-END
+</script>
 <script src="firebase-config.js"></script>
 <script src="notify.js"></script>
 <script src="crazygames.js"></script>
@@ -1315,10 +1363,12 @@
 <script src="start-sky.js"></script>
 <script src="star-fly.js"></script>
 <script src="neon-drift.js"></script>
+<script src="strata.js"></script>
 <script src="grid-render.js"></script>
 <script src="daily.js"></script>
 <script src="collection.js"></script>
 <script src="lb-sync.js"></script>
+<script src="session-rules.js"></script>
 <script src="i18n.js"></script>
 <script src="collection-themes.js"></script>
 
@@ -1329,7 +1379,9 @@ const STORAGE_KEY_PLAYER = 'earthbeyond_player_id';
 
 // ── 버전 ──────────────────────────────────────────────────────────
 // 개발노트(docs/dev-notes.md)와 동기화. 버전 = 기능 묶음 단위.
-const APP_VERSION = 'v0.9';
+const APP_VERSION = 'v0.9.1';
+const DEV = !!SG.DEV;                       // v0.9.1: 개발 도구 스위치 하나 (빌드에서는 항상 false)
+SG.PG.setGameVersion(APP_VERSION);          // analytics 공통 필드 gameVersion
 
 // ── 상태 ──────────────────────────────────────────────────────────
 const ND = SG.ND;
@@ -1531,6 +1583,8 @@ function doMove(dir) {
   }
   devCheatPatchSpawn(result);
   grid = result.grid;
+  _runNoteMove();
+  _discoveryOnMove();
   if (dailyMode) {
     dailyRunStars += (result.starsGained || 0) * (collectionMode ? collectionStarMult : 1);
     dailyRunScore += result.scoreGained || 0;  // 리더보드 동점 분리용
@@ -1562,10 +1616,23 @@ function doMove(dir) {
         return;
       }
       if (collectionMode) {
-        const mergedSizes = result.merges.map(function (m) { return m.size; });
-        // 머지가 있으면 항상 collectionCheckMerges로 (gameOver 판단도 내부에서)
-        if (mergedSizes.length) { collectionCheckMerges(mergedSizes); return; }
-        if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
+        // v0.9.1 지층(strata-gate.md §4 ③) — 머지 · 게임오버 판정보다 먼저(순서가 바뀌면 "정리할 칸이 있는데 게임오버").
+        if (strataRun && window.EBStrata && !result.collapse) {
+          const st = EBStrata.onNewBest(grid, ND.maxSize(grid), strataRun);
+          if (st.fossils.length) {
+            isAnimating = true;                                   // 연출 중 입력 차단
+            (async function () {
+              try { await playClearFx(st.fossils); } catch (_) {} // CONTINUE 와 같은 클리어 연출
+              EBStrata.clearCells(grid, st.fossils);
+              renderer.drawGrid(grid);
+              if (strataRun.steps === 1) showGameToast(EBStrata.describe(SG.i18n && SG.i18n.getLang()), 2400);
+              isAnimating = false;
+              _collectionAfterMove(result);
+            })();
+            return;
+          }
+        }
+        _collectionAfterMove(result);
         return;
       }
       // 현재 보드 최고 타일로 배경 갱신
@@ -1579,6 +1646,13 @@ function doMove(dir) {
     if (ND.maxSize(grid) >= MAIN_GOAL_SIZE) { mainGameClear(); return; }
     if (ND.checkGameOver(grid, 'colorAndSize')) endGame();
   });
+}
+
+// Chronicles 한 수 뒤 본문 — 머지가 있으면 collectionCheckMerges(게임오버 판정도 그 안에서), 없으면 게임오버만.
+function _collectionAfterMove(result) {
+  const mergedSizes = result.merges.map(function (m) { return m.size; });
+  if (mergedSizes.length) { collectionCheckMerges(mergedSizes, result.merges); return; }
+  if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
 }
 
 // 본게임 클리어: 1024 도달 → 클리어 연출 후 점수 정산.
@@ -1699,8 +1773,7 @@ function menuEndlessClick() {
 function openDailyMenu() {
   const date = utcDateStr();
   const ds = SG.Daily.loadDaily(date, SG.Store);
-  const isDev = SG.Store.getItem('sg_dev') === '1' ||
-                new URLSearchParams(location.search).has('dev');
+  const isDev = DEV;
   const t = SG.ND.dailyType(utcDayOfWeek());
 
   document.getElementById('daily-menu-type').textContent = t.label;
@@ -1773,13 +1846,13 @@ var _DTUT_CONTENT = {
       s0: { icon: '🌍', title: 'DAILY CHALLENGE',
             desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.<br>☄️ <strong>Comets</strong> give ×3 · 🔭 <strong>Observatory</strong> gives ×2!' },
       s2: { icon: '🏆', title: 'COMPETE DAILY',
-            desc: 'Your <strong>best run</strong> is posted to today\'s leaderboard.<br>You get <strong>3 attempts</strong> per day — use them wisely!' },
+            desc: 'Your <strong>best score</strong> goes on the Daily leaderboard.<br>Play as often as you like — a <strong>new board</strong> every day (UTC).' },
     },
     ko: {
       s0: { icon: '🌍', title: '데일리 챌린지',
             desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.<br>☄️ <strong>혜성</strong> ×3 · 🔭 <strong>관측소</strong> ×2!' },
       s2: { icon: '🏆', title: '리더보드 경쟁',
-            desc: '오늘의 <strong>최고 기록</strong>이 리더보드에 등록돼요.<br>하루에 <strong>3번</strong> 도전할 수 있으니 신중하게!' },
+            desc: '<strong>최고 점수</strong>가 데일리 리더보드에 올라가요.<br>횟수 제한 없이 도전하세요 — 보드는 매일(UTC) <strong>새로</strong> 바뀌어요.' },
     },
   },
   chronicles: {
@@ -1823,6 +1896,7 @@ function _showTutorial(mode) {
   if (skipBtn) skipBtn.textContent = lang === 'ko' ? '건너뛰기' : 'SKIP';
   _dtutRenderSlide();
   document.getElementById('ol-daily-tutorial').classList.remove('hidden');
+  SG.PG.track('tutorial', { action: 'shown', mode: _dtutMode });
 }
 
 function _dtutRenderSlide() {
@@ -1846,6 +1920,7 @@ function nextDailyTutorial() {
 }
 
 function closeDailyTutorial() {
+  SG.PG.track('tutorial', { action: _dtutSlide >= _dtutTotal - 1 ? 'done' : 'skipped', mode: _dtutMode, slide: _dtutSlide });
   SG.Store.setItem('earthbeyond_tutorial_seen', '1');
   document.getElementById('ol-daily-tutorial').classList.add('hidden');
   if (typeof _dtutOnDone === 'function') { var fn = _dtutOnDone; _dtutOnDone = null; fn(); }
@@ -1875,13 +1950,18 @@ function openGalleryFromMenu() {
   openGallery();
 }
 
-// 온보딩: boot 시 1회 호출. 첫 접속이면 Daily를 튜토리얼로 바로 시작.
+// 온보딩: boot 시 1회 호출. v0.9.1(PD §2-2): 첫 접속이면 Daily · 튜토리얼 · 챕터 인트로 없이 Chronicles 1장 보드로 바로.
+// 기존 키만 쓴다(onboarded · tutorial_seen · intro_seen_<1장>) — 새 Storage 키 없음.
+let _firstBoard = false;
 function _checkOnboarding() {
   if (!isFirstVisit()) return;
   markOnboarded();
-  dailyState = SG.Daily.loadDaily(utcDateStr(), SG.Store);
-  _pendingOnboard = true;
-  startDailyRun();
+  try {
+    SG.Store.setItem('earthbeyond_tutorial_seen', '1');                       // 판을 두면서 배웠다 — 다음 진입에서 튜토리얼 모달 없음
+    SG.Store.setItem('earthbeyond_intro_seen_' + SG.CollectionThemes[0].id, '1');
+  } catch (_) {}
+  _firstBoard = true;
+  startCollection();
 }
 
 let _pendingOnboard = false;   // Daily 게임오버 시 Chronicles CTA 표시 여부
@@ -2100,13 +2180,14 @@ function startDailyRun() {
   rng = _devDailyAllThemes ? makeRng() : dailySeededRng(date);
   grid = SG.Daily.dailyBoard(date, dow, rng);
   // 판 시작 시 retry 1회 소모 (dev 모드 제외)
-  const _isDev = SG.Store.getItem('sg_dev') === '1' ||
-                 new URLSearchParams(location.search).has('dev');
+  const _isDev = DEV;
   if (!_isDev && !_devDailyAllThemes) {
     SG.Daily.useRetry(dailyState, SG.Store);
   }
 
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0; dailyRunScore = 0;
+  strataRun = null;
+  _runBegin();
   document.getElementById('ol-start').classList.add('hidden');
   document.getElementById('ol-daily-over').classList.add('hidden');
   closeModalNav();
@@ -2161,8 +2242,14 @@ var activeThemeId = 'primordial-earth';
 let collectionCollapseCount = 0;
 let collectionContinueCount = 0;   // 이번 콜렉션 세션의 CONTINUE 사용 횟수 (비용 곡선용)
 const CONTINUE_COSTS = [5, 10, 20, 40];   // 회수당 스타 비용 (이후는 마지막 값 유지)
-let lastInterstitialAt = 0;
-const INTERSTITIAL_COOLDOWN_MS = 60000;
+// v0.9.1 광고 리듬(PD §2-3) — 규칙 · 간격은 session-rules.js 의 AD_RHYTHM 한 곳(90초 · 첫 게임오버 · 메뉴 · 장면 공개 직후 제외).
+const adRhythm = SG.SessionRules.createAdRhythm();
+// v0.9.1 표시 없는 연패 보정(cont-pd-final §3): 같은 장 2연패 → 다음 판 생성 한 단계 위, 장 클리어로 해제. 세션 메모리만.
+const lossStreak = SG.SessionRules.createLossStreak();
+// v0.9.1 대체안 스위치(strata-gate.md §5): 지층이 no-go 면 true + 지층 끄기(EBStrata.CHAPTERS.length = 0). 기본 OFF.
+const ENDLESS_UNLOCK_AT_128 = false;
+// v0.9.1 지층(strata.js) — 판 상태(메모리 전용). Chronicles 1장만. CONTINUE 는 같은 판이라 유지.
+let strataRun = null;
 
 // 리워드 광고 공통 래퍼 — 일일 쿼터 소비 후 실제 광고 요청.
 // 쿼터 소진 시 토스트 표시 후 { granted: false } 반환 (실제 광고 미노출).
@@ -2192,12 +2279,18 @@ function _adAudioResume() {
   _applySoundEnabled();
 }
 
-async function showInterstitial() {
+// trigger: 'game_over' | 'collapse' | 'play_again' — 띄울지는 adRhythm 이 정한다.
+async function showInterstitial(trigger) {
+  const d = adRhythm.decide(trigger || 'play_again');
+  SG.PG.track('ad_offer', { format: 'interstitial', trigger: trigger || 'play_again', shown: d.show, reason: d.reason });
+  if (!d.show) return false;
+  adRhythm.noteShown();
   try { SG.CG.hideBanner(); } catch (_) {}
   _adAudioPause();
   try { await SG.CG.requestMidgameAd(); } catch (_) {}
   _adAudioResume();
   try { SG.CG.showBanner(); } catch (_) {}
+  return true;
 }
 
 async function requestRewardedAdWithQuota(placement) {
@@ -2210,6 +2303,7 @@ async function requestRewardedAdWithQuota(placement) {
     _adAudioPause();
     const res = await SG.CG.requestRewardedAd(placement);
     try { SG.CG.showBanner(); } catch (_) {}
+    SG.PG.track('ad_offer', { format: 'rewarded', placement: placement, granted: !res || res.granted !== false });
     return res || { granted: true };
   } catch (_) {
     try { SG.CG.showBanner(); } catch (_e) {}
@@ -2269,9 +2363,11 @@ async function dailyGameOver() {
   // 리더보드 = 오늘(UTC) 최고 게임 점수. Firebase 문서가 날짜 키라 매일 0시(UTC)에 리셋.
   // submitScore는 덮어쓰기라 오늘 최고를 넘을 때만 제출 — 낮은 리트라이가 기록을 지우지 않게.
   if (SG.Daily.setBestScore(dailyState, dailyRunScore, SG.Store)) {
-    try { if (SG.PG.isAvailable()) await SG.PG.leaderboard.submit(dailyRunScore); } catch (_) {}
     try { if (SG.FB.isConnected()) await SG.FB.submitScore(dailyRunScore, { mode: 'daily' }); } catch (_) {}
   }
+  // v0.9.1: Playgama LB 는 lb-sync 가 보낸다(오늘 최고 · 실패 시 다음 동기화에서 재시도)
+  lbSyncNow();
+  SG.PG.track('run_ended', Object.assign(_runBase('daily'), { reason: 'game_over', score: dailyRunScore, stars: dailyRunStars }));
 
   // 점수(리더보드 기준) 먼저, 별(지갑 정산 기준)은 보조.
   document.getElementById('daily-run-stars').textContent =
@@ -2283,7 +2379,7 @@ async function dailyGameOver() {
   renderDailyLeaderboard();
   updateWalletChip();
   _updateDailyOverPanel(claimable);
-  syncAdButtons(['btn-daily-retry']);
+  { const rb = document.getElementById('btn-daily-retry'); if (rb) { rb.style.display = ''; rb.disabled = false; rb.style.opacity = ''; } }
   document.getElementById('ol-daily-over').classList.remove('hidden');
   openModalNav('ol-daily-over');
 }
@@ -2318,11 +2414,7 @@ async function _collapseShared(collapseInfo) {
   } catch (_) {}
   await new Promise(function (r) { setTimeout(r, 400); });
 
-  const now = Date.now();
-  const canShowAd = (now - lastInterstitialAt) >= INTERSTITIAL_COOLDOWN_MS;
-  if (canShowAd) {
-    await showInterstitial(); lastInterstitialAt = now;
-  }
+  await showInterstitial('collapse');
 
   grid = SG.ND.emptyGrid(4);
   cheatIdx = 0;   // collapse 후 시퀀스 리셋 — 새 라운드는 처음부터
@@ -2361,7 +2453,7 @@ function escHtml(s) {
 }
 async function lbSyncNow() {
   // dev/치트 런은 영구 기록(되돌릴 수 없는 chN_clear=1 등)을 남기지 않는다
-  if (cheatActive || new URLSearchParams(location.search).has('dev') || SG.Store.getItem('sg_dev') === '1') return;
+  if (cheatActive || DEV) return;
   if (_lbSyncing) { _lbSyncPending = true; return; }
   if (!SG.PG.isAvailable() || SG.PG.leaderboard.getType() === 'not_available') return;
   _lbSyncing = true;
@@ -2373,6 +2465,11 @@ async function lbSyncNow() {
         return { lbId: SG.PG.LB_CHAPTER_CLEAR[i], themeId: t.id, clearRuns: SG.Collection.loadTheme(t.id, SG.Store, t).clearRuns };
       }),
     };
+    // v0.9.1: 오늘 Daily 최고 · Endless 최고 (재)전송 — playgama_sandbox 에서 LB 가 꺼져 있던 동안의 기록 포함
+    const _today = utcDateStr();
+    const _ds = SG.Daily.loadDaily(_today, SG.Store);
+    cur.daily = { lbId: SG.PG.LB_DAILY, date: _today, score: _ds.bestScore || 0 };
+    cur.endless = { lbId: SG.PG.LB_ENDLESS, score: parseInt(SG.Store.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0 };
     let sent = SG.LbSync.load(SG.Store);
     for (const item of SG.LbSync.plan(cur, sent)) {
       if (await SG.PG.leaderboard.submit(item.score, item.lbId)) sent = SG.LbSync.markSent(sent, item);
@@ -2384,16 +2481,16 @@ async function lbSyncNow() {
     if (_lbSyncPending) { _lbSyncPending = false; lbSyncNow(); }
   }
 }
-async function collectionCheckMerges(mergedSizes) {
+async function collectionCheckMerges(mergedSizes, merges) {
   if (_checkMergesRunning) return;
   _checkMergesRunning = true;
   try {
-    await _collectionCheckMergesInner(mergedSizes);
+    await _collectionCheckMergesInner(mergedSizes, merges);
   } finally {
     _checkMergesRunning = false;
   }
 }
-async function _collectionCheckMergesInner(mergedSizes) {
+async function _collectionCheckMergesInner(mergedSizes, merges) {
   const themes = SG.CollectionThemes;
   const activeThemeObj = themes.find(function (t) { return t.id === activeThemeId; }) || null;
   const rec = SG.Collection.recordMerges(activeThemeId, mergedSizes, SG.Store, themes, activeThemeObj);
@@ -2401,6 +2498,8 @@ async function _collectionCheckMergesInner(mergedSizes) {
     const _ch = chapterIndexOf(activeThemeId);
     rec.newSteps.forEach(function (it) {
       SG.PG.sendCustomMessage('ch' + _ch + '_step' + String(it.step).padStart(2, '0'));
+      SG.PG.track('scene_unlocked', { chapter: _ch, step: it.step, size: it.size, run_moves: _runMoves,
+        run_sec: Math.round((Date.now() - (_runStartedAt || Date.now())) / 1000) });
     });
     if (rec.isComplete) SG.PG.sendMessage('level_completed', { world: activeThemeId });
     lbSyncNow();
@@ -2432,12 +2531,22 @@ async function _collectionCheckMergesInner(mergedSizes) {
     return;
   }
 
-  // 새 step 획득 — 게임 일시 정지
-  gameRunning = false;
-
-  // step을 순서대로 1개씩 팝업
-  for (const item of rec.newSteps) {
-    await showUnlockPopup(item.step, activeThemeId, item.size);
+  // v0.9.1 막지 않는 발견(discovery-fx-spec.md): 모달은 step 1(첫 공개) · 마지막 step 만, 나머지는 칸 팝 + 이름 배너.
+  adRhythm.noteSceneReveal();
+  const _stepCount = SG.Collection.getThemeStepCount(activeThemeObj);
+  const _modalSteps = rec.newSteps.filter(function (it) { return it.step === 1 || it.step >= _stepCount; });
+  rec.newSteps.forEach(function (it) {
+    if (it.step === 1 || it.step >= _stepCount) return;
+    const m = (merges || []).find(function (mm) { return mm.size === it.size; });
+    discoveryReveal(activeThemeObj, it.step, m ? m.at : null);
+  });
+  if (_modalSteps.length) {
+    // 남은 모달 — 게임 일시 정지
+    gameRunning = false;
+    for (const item of _modalSteps) {
+      await showUnlockPopup(item.step, activeThemeId, item.size);
+    }
+    adRhythm.noteSceneReveal();
   }
 
   // Chronicles: 마지막 획득 step 서사 토스트 + 세션 나레이션 이력 기록
@@ -2454,6 +2563,7 @@ async function _collectionCheckMergesInner(mergedSizes) {
     renderer.drawGrid(grid);
     // 풀스크린 챕터 클리어 연출 (탭으로 스킵 가능) → 완료 후 정산
     await showChapterClearFX(activeThemeId);
+    _trackChroniclesRunEnded('chapter_clear');
     await collectionThemeComplete(activeThemeId);
     return;
   }
@@ -2462,6 +2572,8 @@ async function _collectionCheckMergesInner(mergedSizes) {
   gameRunning = true;
   updateCollectionHud();
   renderer.drawGrid(grid);
+  // strata-gate.md §4 ④: 새 step 경로도 게임오버를 판정한다(그 수로 보드가 막히면 입력이 전부 무시되던 소프트락)
+  if (ND.checkGameOver(grid, 'sizeOnly')) { collectionGameOver(); return; }
 }
 
 // 1024 collapse 단독 발생 (새 step 없음) — 보드만 리셋
@@ -2479,9 +2591,9 @@ async function collectionCollapse(collapseInfo) {
 function showUnlockPopup(step, themeId, size) {
   return new Promise(function (resolve) {
     const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
-    document.getElementById('unlock-chain-title').textContent =
-      (theme ? theme.label : themeId.toUpperCase()) + ' — STEP ' + step + ' / ' + SG.Collection.getThemeStepCount(theme || null);
-    document.getElementById('unlock-theme-label').textContent = 'MERGE × ' + size + ' UNLOCKED!';
+    // v0.9.1(discovery-fx-spec §4): ERA Ⅰ · STEP 01 / 11 + 장면 이름
+    document.getElementById('unlock-chain-title').textContent = _eraStepLabel(themeId, step, theme);
+    document.getElementById('unlock-theme-label').textContent = _sceneName(theme, step) || ('MERGE × ' + size + ' UNLOCKED!');
 
     const thumb = document.getElementById('unlock-thumb');
     const fallback = '<div style="color:var(--accent);font-family:\'Rajdhani\',sans-serif;font-size:3.5rem;font-weight:700;line-height:1">' + size + '</div>';
@@ -2491,7 +2603,7 @@ function showUnlockPopup(step, themeId, size) {
     // 획득 연출: 사운드 + 렌더러 FX
     try { if (SG.Sound && SG.Sound.playClear) SG.Sound.playClear(); } catch (_) {}
     try {
-      if (renderer) {
+      if (renderer && !_reducedMotion()) {
         const gold = { fill: '#ffd23f', glow: '#ffe98a' };
         const cx = renderer.canvas.clientWidth / 2;
         const cy = renderer.canvas.clientHeight / 2;
@@ -2540,7 +2652,7 @@ function showChapterClearFX(themeId) {
 
     // 파티클 폭죽 — 3연발
     try {
-      if (renderer && renderer.particles && renderer.rings) {
+      if (renderer && renderer.particles && renderer.rings && !_reducedMotion()) {
         const W = renderer.canvas.clientWidth;
         const H = renderer.canvas.clientHeight;
         const cx = W / 2, cy = H / 2;
@@ -2614,6 +2726,14 @@ async function collectionThemeComplete(themeId) {
       const bgSrc = (theme.stepBgs && theme.stepBgs[10]) || theme.boardBg || '';
       tcBg.src = bgSrc; tcBg.style.display = bgSrc ? 'block' : 'none';
     }
+    // v0.9.1 엔딩: 한 줄 + 걸린 판 수(모든 장 runs 합 — 기록이 없는 옛 저장이면 생략)
+    try {
+      const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+      let runs = 0, known = true;
+      SG.CollectionThemes.forEach(function (t) { const st = SG.Collection.loadTheme(t.id, SG.Store, t); if (st.runsUnknown) known = false; runs += st.runs || 0; });
+      document.getElementById('theme-complete-journey').textContent = ko ? '138억 년의 여정을 마쳤습니다' : 'Your journey through 13.8 billion years is complete';
+      document.getElementById('theme-complete-runs').textContent = known && runs > 0 ? (ko ? (runs + '판 만에') : ('in ' + runs + ' runs')) : '';
+    } catch (_) {}
     const dblBtn = document.getElementById('btn-theme-double');
     if (dblBtn) { dblBtn.style.display = ''; dblBtn.disabled = false; dblBtn.style.opacity = ''; }
     syncAdButtons(['btn-theme-double']);
@@ -2704,11 +2824,19 @@ function startCollection() {
   // 진행도 = 완성한 테마 수 (없으면 0). 진행할수록 graded 강도↑.
   const progress = (meta.completedThemes && meta.completedThemes.length) || 0;
   const gradedTiers = collectionGradedTiers(progress);
+  // v0.9.1 지층 훅(strata-gate.md §4 ②) — window.EBStrata 가 없거나 이 장이 대상이 아니면 기존 그대로.
+  // 끄는 스위치: EBStrata.CHAPTERS.length = 0 (또는 strata.js 태그 삭제).
+  const _strataOn = !!(window.EBStrata && EBStrata.enabledFor(activeThemeId));
+  strataRun = _strataOn ? EBStrata.newRun(activeThemeId) : null;
+  // 장별 창(6/7/7) · 연패 보정(shift)은 strata.js 가 판 ctx 로 정한다 — gradedTiers(strataRun).
+  // 지층이 꺼진 장(끄는 스위치)일 때만 셸의 lossStreak 로 같은 보정(한 단계 위)을 건다 — 이중 적용 없음. 표시 없음.
+  let _tiers = _strataOn ? EBStrata.gradedTiers(strataRun) : gradedTiers;
+  if (!_strataOn && lossStreak.assist(activeThemeId)) _tiers = SG.SessionRules.assistTiers(_tiers);
   // 콜렉션 모드: size 1부터 스폰 (daily spawn은 size 2/4 → false로 오버라이드)
   dailyOpts = Object.assign({}, base, {
     daily: false,
     bias: 0.6, clampThreshold: 3, colors: 4,
-    gradedTiers: gradedTiers,   // null이면 always1, 있으면 graded
+    gradedTiers: _tiers,   // 지층: 생성 크기 상승 / 아니면 null(always1) 또는 graded / 연패 보정 시 한 단계 위
     collapseSize: SG.Collection.getCollapseSize(activeThemeObj),
   });
   rng = makeRng();
@@ -2730,7 +2858,9 @@ function startCollection() {
   collectionCollapseCount = 0;
   collectionContinueCount = 0;
   collectionStarMult = 1;   // 버프는 광고로 시작한 한 판만
-  SG.Daily.resetAdQuota(SG.Store);  // 새 판마다 광고 3회 리셋
+  _runBegin();
+  _discoveryReset();
+  // v0.9.1: 리워드 쿼터는 하루 기준(daily.js loadAdQuota 가 날짜로 리셋) — 예전엔 여기서 판마다 0 으로 되돌려 "하루 3회"가 판당 3회였다.
 
   dailyMode = true;
   dailyRunStars = 0;
@@ -2755,10 +2885,18 @@ function startCollection() {
   // Chapter Intro 필요 여부를 먼저 확인 — 있으면 Intro가 닫힐 때 gameRunning=true
   const _introKey = 'earthbeyond_intro_seen_' + activeThemeId;
   const _needsIntro = activeThemeObj && activeThemeObj.chapter &&
-    !SG.Store.getItem(_introKey);
+    !SG.Store.getItem(_introKey) && !_firstBoard;
   gameRunning = !_needsIntro;   // Intro 있으면 일시 정지 상태로 시작
 
-  if (_needsIntro) {
+  if (_firstBoard) {
+    // v0.9.1 첫 방문(PD §2-2): 인트로 · 튜토리얼 · 공개 모달 없이 보드 — 막지 않는 한 줄 안내만. 첫 수가 곧 시작.
+    _firstBoard = false;
+    const _ko = SG.i18n && SG.i18n.getLang() === 'ko';
+    setTimeout(function () {
+      showGameToast(_ko ? '스와이프 · 방향키 — 같은 숫자를 합쳐 장면을 모으세요' : 'Swipe or use arrow keys — merge matching tiles', 3600);
+    }, 400);
+    SG.PG.track('tutorial', { action: 'first_board', chapter: chapterIndexOf(activeThemeId) });
+  } else if (_needsIntro) {
     // step-01 NEW 토스트는 Intro 닫은 후 보여줌 (closeChapterIntro에서 처리)
     setTimeout(function () { showChapterIntroIfNeeded(activeThemeId); }, 200);
   } else if (SG.Collection.hasNew(activeThemeId, SG.Store, activeThemeObj)) {
@@ -2769,11 +2907,14 @@ function startCollection() {
 // ── Endless Mode ──────────────────────────────────────────────────
 
 function isEndlessUnlocked() {
-  const isDev = SG.Store.getItem('sg_dev') === '1' ||
-                new URLSearchParams(location.search).has('dev');
-  if (isDev) return true;
+  if (DEV) return true;
   const meta = SG.Collection.loadMeta(SG.Store);
   // Chronicles 챕터를 1개 이상 완료하면 해금
+  // v0.9.1 대체안 스위치(strata-gate.md §5) — 지층 no-go 일 때만 true: 1장에서 128 을 만들면 Endless 해금
+  if (ENDLESS_UNLOCK_AT_128) {
+    return (meta.completedThemes && meta.completedThemes.length > 0) ||
+      SG.Collection.loadTheme('primordial-earth', SG.Store, SG.CollectionThemes[0]).acquiredSizes.indexOf(128) !== -1;
+  }
   return meta.completedThemes && meta.completedThemes.length > 0;
 }
 
@@ -2796,6 +2937,8 @@ function startEndless(skinTheme) {
   collectionMode = false;
   dailyMode = true;
   endlessScore = 0;
+  strataRun = null;
+  _runBegin();
   endlessStarsDoubled = false;
   _runSettled = false;
 
@@ -2868,11 +3011,9 @@ async function endlessGameOver() {
       }
     } catch (_) {}
   }
-  try {
-    if (SG.PG && SG.PG.isAvailable && SG.PG.isAvailable()) {
-      await SG.PG.leaderboard.submit(endlessScore, SG.PG.LB_ENDLESS);
-    }
-  } catch (_) {}
+  // v0.9.1: Playgama LB(Endless 최고)는 lb-sync 가 보낸다 — 낮은 판이 기록을 덮지 않고, 실패하면 다시 시도
+  lbSyncNow();
+  SG.PG.track('run_ended', Object.assign(_runBase('endless'), { reason: 'game_over', score: endlessScore, new_best: isNewBest }));
 
   // 점수 → 스타 환산 후 지갑 적립 (daily 캡 공유)
   const rawStars = endlessScoreToStars(endlessScore);
@@ -2880,7 +3021,7 @@ async function endlessGameOver() {
   const capReached = rawStars > earnedStars;
   if (earnedStars > 0) { pgSyncStorage(); updateWalletChip(); }
 
-  await showInterstitial();
+  await showInterstitial('game_over');
 
   endlessStarsDoubled = false;
   const dblBtn = document.getElementById('btn-endless-double');
@@ -3085,6 +3226,113 @@ function _startGameAfterReveal(themeObj) {
   gameRunning = true;
 }
 
+// ── v0.9.1 막지 않는 발견 (docs/sandbox-kpi-debate/discovery-fx-spec.md) ─────────────
+// step 2~(마지막-1): 모달 없이 칸 팝 + 시대 색 고리 + 장면 이름 배너. 입력은 한 번도 막지 않는다.
+const _ERA_FX = {
+  'primordial-earth':   { ring: '#ffb347', fill: '#f7971e' },
+  'human-civilization': { ring: '#e8c27a', fill: '#b8862f' },
+  'solar-system':       { ring: '#7aacff', fill: '#3a7bd5' },
+};
+const _ROMAN = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ'];
+function _eraFx(themeId) { return _ERA_FX[themeId] || { ring: '#7aacff', fill: '#3a7bd5' }; }
+function _reducedMotion() {
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (_) { return false; }
+}
+function _sceneName(theme, step) {
+  const d = theme && theme.stepDescriptions && theme.stepDescriptions[step - 1];
+  if (!d) return '';
+  const i = d.indexOf(' — ');
+  return (i !== -1 ? d.slice(0, i) : d).toUpperCase();
+}
+function _eraStepLabel(themeId, step, theme) {
+  const ch = chapterIndexOf(themeId);
+  const n = SG.Collection.getThemeStepCount(theme || null);
+  return 'ERA ' + (_ROMAN[ch - 1] || ch) + ' · STEP ' + String(step).padStart(2, '0') + ' / ' + String(n).padStart(2, '0');
+}
+
+let _discQueue = [], _discBusy = false, _discShownAt = 0, _discTimer = null, _discPhaseEnd = null;
+function _discoveryReset() {
+  _discQueue = []; _discBusy = false; _discPhaseEnd = null;
+  if (_discTimer) { clearTimeout(_discTimer); _discTimer = null; }
+  const el = document.getElementById('discovery-banner');
+  if (el) el.className = '';
+}
+// 칸 FX(팝 · 고리 · 파티클)는 즉시, 배너는 큐로.
+function discoveryReveal(theme, step, at) {
+  const fx = _eraFx(theme && theme.id);
+  const rm = _reducedMotion();
+  try { if (SG.Sound && SG.Sound.playClear) SG.Sound.playClear(); } catch (_) {}
+  try {
+    if (renderer && at) {
+      const key = at[0] + ',' + at[1];
+      if (rm) {
+        renderer.pops.set(key, { life: 200, max: 200, rise: 80, peak: 1.08, scale: 1 });
+        renderer.outlines.set(key, { life: 600, color: fx.ring });
+      } else {
+        renderer.pops.set(key, { life: 380, max: 380, rise: 120, peak: 1.32, scale: 1 });
+        const [cx, cy] = renderer.cellXY(at[0], at[1]);
+        const cell = renderer.cell;
+        renderer.rings.push(new SG.Ring(cx, cy, cell * 0.45, cell * 1.6, fx.ring, 520));
+        setTimeout(function () { try { renderer.rings.push(new SG.Ring(cx, cy, cell * 0.45, cell * 2.4, fx.ring, 700)); } catch (_) {} }, 120);
+        renderer.particles.emit(cx, cy, { fill: fx.fill, glow: fx.ring }, 18);
+      }
+    }
+  } catch (_) {}
+  // 나레이션 바 + 배경 교체는 기존 그대로
+  _narratedStepsThisSession.add(step);
+  try { chroniclesShowStepToast(theme, step); } catch (_) {}
+  _discQueue.push({ era: _eraStepLabel(theme ? theme.id : activeThemeId, step, theme), name: _sceneName(theme, step), ring: fx.ring });
+  if (_discBusy) _discEndCurrent(200); else setTimeout(_discNext, 80);
+}
+function _discPlace(el) {
+  // 보드 위쪽 끝 + 8px (캔버스 안 보드 좌표 → canvas-wrap 기준)
+  try {
+    const top = renderer ? (renderer.cellXY(0, 0)[1] - renderer.cell / 2) : 0;
+    el.style.top = Math.max(0, canvas.offsetTop + top + 8) + 'px';
+  } catch (_) {}
+}
+function _discNext() {
+  if (_discBusy || !_discQueue.length) return;
+  const item = _discQueue.shift();
+  const el = document.getElementById('discovery-banner');
+  if (!el) return;
+  _discBusy = true;
+  el.style.setProperty('--era', item.ring);
+  el.querySelector('.db-era').textContent = item.era;
+  el.querySelector('.db-name').textContent = item.name;
+  _discPlace(el);
+  const rm = _reducedMotion();
+  el.className = rm ? 'rm' : '';
+  void el.offsetWidth;
+  el.className = rm ? 'rm in' : 'in';
+  _discShownAt = Date.now();
+  _discSchedule(2200);
+}
+function _discSchedule(holdUntilMs) {
+  if (_discTimer) clearTimeout(_discTimer);
+  _discPhaseEnd = _discShownAt + holdUntilMs;
+  _discTimer = setTimeout(function () { _discEndCurrent(300); }, Math.max(0, _discPhaseEnd - Date.now()));
+}
+function _discEndCurrent(outMs) {
+  if (!_discBusy) return;
+  if (_discTimer) { clearTimeout(_discTimer); _discTimer = null; }
+  const el = document.getElementById('discovery-banner');
+  const rm = _reducedMotion();
+  if (el) el.className = rm ? 'rm out' : 'out';
+  _discTimer = setTimeout(function () {
+    _discTimer = null; _discBusy = false;
+    if (_discQueue.length) setTimeout(_discNext, Math.max(0, 600 - outMs));   // 배너 사이 최소 600ms
+  }, rm ? 150 : outMs);
+}
+// 플레이어가 움직이면 배너는 양보: 유지 구간을 최대 900ms 로(이미 1초 넘게 보였으면 바로 퇴장).
+function _discoveryOnMove() {
+  if (!_discBusy || !_discPhaseEnd) return;
+  const shown = Date.now() - _discShownAt;
+  if (shown >= 1000) { _discEndCurrent(300); return; }
+  const cap = _discShownAt + Math.min(2200, shown + 900);
+  if (cap < _discPhaseEnd) _discSchedule(cap - _discShownAt);
+}
+
 // Chronicles 나레이션 바 업데이트
 // - 신규 획득 시: 팝업 + 나레이션 바 + 배경
 // - 재시작 후 재등장 시: 나레이션 바 + 배경만 (팝업 없음)
@@ -3230,7 +3478,35 @@ let collectionStarMult = 1;
 let _runSettled = false;
 
 // 이번 판 누적 스타를 지갑에 적립(정산). 1회만. END RUN/RETRY/MENU에서 호출.
+// ── v0.9.1 계측: 판 통계 · run_ended (Bridge analytics 가 있을 때만 나간다 — SG.PG.track) ──
+let _runStartedAt = 0, _runMoves = 0, _runMaxSize = 0, _runEndPending = false, _runEndedSent = true;
+function _runBegin() { _runStartedAt = Date.now(); _runMoves = 0; _runMaxSize = 0; _runEndPending = false; _runEndedSent = false; }
+function _runNoteMove() { _runMoves++; try { const m = ND.maxSize(grid); if (m > _runMaxSize) _runMaxSize = m; } catch (_) {} }
+function _runBase(mode) {
+  return { mode: mode, moves: _runMoves, duration_sec: Math.round((Date.now() - (_runStartedAt || Date.now())) / 1000), max_size: _runMaxSize };
+}
+function _trackChroniclesRunEnded(reason) {
+  _runEndPending = false;
+  if (_runEndedSent) return;
+  _runEndedSent = true;
+  const _assisted = !!((strataRun && strataRun.shift) || (!strataRun && lossStreak.assist(activeThemeId)));
+  if (reason === 'game_over') lossStreak.noteLoss(activeThemeId);
+  else if (reason === 'chapter_clear') lossStreak.noteClear(activeThemeId);
+  try { if (window.EBStrata && EBStrata.noteRunEnd) EBStrata.noteRunEnd(activeThemeId, reason); } catch (_) {}
+  const t = SG.CollectionThemes.find(function (th) { return th.id === activeThemeId; }) || null;
+  const sizes = SG.Collection.getThemeSizes(t) || [];
+  let maxStep = 0;
+  sizes.forEach(function (sz, i) { if (sz <= _runMaxSize) maxStep = i + 1; });
+  const st = SG.Collection.loadTheme(activeThemeId, SG.Store, t);
+  SG.PG.track('run_ended', Object.assign(_runBase('chronicles'), {
+    reason: reason, chapter: chapterIndexOf(activeThemeId), max_step: maxStep, assisted: _assisted,
+    steps: (st.acquiredSteps || []).length, stars: dailyRunStars, continued: collectionContinueCount,
+    strata_steps: strataRun ? strataRun.steps : 0,
+  }));
+}
+
 function settleRunStars() {
+  if (_runEndPending) _trackChroniclesRunEnded('game_over');
   if (_runSettled) return;
   _runSettled = true;
   if (dailyRunStars > 0) SG.Daily.earnStarsToWallet(dailyRunStars, 'collection', SG.Store);
@@ -3252,49 +3528,68 @@ async function collectionGameOver() {
     SG.PG.sendMessage('level_failed', { world: activeThemeId, level: String(_lv) });
   } catch (_) {}
 
-  // 게임오버 시 전체광고 노출 → 그 다음 팝업
-  await showInterstitial();
+  // v0.9.1: 전면광고는 결과 화면 뒤 PLAY AGAIN 에서(cont-pd-final §4) — 여기서는 게임오버를 세기만 한다
+  adRhythm.noteGameOver();
 
   const _activeThemeObj = SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }) || null;
   const state = SG.Collection.loadTheme(activeThemeId, SG.Store, _activeThemeObj);
-  const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
-  document.getElementById('collection-chain-display').textContent =
-    acquired + '/' + SG.Collection.getThemeStepCount(_activeThemeObj) + ' STEPS';
+  // "7 of 11 kept · Next: reach 128" / "So close — 64 of 128"
+  const _copy = SG.SessionRules.gameOverCopy({
+    sizes: SG.Collection.getThemeSizes(_activeThemeObj) || [], acquired: state.acquiredSizes || [],
+    best: _runMaxSize, lang: (SG.i18n && SG.i18n.getLang()) || 'en',
+  });
+  document.getElementById('collection-chain-display').textContent = _copy.line1;
+  const _nextEl = document.getElementById('co-next-line');
+  if (_nextEl) { _nextEl.textContent = _copy.line2; _nextEl.classList.toggle('close', _copy.soClose); }
 
   // 정산 단계 데이터 준비 (2단계에서 사용)
   document.getElementById('gameover-run-stars').textContent =
     '⭐' + runStars + (collectionStarMult > 1 ? ' (×' + collectionStarMult + ')' : '');
 
-  // CONTINUE 가능 여부 = 상위 3종 외 제거할 블록이 있을 때.
-  const canContinue = continueRemovableCells(grid).length > 0;
-  const continueBtn = document.getElementById('btn-continue-ad');
-  if (continueBtn) {
-    continueBtn.disabled = false;
-    continueBtn.style.opacity = '';
-    continueBtn.style.display = '';  // 쿼터 소진으로 숨겼다가 새 과부하 시 복원
-    // 라벨: 스타 잔액 충분하면 비용(⭐N), 부족하면 광고(AD) / 쿼터 소진이면 비활성
-    const cost = continueCost();
-    const wallet = SG.Daily.getWalletStars(SG.Store);
-    const adsLeft = SG.Daily.rewardedAdsLeft(SG.Store);
-    if (wallet >= cost) {
-      const tag = '⭐' + cost;
-      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(' + tag + ')</span>';
-    } else if (adsLeft > 0) {
-      continueBtn.innerHTML = 'CONTINUE <span style="opacity:.85">(📺 AD ' + adsLeft + '/' + SG.Daily.REWARDED_DAILY_LIMIT + ')</span>';
-    } else {
-      // 스타도 없고 광고 쿼터도 소진 → 버튼 숨기기
-      continueBtn.style.display = 'none';
-    }
-  }
+  // v0.9.1 KEEP GOING(cont-pd-final §2): 광고 없음 · 판당 1회 · 게임 첫 판 무료 1회 · 별 = 지갑 + 이번 판 별.
+  // 별이 모자라면 숨기지 않고 비활성("Earn 5⭐ to keep going"). 상한 · 지울 칸 없음이면 숨김.
+  const offer = _continueOfferNow();
+  _renderContinueButton(offer);
+  // run_ended: CONTINUE 를 권하는 동안은 판이 아직 안 끝났다 → END RUN / PLAY AGAIN / MENU 에서 보낸다
+  _runEndPending = true;
+  if (!offer.show) _trackChroniclesRunEnded('game_over');
 
-  // CONTINUE 가능하면 1단계(이어하기 권유), 아니면 바로 2단계(정산).
-  collectionSetOverPhase(canContinue ? 'continue' : 'settle');
-
-  // btn-continue-ad는 스타 결제도 가능 — 광고 쿼터와 무관하게 노출 유지
   // btn-boost-start만 광고 쿼터 체크 (소진 시 숨김 — 무료 PLAY AGAIN은 항상 있음)
   syncAdButtons(['btn-boost-start']);
   document.getElementById('ol-collection-over').classList.remove('hidden');
   openModalNav('ol-collection-over');
+}
+
+// ── v0.9.1 KEEP GOING 헬퍼 ──
+// 게임 첫 판 = Chronicles 1장 runs === 1 · 미완료 · 기록 있는 저장(runsUnknown 아님). 기존 키(테마 상태)에서 파생 — 새 키 없음.
+function _isFirstRunEver() {
+  const t0 = SG.CollectionThemes[0];
+  if (!t0 || activeThemeId !== t0.id) return false;
+  const st = SG.Collection.loadTheme(t0.id, SG.Store, t0);
+  return st.runs === 1 && !st.runsUnknown && st.status !== 'completed';
+}
+function _continueOfferNow() {
+  return SG.SessionRules.continueOffer({
+    usedThisRun: collectionContinueCount,
+    removable: continueRemovableCells(grid).length,
+    wallet: SG.Daily.getWalletStars(SG.Store),
+    runStars: _runSettled ? 0 : dailyRunStars,
+    cost: continueCost(),
+    firstRunEver: _isFirstRunEver(),
+  });
+}
+function _renderContinueButton(offer) {
+  const btn = document.getElementById('btn-continue-ad');
+  const info = document.getElementById('continue-info');
+  const ko = SG.i18n && SG.i18n.getLang() === 'ko';
+  if (info) info.style.display = offer.show ? '' : 'none';
+  if (!btn) return;
+  btn.style.opacity = '';
+  btn.style.display = offer.show ? '' : 'none';
+  btn.disabled = !offer.enabled;
+  if (offer.method === 'free') btn.textContent = ko ? '무료로 계속하기' : 'KEEP GOING — FREE';
+  else if (!offer.enabled) btn.textContent = ko ? ('⭐' + offer.cost + ' 모으면 계속할 수 있어요') : ('Earn ' + offer.cost + '⭐ to keep going');
+  else btn.textContent = ko ? ('계속하기 (⭐' + offer.cost + ')') : ('KEEP GOING (⭐' + offer.cost + ')');
 }
 
 // 게임오버 오버레이 단계 전환: 'continue'(이어하기 권유) | 'settle'(스타 정산)
@@ -3327,7 +3622,7 @@ async function collectionBoostedStart() {
     showGameToast('Ad failed to load. Please try again.', 2200);
     return;
   }
-  collectionPlayAgain();
+  await collectionPlayAgain({ noAd: true });
   collectionStarMult = 2;   // startCollection()이 1로 리셋한 뒤에 건다
   updateCollectionHud();
   showGameToast('⭐×2 for this run!', 2000);
@@ -3359,40 +3654,22 @@ function continueCost() {
 //  - 1순위: 스타 소모(회수당 증가). 잔액 충분하면 차감.
 //  - 잔액 부족: 리워드 광고로 대체(무료 진행).
 //  - 누적 스타(dailyRunStars)는 유지 — 이어가는 판이므로 정산하지 않음.
+// (이름은 예전 그대로 — onclick 이 부른다. v0.9.1 부터 광고 경로 없음: 별 결제만 · 판당 1회.)
 async function collectionContinueWithAd() {
-  const btn = document.getElementById('btn-continue-ad');
   const cells = continueRemovableCells(grid);
-  if (cells.length === 0) return;   // 제거할 게 없으면 무의미
-
-  const cost = continueCost();
-  const wallet = SG.Daily.getWalletStars(SG.Store);
-  let paid = false;
-
-  if (wallet >= cost) {
-    // 스타로 결제
-    paid = SG.Daily.spendStars(cost, SG.Store);
-  } else {
-    // 잔액 부족 → 광고 대체
-    if (SG.Daily.rewardedAdsLeft(SG.Store) <= 0) {
-      // 쿼터 소진: 버튼 숨기고 종료 유도
-      if (btn) { btn.style.display = 'none'; }
-      showGameToast('No more ads available. End run or come back tomorrow!', 2800);
-      return;
-    }
-    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
-    let granted = false;
-    try { const res = await requestRewardedAdWithQuota('collection_continue'); granted = res && res.granted !== false; } catch (_) { granted = false; }
-    if (!granted) {
-      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
-      // 쿼터가 소진된 경우(requestRewardedAdWithQuota 내부에서 이미 토스트 표시됨)
-      if (SG.Daily.rewardedAdsLeft(SG.Store) <= 0) {
-        if (btn) { btn.style.display = 'none'; }
-      }
-      return;
-    }
-    paid = true;
+  const offer = _continueOfferNow();
+  if (!offer.show || !offer.enabled) { _renderContinueButton(offer); return; }
+  if (offer.method === 'stars') {
+    // 이번 판 별(미정산)을 먼저, 모자라면 지갑에서
+    const pay = SG.SessionRules.splitContinueCost(offer.cost, _runSettled ? 0 : dailyRunStars, SG.Daily.getWalletStars(SG.Store));
+    if (!pay || (pay.fromWallet > 0 && !SG.Daily.spendStars(pay.fromWallet, SG.Store))) { _renderContinueButton(_continueOfferNow()); return; }
+    dailyRunStars -= pay.fromRun;
+    dailyStarsShown = Math.min(dailyStarsShown, dailyRunStars);
   }
-  if (!paid) { showGameToast('Not enough stars.', 1800); return; }
+  SG.PG.track('continue_used', { method: offer.method, cost: offer.cost, chapter: chapterIndexOf(activeThemeId) });
+  _runEndPending = false;   // 같은 판이 이어진다
+  pgSyncStorage();
+  updateWalletChip();
 
   collectionContinueCount++;
   closeModalNav();
@@ -3450,13 +3727,19 @@ function playClearFx(cells) {
 
 // 정산 단계에서 같은 챕터를 새 보드로 다시 시작 (획득한 STEP은 유지).
 // 이 버튼이 없으면 DOUBLE STARS 광고 뒤에도 GAME OVER 화면에 GALLERY/MENU만 남았다.
-function collectionPlayAgain() {
-  settleRunStars();   // END RUN에서 이미 정산됐으면 no-op
+// v0.9.1: 전면광고는 결과 화면 뒤 여기서만(리듬 규칙 — 세션 첫 게임오버 · 90초 안 · 장면 공개 직후 제외). 보상형 ⭐×2 경로는 광고 없음.
+async function collectionPlayAgain(opts) {
+  settleRunStars();   // 이미 정산됐으면 no-op
   closeModalNav();
+  if (!(opts && opts.noAd)) {
+    document.getElementById('ol-collection-over').classList.add('hidden');
+    await showInterstitial('after_game_over');
+  }
   startCollection();
 }
 
 function collectionToMenu() {
+  if (!_runEndedSent && !_runEndPending && collectionMode) _trackChroniclesRunEnded('quit');
   settleRunStars();   // 이번 판 종료 → 누적 스타 정산
   closeModalNav();
   ['ol-collection-over', 'ol-theme-complete', 'ol-gallery'].forEach(function (id) {
@@ -3961,12 +4244,11 @@ async function renderDailyLeaderboard() {
   box.innerHTML = html;
 }
 
+// v0.9.1: Daily PLAY AGAIN 은 무료(광고 시청 조건 없음). 전면광고는 리듬 규칙(90초 · 첫 게임오버 제외)을 따를 때만.
 async function dailyRetry() {
   closeModalNav();
   document.getElementById('ol-daily-over').classList.add('hidden');
-  let granted = false;
-  try { const res = await requestRewardedAdWithQuota('daily_retry'); granted = res && res.granted !== false; } catch (_) { granted = false; }
-  if (!granted) { document.getElementById('ol-daily-over').classList.remove('hidden'); openModalNav('ol-daily-over'); return; }
+  await showInterstitial('play_again');
   startDailyRun();
 }
 
@@ -3978,7 +4260,7 @@ function dailyToMenu() {
   dailyMode = false;
   _devDailyAllThemes = false;  // dev Daily 플래그 리셋
   try { if (SG.Sound && SG.Sound.stopBgm) SG.Sound.stopBgm(); } catch (_) {}
-  showInterstitial();
+  // v0.9.1: 메뉴로 나갈 때는 전면광고 없음(PD §2-3)
   renderer.setMode('main');
   showStart();
   refreshDailyMenu();
@@ -4001,7 +4283,7 @@ function msToNextUtcMidnight() {
 async function restartGame() {
   closeModalNav();
   document.getElementById('ol-gameover').classList.add('hidden');
-  await showInterstitial();
+  await showInterstitial('play_again');
   await startGame();
 }
 
@@ -4033,12 +4315,20 @@ async function endGame() {
 document.querySelectorAll('.dirbtn').forEach(function (b) {
   b.addEventListener('click', function () { doMove(b.dataset.dir); });
 });
+// v0.9.1: e.key 가 비거나 다른 배열(한글 IME 등)이어도 e.code 로 — 화살표 · WASD
+const _KEY_DIR  = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+const _CODE_DIR = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+                    KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
 window.addEventListener('keydown', function (e) {
   // Modal open → arrows/enter navigate the modal, not the board.
   if (_modal) { if (modalNavKey(e)) e.preventDefault(); return; }
-  const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
-  if (map[e.key]) { e.preventDefault(); doMove(map[e.key]); }
+  const dir = _KEY_DIR[e.key] || _CODE_DIR[e.code];
+  if (dir) { e.preventDefault(); doMove(dir); }
 });
+// Playgama 는 게임을 iframe 에 넣는다 — 포커스가 없으면 방향키가 바깥 페이지로 간다. 부팅 · 모든 포인터 입력에서 잡는다.
+function focusGame() { try { window.focus(); } catch (_) {} }
+focusGame();
+window.addEventListener('pointerdown', focusGame, true);
 
 // ── 햅틱 (모바일) — 옵션 ON/OFF + 첫 사용자 입력 후에만 진동 ──────
 // 첫 탭/클릭/키 전에는 vibrate가 차단(콘솔 경고)되므로 게이트로 막는다.
@@ -4093,7 +4383,9 @@ function closeModalNav() {
 }
 function modalNavKey(e) {
   if (!_modal) return false;
-  const k = e.key;
+  const _CODE_KEY = { ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight',
+                      Enter: 'Enter', NumpadEnter: 'Enter', Space: ' ', Escape: 'Escape' };
+  const k = (e.key && e.key !== 'Unidentified' && e.key !== 'Process') ? e.key : (_CODE_KEY[e.code] || e.key);
   const fwd = (_modal.axis === 'h') ? 'ArrowRight' : 'ArrowDown';
   const back = (_modal.axis === 'h') ? 'ArrowLeft' : 'ArrowUp';
   // settings: ←→ change sound pack live; ↑↓ also move focus across chips+close
@@ -4585,6 +4877,7 @@ const CHEAT_SEQ = [1,1,2,2,4,4,8,8,16,16,32,32,64,64,128,128,256,256,512,512];
 let cheatActive = false;
 let cheatIdx = 0;
 
+// DEV-BEGIN
 function devToggleCheat() {
   cheatActive = !cheatActive;
   cheatIdx = 0;
@@ -4595,6 +4888,7 @@ function devToggleCheat() {
     btn.style.borderColor = cheatActive ? '#39ff14' : '';
   }
 }
+// DEV-END
 
 // 초기 보드(dailyBoard)의 기존 타일을 치트 시퀀스 size로 교체
 function devCheatPatchInitialGrid(g) {
@@ -4625,6 +4919,7 @@ function devCheatPatchSpawn(result) {
   result.spawned = { at: s.at, color: s.color, size: size, comet: s.comet };
 }
 
+// DEV-BEGIN — 개발 바 전용 함수(Playgama 빌드에서 지운다)
 // ── DEV BAR ───────────────────────────────────────────────────────
 // Dev Daily: 제한 없이 진입, 전 테마 랜덤 배경으로 미해금 테마 소개
 function devStartDaily() {
@@ -4695,6 +4990,7 @@ function devResetAll() {
   // Bridge 저장이 끝난 뒤 새로고침 — 안 기다리면 지운 데이터가 복원된다.
   Promise.resolve(SG.Store.flush()).finally(function () { location.reload(); });
 }
+// DEV-END
 
 // ── 부팅 IIFE ─────────────────────────────────────────────────────
 // SDK / Firebase reject promise sometimes escapes try/catch (e.g. CORS on file://).
@@ -4758,12 +5054,12 @@ window.addEventListener('pagehide', pgSyncStorage);
   // 스크립트 로드 시점에 읽은 값은 복원 전이라 다시 읽는다.
   bestScore = parseInt(SG.Store.getItem(STORAGE_KEY_BEST) || '0', 10);
 
-  const _isDev = new URLSearchParams(location.search).has('dev') ||
-      SG.Store.getItem('sg_dev') === '1';
+  const _isDev = DEV;
   // 버전 표시 (START 화면). DEV 모드면 DEV 태그 부가.
   const _verEl = document.getElementById('app-version');
   if (_verEl) _verEl.textContent = 'EARTH & BEYOND ' + APP_VERSION + (_isDev ? ' · DEV' : '');
   // DEV BAR + dev-only 버튼 노출 (본게임 START, 스토리모드 STORY)
+  // DEV-BEGIN
   if (_isDev) {
     document.getElementById('dev-bar').style.display = 'flex';
     const startBtn = document.getElementById('btn-start');
@@ -4772,6 +5068,7 @@ window.addEventListener('pagehide', pgSyncStorage);
     if (storyBtn) storyBtn.style.display = '';
     devPopulateThemeSelect();
   }
+  // DEV-END
 
   // 캔버스 크기 설정
   resizeCanvas();
@@ -4812,7 +5109,12 @@ window.addEventListener('pagehide', pgSyncStorage);
   document.body.classList.remove('booting');
 
   // 첫 플레이 가능한 화면이 떴다 → game_ready (Firebase 연결은 기다리지 않는다)
+  // v0.9.1: Bridge 가 부팅 타임아웃 뒤에 늦게 붙어도 그때 1회 보낸다(SG.PG.markGameShown — 세션당 1회 보장).
   SG.CG.loadingStop();
+  SG.PG.markGameShown();
+  SG.PG.onReady(function () { lbSyncNow(); });
+  // 운영 집계(읽기 전용): ?lbstats=1 — 개발 바(DEV)와 분리. 리더보드 분포만 보여 준다.
+  if (new URLSearchParams(location.search).get('lbstats') === '1') { try { openLbStats(); } catch (_) {} }
 
   // 배너 광고 (시작 화면)
   SG.CG.showBanner();
