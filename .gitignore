@@ -7,8 +7,9 @@ build/
 *.zip
 neon-drift.zip
 
-# Local Claude Code config
-.claude/
+# Local Claude Code config (팀 에이전트 정의는 저장소에 둔다)
+.claude/*
+!.claude/agents/
 
 # OS / editor
 .DS_Store
