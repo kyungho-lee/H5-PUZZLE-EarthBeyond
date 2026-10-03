@@ -220,15 +220,29 @@
   }
 
   // ── 다음 테마 해금 ────────────────────────────────────────────────
+  // v0.9.2: 다음 장이 없어도(마지막 장) 완료 기록은 남긴다 — 예전엔 다음 장이 없으면 바로 null 을 돌려
+  // III 장(solar-system)이 meta.completedThemes 에 들어가지 않았다(장 완료 수 · 테마 ✓ · 스폰 강도 progress 에서 미완료로 보임).
   function unlockNextTheme(completedThemeId, store, themes) {
     var meta = loadMeta(store);
-    var next = themes && themes.find(function (t) { return t.unlockCondition === completedThemeId; });
-    if (!next) return null;
-    if (meta.unlockedThemes.indexOf(next.id) === -1) meta.unlockedThemes.push(next.id);
     if (meta.completedThemes.indexOf(completedThemeId) === -1) meta.completedThemes.push(completedThemeId);
+    var next = themes && themes.find(function (t) { return t.unlockCondition === completedThemeId; });
+    if (!next) { saveMeta(store, meta); return null; }
+    if (meta.unlockedThemes.indexOf(next.id) === -1) meta.unlockedThemes.push(next.id);
     meta.activeThemeId = next.id;
     saveMeta(store, meta);
     return next.id;
+  }
+
+  // v0.9.2: 옛 저장 복구 — 장 상태가 completed 인데 meta.completedThemes 에 없는 장을 채운다(위 버그로 빠진 III 장).
+  // 반환: 새로 채운 장 id 목록([] = 바꾼 것 없음, 저장도 안 함).
+  function syncCompletedThemes(store, themes) {
+    var meta = loadMeta(store), added = [];
+    (themes || []).forEach(function (t) {
+      if (meta.completedThemes.indexOf(t.id) !== -1) return;
+      if (loadTheme(t.id, store, t).status === 'completed') { meta.completedThemes.push(t.id); added.push(t.id); }
+    });
+    if (added.length) saveMeta(store, meta);
+    return added;
   }
 
   // ── 테마 즉시 해금 (별 사용처) ────────────────────────────────────
@@ -272,6 +286,6 @@
     // CRUD
     loadMeta, saveMeta, loadTheme, saveTheme,
     recordMerges, grantStartStep, claimStep, hasNew, bumpRuns, totalAcquired,
-    unlockNextTheme, forceUnlockTheme, getAllKeys,
+    unlockNextTheme, syncCompletedThemes, forceUnlockTheme, getAllKeys,
   };
 });

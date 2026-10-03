@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<!-- EARTH & BEYOND — 엔딩 영상 (HyperFrames 컴포지션 · 720×720 · 60초 · 30fps)
+     콘티: docs/ending/ending-credits-plan.md 2장 (AD 문세라) — C01~C23.
+     그림은 게임에 있는 파일 복사본만(assets/img ← src/themes, prepare.mjs). 새 그림 없음 — 글자 · 빛 · 비네트 · 점만 더한다.
+     bg-step 가장자리 4px 테두리 → 모든 장면 최소 1.04배, 원본 512px → 최대 1.18배.
+     크레딧은 게임과 같은 데이터(assets/credits.js ← src/ending/credits.js).
+     음악: assets/audio/ending-mix.wav ← record-audio.mjs (sound.js 합성 그대로). -->
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=720, height=720" />
+<script src="vendor/gsap.min.js"></script>
+<script src="assets/credits.js"></script>
+<style>
+  @font-face { font-family: 'Rajdhani'; font-weight: 700; font-display: block; src: url('assets/fonts/rajdhani-700.woff2') format('woff2'); }
+  @font-face { font-family: 'Rajdhani'; font-weight: 600; font-display: block; src: url('assets/fonts/rajdhani-600.woff2') format('woff2'); }
+  @font-face { font-family: 'Share Tech Mono'; font-weight: 400; font-display: block; src: url('assets/fonts/share-tech-mono-400.woff2') format('woff2'); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 720px; height: 720px; overflow: hidden; background: #000; }
+  #root { position: relative; width: 720px; height: 720px; overflow: hidden; background: #000; color: #fff; }
+  .clip { position: absolute; inset: 0; overflow: hidden; }
+  .cut img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 50%; }
+  .cut::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 58%, rgba(0,0,0,.55) 100%); }
+  .tile { position: absolute; left: 50%; top: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 20px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 18px 60px rgba(0,0,0,.65), 0 0 80px rgba(122,172,255,.28); z-index: 2; }
+  .txt { position: absolute; left: 0; right: 0; text-align: center; text-shadow: 0 2px 14px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9); }
+  .t-title { top: 300px; font: 700 64px/1 'Rajdhani', sans-serif; letter-spacing: 9px; padding-left: 9px; }
+  .t-ch { font: 400 21px/1 'Share Tech Mono', monospace; letter-spacing: 8px; padding-left: 8px; color: #e4eeff; }
+  .t-chname { font: 700 54px/1 'Rajdhani', sans-serif; letter-spacing: 5px; }
+  .card { position: absolute; left: 0; right: 0; top: 270px; text-align: center; }
+  .card .t-ch, .card .t-chname { display: block; text-shadow: 0 2px 14px rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.9); }
+  .card .t-chname { margin-top: 18px; }
+  .t-quote { font: 600 30px/1.3 'Rajdhani', sans-serif; letter-spacing: 1px; padding: 0 60px; }
+  .t-end { top: 318px; font: 700 84px/1 'Rajdhani', sans-serif; letter-spacing: 18px; padding-left: 18px; }
+  .dot { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #bcd4ff; }
+  #mosaic-grid { position: absolute; left: 0; top: 0; width: 720px; display: grid; grid-template-columns: repeat(11, 1fr); }
+  #mosaic-grid img { width: 100%; aspect-ratio: 1; display: block; }
+  #mosaic-dim { position: absolute; inset: 0; background: #000; opacity: .65; }
+  .cr-page { position: absolute; left: 0; right: 0; top: 0; height: 720px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; opacity: 0; }
+  .cr-title { font: 700 40px/1 'Rajdhani', sans-serif; letter-spacing: 6px; color: #ffd36a; margin-bottom: 34px; }
+  .cr-role { font: 400 15px/1 'Share Tech Mono', monospace; letter-spacing: 2px; color: #9fc2ff; margin-top: 22px; }
+  .cr-name { font: 700 28px/1.15 'Rajdhani', sans-serif; letter-spacing: 1px; color: #fff; margin-top: 7px; padding: 0 40px; }
+  .cr-line { font: 600 22px/1.2 'Rajdhani', sans-serif; letter-spacing: 1px; color: #ffe7b0; margin-top: 26px; }
+  .cr-page div { text-shadow: 0 2px 12px rgba(0,0,0,.9); }
+  #thanks { top: 290px; }
+  #thanks .a { font: 700 52px/1 'Rajdhani', sans-serif; letter-spacing: 6px; }
+  #thanks .b { font: 600 22px/1.3 'Rajdhani', sans-serif; letter-spacing: 1px; color: #ffe7b0; margin-top: 18px; }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 50; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="ending" data-start="0" data-duration="60" data-width="720" data-height="720" data-fps="30">
+
+  <!-- ── I PRIMORDIAL EARTH ── -->
+  <div id="c01" class="clip cut" style="z-index:1" data-start="0" data-duration="3.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-01.webp" alt=""></div>
+  <div id="c02" class="clip cut" style="z-index:2" data-start="3" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/primordial-earth/board-bg.webp" alt=""></div>
+  <div id="c03" class="clip cut" style="z-index:3" data-start="5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-03.webp" alt=""></div>
+  <div id="c04" class="clip cut" style="z-index:4" data-start="7" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/primordial-earth/bg-step-04.webp" alt=""></div>
+  <div id="c05" class="clip cut" style="z-index:5" data-start="9" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-06.webp" alt=""></div>
+  <div id="c06" class="clip cut" style="z-index:6" data-start="11" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/primordial-earth/bg-step-09.webp" alt=""></div>
+  <div id="c07" class="clip cut" style="z-index:7" data-start="13" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-11.webp" alt=""><img class="tile" src="assets/img/primordial-earth/step-11.webp" alt=""></div>
+
+  <!-- ── II HUMAN CIVILIZATION ── -->
+  <div id="c08" class="clip cut" style="z-index:8" data-start="15.5" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/human-civilization/board-bg.webp" alt=""></div>
+  <div id="c09" class="clip cut" style="z-index:9" data-start="17.5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/human-civilization/bg-step-01.webp" alt=""></div>
+  <div id="c10" class="clip cut" style="z-index:10" data-start="19.5" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/human-civilization/bg-step-03.webp" alt=""></div>
+  <div id="c11" class="clip cut" style="z-index:11" data-start="21.5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/human-civilization/bg-step-05.webp" alt=""></div>
+  <div id="c12" class="clip cut" style="z-index:12" data-start="23.5" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/human-civilization/bg-step-07.webp" alt=""></div>
+  <div id="c13" class="clip cut" style="z-index:13" data-start="25.5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/human-civilization/bg-step-11.webp" alt=""><img class="tile" src="assets/img/human-civilization/step-11.webp" alt=""></div>
+
+  <!-- ── III SOLAR SYSTEM ── (board-bg = AI 생성 그림, 감독 확인 2026-10-04) -->
+  <div id="c14" class="clip cut" style="z-index:14" data-start="28" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/solar-system/board-bg.webp" alt=""></div>
+  <div id="c15" class="clip cut" style="z-index:15" data-start="30" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/solar-system/bg-step-03.webp" alt=""></div>
+  <div id="c16" class="clip cut" style="z-index:16" data-start="32" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/solar-system/bg-step-05.webp" alt=""></div>
+  <div id="c17" class="clip cut" style="z-index:17" data-start="34" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/solar-system/bg-step-06.webp" alt=""></div>
+  <div id="c18" class="clip cut" style="z-index:18" data-start="36" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/solar-system/bg-step-10.webp" alt=""></div>
+  <div id="c19" class="clip cut" style="z-index:19" data-start="38" data-duration="3" data-track-index="1"><img class="bg" src="assets/img/solar-system/bg-step-11.webp" alt=""><img class="tile" src="assets/img/solar-system/step-11.webp" alt=""></div>
+
+  <!-- ── 되돌아보기 · THE END ── -->
+  <div id="c20" class="clip cut" style="z-index:20" data-start="40.5" data-duration="5.5" data-track-index="2"><img class="bg" src="assets/img/human-civilization/bg-step-11.webp" alt=""></div>
+  <div id="c21" class="clip" style="z-index:21;background:#000" data-start="46" data-duration="3" data-track-index="1"><div id="stars"></div><div id="theend" class="txt t-end">THE END</div></div>
+
+  <!-- ── 크레딧 (타일 모자이크 위) ── -->
+  <div id="c22" class="clip" style="z-index:22;background:#000" data-start="49" data-duration="11" data-track-index="2">
+    <div id="mosaic-grid"></div>
+    <div id="mosaic-dim"></div>
+    <div id="credits"></div>
+    <div id="thanks" class="txt"><div class="a">THANK YOU FOR PLAYING</div><div class="b" id="thanks-line"></div></div>
+  </div>
+
+  <!-- ── 글자 레이어 ── -->
+  <div id="t-c01" class="clip" style="z-index:30" data-start="1" data-duration="2.3" data-track-index="3"><div class="txt t-title">EARTH &amp; BEYOND</div></div>
+  <div id="t-c02" class="clip" style="z-index:30" data-start="3.2" data-duration="1.9" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER I</span><span class="t-chname">PRIMORDIAL EARTH</span></div></div>
+  <div id="t-c08" class="clip" style="z-index:30" data-start="15.7" data-duration="1.9" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER II</span><span class="t-chname">HUMAN CIVILIZATION</span></div></div>
+  <div id="t-c14" class="clip" style="z-index:30" data-start="28.2" data-duration="1.9" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER III</span><span class="t-chname">SOLAR SYSTEM</span></div></div>
+  <div id="t-c20a" class="clip" style="z-index:30" data-start="41" data-duration="4.9" data-track-index="3"><div class="txt t-quote" style="top:46px">Looking back, you see a pale blue dot.</div></div>
+  <div id="t-c20b" class="clip" style="z-index:30" data-start="43.5" data-duration="2.4" data-track-index="4"><div class="txt t-quote" style="top:96px;font-size:24px;color:#cfe0ff">Your journey through 13.8 billion years is complete.</div></div>
+
+  <div id="fade" class="clip" data-start="0" data-duration="60" data-track-index="5"></div>
+
+  <audio id="music" src="assets/audio/ending-mix.wav" data-start="0" data-duration="60" data-volume="1" data-track-index="6"></audio>
+</div>
+
+<script>
+(function () {
+  // ── 크레딧 · 모자이크 DOM (시간과 무관한 정적 구성 — 결정적) ──
+  var CREDITS = (window.SG && SG.EndingCredits) || [];
+  var THEMES = ['primordial-earth', 'human-civilization', 'solar-system'];
+  var grid = document.getElementById('mosaic-grid');
+  for (var r = 0; r < 14; r++) for (var c = 0; c < 11; c++) {
+    var im = document.createElement('img');
+    im.src = 'assets/img/' + THEMES[r % 3] + '/step-' + String(c + 1).padStart(2, '0') + '.webp';
+    im.alt = '';
+    grid.appendChild(im);
+  }
+  var title = CREDITS.filter(function (e) { return e.title; })[0];
+  var roles = CREDITS.filter(function (e) { return e.role; });
+  var lines = CREDITS.filter(function (e) { return e.line; });
+  var last = lines.length ? lines[lines.length - 1].line : '';
+  lines = lines.slice(0, -1);
+  var per = Math.ceil(roles.length / 3);
+  var pages = [roles.slice(0, per), roles.slice(per, per * 2), roles.slice(per * 2)];
+  var box = document.getElementById('credits');
+  pages.forEach(function (list, i) {
+    var p = document.createElement('div');
+    p.className = 'cr-page'; p.id = 'cr-p' + i;
+    var h = '';
+    if (i === 0 && title) h += '<div class="cr-title">' + title.title + '</div>';
+    list.forEach(function (e) {
+      h += '<div class="cr-role">' + e.role + '</div>';
+      [].concat(e.name).forEach(function (n) { h += '<div class="cr-name">' + n + '</div>'; });
+    });
+    if (i === 2) lines.forEach(function (e) { h += '<div class="cr-line">' + e.line + '</div>'; });
+    p.innerHTML = h;
+    box.appendChild(p);
+  });
+  document.getElementById('thanks-line').textContent = last;
+  // C21 별 — 시드 고정(Math.random 금지)
+  var seed = 7, stars = document.getElementById('stars');
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  for (var k = 0; k < 70; k++) {
+    var d = document.createElement('div');
+    d.className = 'dot'; d.id = 'dot' + k;
+    d.style.left = (rnd() * 716).toFixed(1) + 'px'; d.style.top = (rnd() * 716).toFixed(1) + 'px';
+    var s = 1 + rnd() * 2.4; d.style.width = d.style.height = s.toFixed(1) + 'px';
+    d.style.opacity = '0';
+    stars.appendChild(d);
+  }
+
+  // ── 타임라인 ──
+  var tl = gsap.timeline({ paused: true });
+  var E = 'none', SO = 'sine.inOut';
+  function bg(id) { return '#' + id + ' img.bg'; }
+  // 장면 움직임: [id, 시작, 길이(디졸브 포함), from, to]
+  function move(id, t0, dur, from, to) { tl.fromTo(bg(id), from, Object.assign({ duration: dur, ease: E }, to), t0); }
+  function dissolveIn(id, t0) { tl.fromTo('#' + id, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, t0); }
+  function blackIn(id, t0) { tl.fromTo('#' + id, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, t0); }
+  function blackOut(id, t1) { tl.to('#' + id, { opacity: 0, duration: 0.4, ease: E }, t1 - 0.4); }
+  function text(id, t0, dur, rise) {
+    tl.fromTo('#' + id, { opacity: 0, y: rise || 10 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, t0);
+    tl.to('#' + id, { opacity: 0, duration: 0.45, ease: E }, t0 + dur - 0.45);
+  }
+
+  // C01 검정에서 페이드 인 · 줌 1.04→1.14
+  tl.fromTo('#c01', { opacity: 0 }, { opacity: 1, duration: 1.2, ease: E }, 0);
+  move('c01', 0, 3.5, { scale: 1.04 }, { scale: 1.14 });
+  tl.fromTo('#t-c01 .t-title', { scale: 0.94 }, { scale: 1.02, duration: 2.3, ease: 'power1.out' }, 1);   // 자간 대신 transform(시크 캡처에서 끊김 없음)
+  text('t-c01', 1, 2.3, 0);
+  // C02 board-bg 1.04→1.08
+  dissolveIn('c02', 3); move('c02', 3, 2.5, { scale: 1.04 }, { scale: 1.08 });
+  text('t-c02', 3.2, 1.9);
+  // C03 마그마 바다 줌 인 1.06→1.16
+  dissolveIn('c03', 5); move('c03', 5, 2.5, { scale: 1.06 }, { scale: 1.16 });
+  // C04 달 형성 충돌 왼→오 팬 (1.10)
+  dissolveIn('c04', 7); move('c04', 7, 2.5, { scale: 1.10, x: 30 }, { scale: 1.10, x: -30 });
+  // C05 최초의 생명 아래→위 틸트
+  dissolveIn('c05', 9); move('c05', 9, 2.5, { scale: 1.12, y: -36 }, { scale: 1.12, y: 36 });
+  // C06 공룡 오→왼 팬
+  dissolveIn('c06', 11); move('c06', 11, 2.5, { scale: 1.10, x: -30 }, { scale: 1.10, x: 30 });
+  // C07 포유류 + 타일 패럴랙스 → 검정 경유
+  dissolveIn('c07', 13); move('c07', 13, 2.5, { scale: 1.04 }, { scale: 1.10 });
+  tl.fromTo('#c07 .tile', { y: 260, opacity: 0, scale: 0.92 }, { y: -40, opacity: 1, scale: 1, duration: 2.5, ease: 'power2.out' }, 13);
+  blackOut('c07', 15.5);
+  // C08 문명 board-bg
+  blackIn('c08', 15.5); move('c08', 15.5, 2.5, { scale: 1.04 }, { scale: 1.08 });
+  text('t-c08', 15.7, 1.9);
+  dissolveIn('c09', 17.5); move('c09', 17.5, 2.5, { scale: 1.05 }, { scale: 1.13 });
+  dissolveIn('c10', 19.5); move('c10', 19.5, 2.5, { scale: 1.10, x: 30 }, { scale: 1.10, x: -30 });
+  dissolveIn('c11', 21.5); move('c11', 21.5, 2.5, { scale: 1.06, y: 10 }, { scale: 1.14, y: -14 });
+  dissolveIn('c12', 23.5); move('c12', 23.5, 2.5, { scale: 1.10, x: -30 }, { scale: 1.10, x: 30 });
+  dissolveIn('c13', 25.5); move('c13', 25.5, 2.5, { scale: 1.04 }, { scale: 1.10 });
+  tl.fromTo('#c13 .tile', { y: 260, opacity: 0, scale: 0.92 }, { y: -40, opacity: 1, scale: 1, duration: 2.5, ease: 'power2.out' }, 25.5);
+  blackOut('c13', 28);
+  // C14 태양계 board-bg
+  blackIn('c14', 28); move('c14', 28, 2.5, { scale: 1.04 }, { scale: 1.08 });
+  text('t-c14', 28.2, 1.9);
+  // C15 지구 줌 아웃 1.16→1.06
+  dissolveIn('c15', 30); move('c15', 30, 2.5, { scale: 1.16 }, { scale: 1.06 });
+  // C16 목성 왼→오 팬
+  dissolveIn('c16', 32); move('c16', 32, 2.5, { scale: 1.10, x: 30 }, { scale: 1.10, x: -30 });
+  // C17 토성 대각 팬
+  dissolveIn('c17', 34); move('c17', 34, 2.5, { scale: 1.12, x: 28, y: 22 }, { scale: 1.12, x: -28, y: -22 });
+  // C18 태양 줌 인 + 밝기
+  dissolveIn('c18', 36); move('c18', 36, 2.5, { scale: 1.05, filter: 'brightness(1)' }, { scale: 1.14, filter: 'brightness(1.15)' });
+  // C19 은하 + 타일 패럴랙스 + 느린 회전 2°
+  dissolveIn('c19', 38); move('c19', 38, 3, { scale: 1.08, rotation: 0 }, { scale: 1.14, rotation: 2 });
+  tl.fromTo('#c19 .tile', { y: 260, opacity: 0, scale: 0.92 }, { y: -40, opacity: 1, scale: 1, duration: 2.5, ease: 'power2.out' }, 38);
+  tl.to('#c19 .tile', { opacity: 0, y: -90, duration: 0.5, ease: E }, 40.5);
+  // C20 돌아보기 — 줌 아웃 1.18→1.04
+  dissolveIn('c20', 40.5); move('c20', 40.5, 5.5, { scale: 1.18 }, { scale: 1.04 });
+  text('t-c20a', 41, 4.9);
+  text('t-c20b', 43.5, 2.4);
+  tl.to('#c20', { opacity: 0, duration: 0.5, ease: E }, 45.5);
+  // C21 THE END — 별 반짝임(시드 고정 위상)
+  tl.fromTo('#theend', { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 1.0, ease: 'power2.out' }, 46.3);
+  tl.to('#theend', { opacity: 0, duration: 0.5, ease: E }, 48.5);
+  seed = 11;
+  for (var j = 0; j < 70; j++) {
+    var t0 = 46 + rnd() * 1.2, peak = 0.35 + rnd() * 0.6;
+    tl.fromTo('#dot' + j, { opacity: 0 }, { opacity: peak, duration: 0.6 + rnd() * 0.6, ease: SO }, t0);
+    tl.to('#dot' + j, { opacity: peak * 0.3, duration: 0.8, ease: SO, yoyo: true, repeat: 1 }, t0 + 1.2);
+  }
+  // C22 크레딧 — 모자이크 35% · 아주 느리게 위로, 3장 페이지
+  tl.fromTo('#c22', { opacity: 0 }, { opacity: 1, duration: 0.6, ease: E }, 49);
+  tl.fromTo('#mosaic-grid', { y: 0 }, { y: -150, duration: 11, ease: E }, 49);
+  var P = [[49.4, 52.3], [52.3, 55.2], [55.2, 58.0]];
+  P.forEach(function (w, i) {
+    tl.fromTo('#cr-p' + i, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, w[0]);
+    tl.to('#cr-p' + i, { y: -10, duration: w[1] - w[0] - 0.9, ease: E }, w[0] + 0.5);
+    tl.to('#cr-p' + i, { opacity: 0, duration: 0.4, ease: E }, w[1] - 0.4);
+  });
+  // C23 모자이크 밝기 100% + THANK YOU
+  tl.to('#mosaic-dim', { opacity: 0.2, duration: 1.0, ease: SO }, 58.0);
+  tl.fromTo('#thanks', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 58.0);
+  tl.to('#fade', { opacity: 1, duration: 0.6, ease: E }, 59.4);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines['ending'] = tl;
+  tl.seek(0);
+})();
+</script>
+</body>
+</html>

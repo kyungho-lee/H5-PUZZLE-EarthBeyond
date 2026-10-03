@@ -75,3 +75,16 @@ test('bridge config must list playgama_sandbox for SaaS leaderboards', () => {
   const f = edit(buildFiles(), 'playgama-bridge-config.json', s => s.replace('"playgama_sandbox", ', ''));
   assert.ok(has(G.checkBuild(f, VERSION), /playgama_sandbox/));
 });
+
+test('v0.9.2 ending: local mp4 ships, over 6MB or a non-mp4 video fails, OFL text required for fonts', () => {
+  const files = buildFiles();
+  assert.ok(files.some(f => f.name === 'ending/ending-720.mp4'), 'ending video is in the zip');
+  assert.ok(files.some(f => f.name === 'fonts/OFL-Rajdhani.txt') && files.some(f => f.name === 'fonts/OFL-ShareTechMono.txt'));
+  const big = files.filter(f => f.name !== 'ending/ending-720.mp4').concat({ name: 'ending/ending-720.mp4', data: Buffer.alloc(G.MEDIA_MAX_BYTES + 1) });
+  assert.ok(has(G.checkBuild(big, VERSION), /video over 6MB/));
+  assert.ok(has(G.checkBuild(files.concat({ name: 'ending/ending.webm', data: Buffer.alloc(10) }), VERSION), /must be H\.264 \.mp4/));
+  const noOfl = files.filter(f => !/^fonts\/OFL/.test(f.name));
+  assert.ok(has(G.checkBuild(noOfl, VERSION), /without an OFL license text/));
+  // 라이선스 본문의 URL 은 통과, 같은 URL 이 js 에 있으면 걸린다
+  assert.ok(has(G.checkBuild(withFile(files, 'x.js', '// http://scripts.sil.org/OFL'), VERSION), /external URL in x\.js/));
+});

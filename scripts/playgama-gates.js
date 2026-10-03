@@ -20,6 +20,12 @@ const STUBS = ['firebase.js', 'crazygames.js', 'firebase-config.js'];
 const STUB_MARK = 'PLAYGAMA-STUB';
 const STUB_DIR = path.join(__dirname, 'playgama-stubs');
 
+// 폰트 라이선스 본문(OFL)은 게임이 요청하지 않는 문서라 URL 검사에서 뺀다 (본문에 http://scripts.sil.org/OFL 이 있다)
+const LICENSE_TEXT = /^fonts\/OFL[A-Za-z0-9._-]*\.txt$/;
+// v0.9.2 엔딩 영상: zip 안 로컬 mp4 만, 한 파일 6MB 이하(저가 모바일 엔딩 진입 대기 기준 — docs/ending/ending-credits-plan.md 4장)
+const MEDIA = /\.(mp4|webm|mov|m4v)$/i;
+const MEDIA_MAX_BYTES = 6 * 1024 * 1024;
+
 const DEV_BLOCK_JS = /^[ \t]*\/\/ DEV-BEGIN[\s\S]*?\/\/ DEV-END[^\n]*\n?/gm;
 const DEV_BLOCK_HTML = /^[ \t]*<!-- DEV-BEGIN -->[\s\S]*?<!-- DEV-END -->[^\n]*\n?/gm;
 function stripDev(files) {
@@ -67,7 +73,7 @@ function checkBuild(files, version) {
   for (const f of files) {
     const s = text(f);
     if (s == null) continue;
-    for (const m of s.matchAll(/https?:\/\/[^\s'"`)<>]+/g)) {
+    for (const m of (LICENSE_TEXT.test(f.name) ? [] : s.matchAll(/https?:\/\/[^\s'"`)<>]+/g))) {
       if (!ALLOWED_URL_PREFIXES.some(p => m[0].startsWith(p))) errs.push('external URL in ' + f.name + ': ' + m[0]);
     }
     if (/(src|href)\s*=\s*["']\/\//i.test(s)) errs.push('protocol-relative URL in ' + f.name);
@@ -77,6 +83,15 @@ function checkBuild(files, version) {
     }
     if (DEV_LEFTOVERS.test(s)) errs.push('dev tool leftover in ' + f.name + ': ' + s.match(DEV_LEFTOVERS)[0]);
   }
+
+  for (const f of files) {
+    if (!MEDIA.test(f.name)) continue;
+    if (!/\.mp4$/i.test(f.name)) errs.push('video must be H.264 .mp4 (one file, iOS Safari): ' + f.name);
+    if (f.data.length > MEDIA_MAX_BYTES) errs.push('video over 6MB: ' + f.name + ' (' + f.data.length + ' bytes)');
+  }
+  // 폰트 파일을 재배포하면 OFL 본문을 함께 넣는다
+  const fonts = files.filter(f => /^fonts\/.+\.(woff2?|ttf|otf)$/.test(f.name));
+  if (fonts.length && !files.some(f => LICENSE_TEXT.test(f.name))) errs.push('fonts/ ships font files without an OFL license text (fonts/OFL-*.txt)');
 
   for (const name of STUBS) {
     const f = byName.get(name);
@@ -108,4 +123,4 @@ function checkBuild(files, version) {
   return errs;
 }
 
-module.exports = { checkBuild, stripDev, applyStubs, inlineScriptErrors, expectedAppVersion, BRIDGE_URL, STORE_FILE, STUBS };
+module.exports = { MEDIA_MAX_BYTES, checkBuild, stripDev, applyStubs, inlineScriptErrors, expectedAppVersion, BRIDGE_URL, STORE_FILE, STUBS };

@@ -92,6 +92,7 @@
       text-transform: uppercase;
       margin-right: auto;            /* 제목이 좌측, 나머지는 우측으로 밀림 */
       white-space: nowrap;
+      min-width: 0; overflow: hidden; text-overflow: ellipsis;   /* v0.9.2: 긴 제목이 별 칩 · 설정을 밀어내지 않게 */
     }
     #stats {
       display: flex; gap: 14px;
@@ -116,12 +117,15 @@
     #wallet-chip.bump { animation: walletbump .35s ease; }
 
     /* ── 캔버스 영역 ────────────────────────────────────────────── */
+    /* v0.9.2: 방향 버튼 패드를 없앤 자리까지 보드가 쓴다. min-height:0 — 캔버스 크기가 다시 칸 높이를 밀어 올리는
+       되먹임(가로 폰에서 보드가 화면 밖으로 잘리던 원인)을 끊는다. 폭 제한(520px)도 풀고 크기는 resizeCanvas 가 정한다. */
     #canvas-wrap {
-      flex: 1;
+      flex: 1; min-height: 0;
       display: flex; align-items: center; justify-content: center;
-      width: 100%; max-width: 520px;
-      padding: 8px;
+      width: 100%;
+      padding: 6px;
       position: relative;
+      touch-action: none;
     }
     /* 인라인 토스트 (콜렉션 첫 블록 획득/스타 보상 등 부드러운 안내) */
     #game-toast {
@@ -192,6 +196,36 @@
     #ol-gallery-detail { z-index: 30; }
     #ol-ranking { z-index: 30; }
     #ol-lbstats { z-index: 40; }
+
+    /* ── v0.9.2 엔딩 영상 + 크레딧 (docs/ending/ending-credits-plan.md 4장 A안 — 로컬 mp4, 엔딩 때만 로드) ── */
+    #ol-ending { position: fixed; inset: 0; z-index: 70; background: #000; display: flex; align-items: center; justify-content: center; }
+    #ol-ending.hidden { display: none; }
+    #ending-video { width: min(100vw, 100vh); height: min(100vw, 100vh); object-fit: contain; background: #000; display: block; }
+    #ending-skip { position: absolute; top: max(10px, env(safe-area-inset-top)); right: 10px; z-index: 3; padding: 8px 16px; min-height: 40px;
+      background: rgba(0,0,0,.45); color: #e8eeff; border: 1px solid rgba(255,255,255,.35); border-radius: 20px;
+      font: 700 .9rem 'Rajdhani', sans-serif; letter-spacing: 2px; cursor: pointer; }
+    #ending-skip:hover, #ending-skip:focus-visible { border-color: var(--accent); color: #fff; }
+    #ending-tap, #ending-sound { position: absolute; z-index: 3; cursor: pointer; font: 700 1rem 'Rajdhani', sans-serif; letter-spacing: 2px;
+      color: #fff; background: rgba(5,8,16,.7); border: 1px solid var(--accent); border-radius: 24px; padding: 12px 24px; }
+    #ending-tap { left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 1.2rem; }
+    #ending-sound { left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: .85rem; padding: 8px 18px; }
+    #ending-end { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, rgba(10,16,34,.92), rgba(0,0,0,.97)); padding: 20px; overflow-y: auto; }
+    #ending-end .ee-panel { width: min(360px, 92vw); text-align: center; }
+    #ending-conq { font: 700 1.25rem/1.3 'Rajdhani', sans-serif; letter-spacing: 1px; color: #ffd36a; margin-bottom: 14px; }
+    #ending-hof { text-align: left; margin: 0 0 14px; }
+    #ending-hof .eh-title { font-size: .62rem; letter-spacing: 3px; color: var(--accent); margin-bottom: 6px; text-align: center; }
+    #ending-credits-text { max-height: 40vh; overflow-y: auto; scrollbar-color: #2a3a5c transparent; scrollbar-width: thin; margin-bottom: 12px; font-size: .78rem; line-height: 1.45; color: var(--textdim); }
+    #ending-credits-text .ec-title { font: 700 1.1rem 'Rajdhani', sans-serif; color: #ffd36a; letter-spacing: 3px; margin-bottom: 6px; }
+    #ending-credits-text .ec-role { font-family: 'Share Tech Mono', monospace; font-size: .62rem; letter-spacing: 1px; color: #9fc2ff; margin-top: 8px; }
+    #ending-credits-text .ec-name { color: var(--text); font-weight: 700; }
+    #ending-credits-text .ec-line { color: #ffe7b0; margin-top: 8px; }
+    /* 로비 명예의 전당 띠 — 막지 않음(메뉴 키보드 이동에서 빠진다), 탭하면 명예의 전당 */
+    #hof-banner { display: block; margin: 10px auto 0; max-width: min(92vw, 420px); padding: 6px 14px; border-radius: 16px;
+      background: rgba(5,8,16,.62); border: 1px solid rgba(255,211,106,.45); color: #ffe7b0; cursor: pointer;
+      font: 600 .8rem/1.3 'Rajdhani', sans-serif; letter-spacing: .5px; }
+    #hof-banner[hidden] { display: none; }
+    #ol-ending [hidden] { display: none !important; }
 
     /* ── START 히어로 화면 ───────────────────────────────────────── */
     #ol-start {
@@ -459,20 +493,43 @@
     }
     #dev-bar button:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* ── 방향 컨트롤: 2줄 (↑ / ← ↓ →), 세로 간격 최적화 ──────────── */
-    /* ↑ 는 가운데 정렬되어 ↓ 바로 위에 온다. 아래 줄은 ← ↓ → 나란히. */
-    #controls { display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; }
-    .dirrow { display:flex; gap:8px; }
-    .dirbtn {
-      width:56px; height:56px; font-size:1.4rem; color:var(--accent);
-      background:var(--panel); border:1px solid var(--border); border-radius:10px;
-      box-shadow:0 0 12px rgba(0,245,200,.15); cursor:pointer; touch-action:manipulation;
-      transition:background .08s, box-shadow .08s, color .08s, border-color .08s;
+    /* ── v0.9.2 배경 파티클 레이어 (bg-fx.js) — 보드 뒤 · 입력 통과 ──────── */
+    #bg-fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+    /* ── v0.9.2 조작 안내 — 세션 첫 판에 한 번, 첫 수에 사라짐. 입력 통과 ── */
+    #ctrl-hint {
+      position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%);
+      z-index: 4; pointer-events: none; opacity: 0; transition: opacity .35s ease;
+      display: flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 12px; border-radius: 999px;
+      background: rgba(5,8,16,.72); border: 1px solid rgba(122,172,255,.35);
+      font-family: 'Share Tech Mono', monospace; font-size: .7rem; letter-spacing: 1px; color: var(--text);
     }
-    /* 눌렀을 때 밝은 버튼으로 (active 클래스는 JS가 키보드/터치/클릭 모두에 부여) */
-    .dirbtn.active, .dirbtn:active {
-      background:var(--accent); color:#04141a; border-color:var(--accent);
-      box-shadow:0 0 22px rgba(0,245,200,.65);
+    #ctrl-hint.show { opacity: 1; }
+    #ctrl-hint .kc {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px;
+      border: 1px solid rgba(221,232,246,.45); border-bottom-width: 2px; border-radius: 4px; font-size: .68rem; line-height: 1;
+    }
+    #ctrl-hint .sw { position: relative; width: 64px; height: 20px; }
+    #ctrl-hint .sw::before {   /* 손끝 궤적 */
+      content: ''; position: absolute; left: 6px; right: 6px; top: 50%; height: 2px; margin-top: -1px; border-radius: 1px;
+      background: linear-gradient(90deg, transparent, rgba(122,172,255,.6));
+    }
+    #ctrl-hint .sw::after {    /* 손끝 */
+      content: ''; position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%;
+      background: radial-gradient(circle, #fff 0 30%, rgba(122,172,255,.85) 55%, rgba(122,172,255,0) 75%);
+      animation: ctrl-swipe 1.4s ease-in-out infinite;
+    }
+    @keyframes ctrl-swipe { 0% { transform: translateX(0); opacity: 0; } 15% { opacity: 1; } 70% { transform: translateX(50px); opacity: 1; } 100% { transform: translateX(50px); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { #ctrl-hint .sw::after { animation: none; left: 50px; } }
+
+    /* ── v0.9.2 가로 화면: 단계 설명 바를 보드 아래가 아니라 왼쪽 여백에 → 보드가 세로 전체를 쓴다 ── */
+    @media (orientation: landscape) and (min-aspect-ratio: 13/10) {
+      #chronicles-narration.visible {
+        position: fixed; left: 12px; bottom: 12px; z-index: 2; margin: 0;
+        width: min(300px, calc((100vw - 100vh) / 2 - 8px));
+        border: 1px solid rgba(58,123,213,0.3); border-radius: 8px;
+      }
     }
 
     /* ── 헤더 버튼 (settings) ────────────────────────────────────── */
@@ -702,25 +759,46 @@
     }
 
     /* ── Chronicles: Progress Bar ───────────────────────────────────── */
+    /* v0.9.2 단계 아이콘 내비 — 막대 대신 칸: 지난 단계 = 채움 · 지금 노리는 단계 = 고리 강조 · 남은 단계 = 윤곽.
+       Chronicles: 지금 장은 11칸으로 펼치고 다른 장은 로마 숫자 배지(끝냄 = 채움 · 열림 = 윤곽 · 잠김 = 점선 흐림).
+       Daily: 그 판의 별 목표 4개(64 · 128 · 256 · 512). Endless 는 단계가 없어 숨김. */
     #chronicles-progress {
       display: none;
-      padding: 4px 12px 0;
-      background: transparent;
+      width: 100%; max-width: 520px;
+      padding: 7px 12px 2px;
+      justify-content: center;
     }
-    #chronicles-progress.visible { display: block; }
-    #chronicles-prog-label {
-      font-size: 0.58rem; color: var(--textdim); letter-spacing: 1px;
-      margin-bottom: 3px; text-align: right;
+    #chronicles-progress.visible { display: flex; }
+    #stage-nav { display: flex; align-items: center; gap: 6px; --era: #7aacff; }
+    #stage-nav .sn-ch {
+      min-width: 22px; height: 18px; padding: 0 4px; border-radius: 9px; box-sizing: border-box;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: .72rem; line-height: 1;
+      border: 1px solid rgba(221,232,246,.28); color: var(--textdim);
     }
-    #chronicles-prog-wrap {
-      height: 3px; background: rgba(255,255,255,0.08);
-      border-radius: 2px; overflow: hidden;
+    #stage-nav .sn-ch.done { background: var(--chc, #7aacff); border-color: var(--chc, #7aacff); color: #050810; }
+    #stage-nav .sn-ch.cur  { border-color: var(--era); color: var(--era); }
+    #stage-nav .sn-ch.lock { opacity: .4; border-style: dashed; }
+    #stage-nav .sn-steps { display: flex; align-items: center; gap: 4px; }
+    #stage-nav .sn-sep { width: 1px; height: 14px; background: rgba(221,232,246,.18); }
+    #stage-nav .sn-d {
+      width: 11px; height: 11px; border-radius: 50%; box-sizing: border-box;
+      border: 1.5px solid rgba(221,232,246,.32);
     }
-    #chronicles-prog-bar {
-      height: 100%; background: var(--accent);
-      border-radius: 2px; transition: width 0.4s ease;
-      box-shadow: 0 0 6px rgba(58,123,213,0.6);
+    #stage-nav .sn-d.done { background: var(--era); border-color: var(--era); box-shadow: 0 0 5px color-mix(in srgb, var(--era) 55%, transparent); }
+    #stage-nav .sn-d.next { border-color: #fff; border-width: 2px; transform: scale(1.25); box-shadow: 0 0 0 2px color-mix(in srgb, var(--era) 45%, transparent); animation: sn-pulse 1.6s ease-in-out infinite; }
+    #stage-nav .sn-d.last { border-radius: 3px; }   /* 장의 마지막 장면 — 네모 */
+    @keyframes sn-pulse { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--era) 15%, transparent); } }
+    #stage-nav .sn-t {
+      height: 18px; padding: 0 6px; border-radius: 9px; box-sizing: border-box;
+      display: inline-flex; align-items: center; gap: 2px;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: .7rem; line-height: 1;
+      border: 1px solid rgba(255,210,63,.3); color: rgba(255,210,63,.55);
     }
+    #stage-nav .sn-t.done { background: rgba(255,210,63,.9); border-color: #ffd23f; color: #050810; }
+    #stage-nav .sn-t.next { border-color: #ffd23f; color: #ffd23f; box-shadow: 0 0 8px rgba(255,210,63,.35); }
+    #stage-nav .sn-left { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: .72rem; color: var(--textdim); margin-left: 2px; }
+    @media (prefers-reduced-motion: reduce) { #stage-nav .sn-d.next { animation: none; } }
 
     /* ── Chronicles: Chapter Clear 풀스크린 연출 ───────────────────── */
     @keyframes clear-title-in {
@@ -812,6 +890,23 @@
       white-space: normal; overflow: hidden;
       display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     }
+    /* v0.9.2 세로 화면(PD 결정): 보드를 화면 폭 끝까지 · 헤더 한 줄 압축 · 단계 설명 바 한 줄(그림 + 이름 + 설명 말줄임).
+       가로 · 데스크톱은 건드리지 않는다. 보드 크기는 resizeCanvas(_portrait) 가 맞춘다. */
+    @media (orientation: portrait) {
+      #header { padding: 6px 10px; gap: 10px; }
+      #game-title { font-size: 1rem; letter-spacing: 1.5px; }
+      #stats { gap: 10px; }
+      .stat-label { white-space: nowrap; }
+      #btn-settings { width: 30px; height: 30px; }
+      #canvas-wrap { padding: 0; }
+      #gameCanvas { border: none; border-radius: 0; }
+      #chronicles-narration { padding: 6px 10px; }
+      #chronicles-narration.visible { align-items: center; }
+      #ctoast-thumb { width: 34px; height: 34px; margin-top: 0; }
+      #ctoast-step { display: none; }
+      #ctoast-title { margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #ctoast-desc { display: block; white-space: nowrap; text-overflow: ellipsis; -webkit-line-clamp: unset; line-height: 1.35; }
+    }
     @keyframes narration-in {
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -833,10 +928,12 @@
   <select id="dev-theme-select" onchange="devSetTheme(this.value)" style="background:#111;color:#fff;border:1px solid #444;font-size:.75rem;padding:1px 4px"></select>
   <button onclick="devUnlockActiveTheme()">UNLOCK</button>
   <button onclick="openLbStats()">LB STATS</button>
+  <button onclick="devPlayEnding()" style="color:#ffd36a;border-color:#ffd36a">ENDING</button>
 </div>
 <!-- DEV-END -->
 
 <!-- ── 앱 루트 ──────────────────────────────────────────────────── -->
+<canvas id="bg-fx" aria-hidden="true"></canvas>
 <div id="app">
 
   <!-- 헤더: 제목 | 스탯 | 액션버튼 (한 줄, 겹침 없음) -->
@@ -860,8 +957,7 @@
 
   <!-- Chronicles: Progress Bar (캔버스 위) -->
   <div id="chronicles-progress">
-    <div id="chronicles-prog-label">CHAPTER 1 · 0 / 11</div>
-    <div id="chronicles-prog-wrap"><div id="chronicles-prog-bar" style="width:0%"></div></div>
+    <div id="stage-nav" role="img" aria-label=""></div>
   </div>
 
   <!-- 캔버스 -->
@@ -869,6 +965,7 @@
     <canvas id="gameCanvas"></canvas>
     <div id="game-toast"></div>
     <div id="discovery-banner" aria-live="polite"><div class="db-era"></div><div class="db-name"></div></div>
+    <div id="ctrl-hint" aria-hidden="true"></div>
   </div>
 
   <!-- Chronicles: 나레이션 바 (보드 아래 · 컨트롤 위 고정) -->
@@ -881,15 +978,7 @@
     </div>
   </div>
 
-  <!-- 방향 컨트롤: ↑ 위, 아래 줄에 ← ↓ → 나란히 (2줄, 세로 최적화) -->
-  <div id="controls">
-    <button class="dirbtn" data-dir="up" aria-label="up">↑</button>
-    <div class="dirrow">
-      <button class="dirbtn" data-dir="left" aria-label="left">←</button>
-      <button class="dirbtn" data-dir="down" aria-label="down">↓</button>
-      <button class="dirbtn" data-dir="right" aria-label="right">→</button>
-    </div>
-  </div>
+  <!-- v0.9.2: 방향 버튼 패드 없음 — 키보드(화살표 · WASD) + 보드 스와이프 -->
 
 </div>
 
@@ -909,6 +998,7 @@
   <div id="start-title-block">
     <div class="hero-title">EARTH &amp; BEYOND</div>
     <div class="hero-sub" data-i18n="ui.gameSubtitle">Merge tiles to travel from Primordial Earth to the edge of the Universe</div>
+    <button id="hof-banner" type="button" hidden onclick="openHallOfFame()"></button>
   </div>
 
   <!-- 버튼 패널 -->
@@ -1196,11 +1286,32 @@
         <button class="btn-primary modal-btn" onclick="startEndless(SG.CollectionThemes.find(function (t) { return t.id === activeThemeId; }))">ENDLESS MODE ∞</button>
         <div style="font-size:.65rem;color:var(--textdim);margin-top:4px;line-height:1.4">Merge freely — no story, no limits.<br>Farm stars as long as you survive.</div>
       </div>
-      <button class="btn-secondary modal-btn" onclick="collectionToMenu()" style="margin-top:10px">MENU</button>
+      <button class="btn-secondary modal-btn" id="btn-theme-ending" onclick="replayEndingFromPanel()" style="margin-top:10px">▶ WATCH ENDING</button>
+      <button class="btn-secondary modal-btn" onclick="collectionToMenu()" style="margin-top:6px">MENU</button>
       <!-- v0.9.1: 광고(보너스)는 맨 아래 -->
       <button class="btn-ad ad-gold modal-btn co-bonus" id="btn-theme-double" onclick="themeCompleteDoubleStars()" style="margin-top:6px">
         📺 DOUBLE REWARD <span style="opacity:.8">(AD)</span>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── v0.9.2 엔딩 영상 + 크레딧 · 명예의 전당 (III 장 마지막 단계 첫 완성 → 클리어 연출 뒤, 정산 패널 앞) ── -->
+<div id="ol-ending" class="hidden" role="dialog" aria-label="Ending">
+  <video id="ending-video" playsinline preload="none" poster="themes/solar-system/bg-step-11.webp"></video>
+  <button id="ending-skip" type="button" onclick="endingSkip()">SKIP ›</button>
+  <button id="ending-tap" type="button" hidden onclick="endingTapPlay()">▶ TAP TO PLAY</button>
+  <button id="ending-sound" type="button" hidden onclick="endingTapSound()">🔊 TAP FOR SOUND</button>
+  <div id="ending-end" hidden>
+    <div class="ee-panel">
+      <div id="ending-conq" hidden></div>
+      <div id="ending-hof" hidden>
+        <div class="eh-title">👑 HALL OF FAME</div>
+        <div id="ending-hof-rows"></div>
+      </div>
+      <div id="ending-credits-text" hidden></div>
+      <button class="btn-primary modal-btn" id="btn-ending-continue" onclick="endingContinue()">CONTINUE</button>
+      <button class="btn-secondary modal-btn" id="btn-ending-again" onclick="endingWatchAgain()">▶ WATCH AGAIN</button>
     </div>
   </div>
 </div>
@@ -1214,6 +1325,7 @@
     <div id="gallery-bar-wrap"><div id="gallery-bar" style="width:0%"></div></div>
     <div id="gallery-grid"><!-- cells injected by JS --></div>
     <button class="btn-primary modal-btn" id="btn-gallery-play" onclick="startCollectionFromGallery()" data-i18n="ui.btn.playChapter">PLAY CHAPTER</button>
+    <button class="btn-secondary modal-btn" id="btn-gallery-ending" onclick="replayEndingFromGallery()" style="display:none">▶ ENDING</button>
     <button class="btn-secondary modal-btn" id="btn-gallery-ranking" onclick="openRanking()" data-i18n="ui.btn.ranking" style="display:none">🏆 RANKING</button>
     <button class="btn-secondary modal-btn" onclick="closeGallery()" data-i18n="ui.btn.close">CLOSE</button>
   </div>
@@ -1227,6 +1339,7 @@
       <button class="soundset-chip modal-btn" data-rk="1" onclick="rankingShowTab('1')" style="flex:1;justify-content:center">CH 1</button>
       <button class="soundset-chip modal-btn" data-rk="2" onclick="rankingShowTab('2')" style="flex:1;justify-content:center">CH 2</button>
       <button class="soundset-chip modal-btn" data-rk="3" onclick="rankingShowTab('3')" style="flex:1;justify-content:center">CH 3</button>
+      <button class="soundset-chip modal-btn" data-rk="hof" onclick="rankingShowTab('hof')" style="flex:1;justify-content:center" title="Hall of Fame" aria-label="Hall of Fame">👑</button>
     </div>
     <div id="ranking-rows"></div>
     <div class="lb-sep">···</div>
@@ -1361,6 +1474,7 @@ try { SG.DEV = new URLSearchParams(location.search).has('dev') || SG.Store.getIt
 <script src="palette.js"></script>
 <script src="particles.js"></script>
 <script src="start-sky.js"></script>
+<script src="bg-fx.js"></script>
 <script src="star-fly.js"></script>
 <script src="neon-drift.js"></script>
 <script src="strata.js"></script>
@@ -1368,6 +1482,8 @@ try { SG.DEV = new URLSearchParams(location.search).has('dev') || SG.Store.getIt
 <script src="daily.js"></script>
 <script src="collection.js"></script>
 <script src="lb-sync.js"></script>
+<script src="hall-of-fame.js"></script>
+<script src="ending/credits.js"></script>
 <script src="session-rules.js"></script>
 <script src="i18n.js"></script>
 <script src="collection-themes.js"></script>
@@ -1379,7 +1495,7 @@ const STORAGE_KEY_PLAYER = 'earthbeyond_player_id';
 
 // ── 버전 ──────────────────────────────────────────────────────────
 // 개발노트(docs/dev-notes.md)와 동기화. 버전 = 기능 묶음 단위.
-const APP_VERSION = 'v0.9.1';
+const APP_VERSION = 'v0.9.2';
 const DEV = !!SG.DEV;                       // v0.9.1: 개발 도구 스위치 하나 (빌드에서는 항상 false)
 SG.PG.setGameVersion(APP_VERSION);          // analytics 공통 필드 gameVersion
 
@@ -1475,9 +1591,12 @@ function makeRng() {
 }
 
 // ── 캔버스 크기 ───────────────────────────────────────────────────
+function _portrait() { try { return !!(window.matchMedia && window.matchMedia('(orientation: portrait)').matches); } catch (_) { return false; } }
 function resizeCanvas() {
   const wrap = document.getElementById('canvas-wrap');
-  const size = Math.min(wrap.clientWidth - 16, wrap.clientHeight - 16, 480);
+  // v0.9.2: 버튼 패드가 비운 높이까지 · 상한 480 → 640(장면 그림 512px 원본이 크게 흐려지지 않는 선)
+  const m = _portrait() ? 0 : 12;   // v0.9.2 세로: 좌우 여백 0 — 보드가 화면 폭 끝까지
+  const size = Math.max(160, Math.floor(Math.min(wrap.clientWidth - m, wrap.clientHeight - m, 640)));
   canvas.style.width = size + 'px';
   canvas.style.height = size + 'px';
   if (renderer) { renderer.resize(); if (grid) renderer.drawGrid(grid); }
@@ -1522,8 +1641,9 @@ function syncAdButtons(ids) {
 
 // 두 스탯 슬롯에 (라벨, 값) 설정. 모드별 핵심 지표 1~2개만.
 function setStats(label1, value1, label2, value2) {
-  document.getElementById('stat-label-1').textContent = label1;
-  document.getElementById('stat-score').textContent = value1;
+  document.getElementById('stat-item-1').style.display = label1 == null ? 'none' : '';   // v0.9.2: Chronicles 는 단계를 아이콘 내비로
+  document.getElementById('stat-label-1').textContent = label1 == null ? '' : label1;
+  document.getElementById('stat-score').textContent = label1 == null ? '' : value1;
   const item2 = document.getElementById('stat-item-2');
   if (label2 == null) {
     item2.style.display = 'none';
@@ -1541,14 +1661,6 @@ function updateStats(chain) {
   document.getElementById('game-title').textContent = 'EARTH & BEYOND · GOAL ' + MAIN_GOAL_SIZE + chainTag;
   updateWalletChip();
   updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
-}
-
-// 방향 버튼 누름 피드백: 입력원(키/클릭/스와이프) 무관하게 밝게 잠깐 점등.
-function flashDirBtn(dir) {
-  const btn = document.querySelector('.dirbtn[data-dir="' + dir + '"]');
-  if (!btn) return;
-  btn.classList.add('active');
-  setTimeout(function () { btn.classList.remove('active'); }, 110);
 }
 
 // 보드 프레임의 진행 방향 모서리를 빛나게 → 어느 방향으로 밀렸는지 표시.
@@ -1569,8 +1681,8 @@ function showGameToast(msg, ms) {
 
 // ── 한 번의 밀기 ──────────────────────────────────────────────────
 function doMove(dir) {
-  flashDirBtn(dir);
   if (!gameRunning || isAnimating || isPlatformPaused) return;
+  _ctrlHintHide(true);
   flashBoardEdge(dir);
   const opts = dailyMode ? dailyOpts : mainOpts;
   const before = ND.cloneGrid(grid);
@@ -1673,6 +1785,8 @@ function mainGameClear() {
 let _rafId = null;
 function loop(ts) {
   if (renderer) renderer.tick(ts || 0);
+  // v0.9.2 배경 파티클: 지금 장 + 지금 단계 그림(없으면 장 보드 그림)의 톤. 같은 값이면 BgFx.set 이 바로 돌아간다.
+  if (renderer && SG.BgFx) { const _t = renderer.collectionTheme; SG.BgFx.set(_t ? _t.id : null, renderer._stepBgPath || (_t && _t.boardBg) || null); }
   _rafId = requestAnimationFrame(loop);
 }
 
@@ -1697,6 +1811,7 @@ function showStart() {
   updateGalleryDot();
   _refreshMenuDots();
   openModalNav('ol-start');
+  hofBannerRefresh();
 }
 
 // 메인 메뉴 버튼 상태 전체 갱신 (레드닷 + 서브텍스트 + Endless 잠김)
@@ -1844,13 +1959,13 @@ var _DTUT_CONTENT = {
   daily: {
     en: {
       s0: { icon: '🌍', title: 'DAILY CHALLENGE',
-            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.<br>☄️ <strong>Comets</strong> give ×3 · 🔭 <strong>Observatory</strong> gives ×2!' },
+            desc: '<strong>Swipe</strong> the board or press <strong>← → ↑ ↓</strong> / <strong>WASD</strong> to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.<br>☄️ <strong>Comets</strong> give ×3 · 🔭 <strong>Observatory</strong> gives ×2!' },
       s2: { icon: '🏆', title: 'COMPETE DAILY',
             desc: 'Your <strong>best score</strong> goes on the Daily leaderboard.<br>Play as often as you like — a <strong>new board</strong> every day (UTC).' },
     },
     ko: {
       s0: { icon: '🌍', title: '데일리 챌린지',
-            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.<br>☄️ <strong>혜성</strong> ×3 · 🔭 <strong>관측소</strong> ×2!' },
+            desc: '보드를 <strong>스와이프</strong>하거나 <strong>← → ↑ ↓</strong> · <strong>WASD</strong> 로 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.<br>☄️ <strong>혜성</strong> ×3 · 🔭 <strong>관측소</strong> ×2!' },
       s2: { icon: '🏆', title: '리더보드 경쟁',
             desc: '<strong>최고 점수</strong>가 데일리 리더보드에 올라가요.<br>횟수 제한 없이 도전하세요 — 보드는 매일(UTC) <strong>새로</strong> 바뀌어요.' },
     },
@@ -1858,13 +1973,13 @@ var _DTUT_CONTENT = {
   chronicles: {
     en: {
       s0: { icon: '📖', title: 'CHRONICLES',
-            desc: 'Tap <strong>← → ↑ ↓</strong> or swipe to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.' },
+            desc: '<strong>Swipe</strong> the board or press <strong>← → ↑ ↓</strong> / <strong>WASD</strong> to slide all tiles.<br>Two tiles of the <strong>same value</strong> merge into one.' },
       s2: { icon: '🎨', title: 'UNLOCK SCENES',
             desc: 'Merge tiles to unlock <strong>11 scenes</strong> per Era.<br>Complete all 3 Eras — from Primordial Earth to the edge of the Universe!' },
     },
     ko: {
       s0: { icon: '📖', title: '크로니클',
-            desc: '<strong>← → ↑ ↓</strong> 버튼을 탭하거나 스와이프해서 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.' },
+            desc: '보드를 <strong>스와이프</strong>하거나 <strong>← → ↑ ↓</strong> · <strong>WASD</strong> 로 타일을 밀어요.<br><strong>같은 숫자</strong> 타일이 부딪히면 합쳐집니다.' },
       s2: { icon: '🎨', title: '장면 수집',
             desc: '타일을 합쳐 시대별 <strong>11개 장면</strong>을 해금해요.<br>원시지구부터 우주의 끝까지, 3개 시대를 완성하세요!' },
     },
@@ -2186,6 +2301,7 @@ function startDailyRun() {
   }
 
   dailyMode = true; gameRunning = true; dailyRunStars = 0; dailyStarsShown = 0; dailyRunScore = 0;
+  _dailyRunMax = 0;
   strataRun = null;
   _runBegin();
   document.getElementById('ol-start').classList.add('hidden');
@@ -2270,6 +2386,7 @@ function _adAudioPause() {
   isAdPlaying = true;
   try { if (SG.Sound) SG.Sound.setMuted(true); } catch (_) {}
   _bgmCtxSet(false);
+  _endingSync();
 }
 function _adAudioResume() {
   isAdPlaying = false;
@@ -2290,6 +2407,7 @@ async function showInterstitial(trigger) {
   try { await SG.CG.requestMidgameAd(); } catch (_) {}
   _adAudioResume();
   try { SG.CG.showBanner(); } catch (_) {}
+  regainFocus();   // v0.9.2: 광고 뒤 방향키 · WASD 바로 사용
   return true;
 }
 
@@ -2311,6 +2429,7 @@ async function requestRewardedAdWithQuota(placement) {
     return { granted: false };
   } finally {
     _adAudioResume();
+    regainFocus();   // v0.9.2: 리워드 광고 뒤에도 방향키 바로 사용
   }
 }
 
@@ -2325,6 +2444,7 @@ function updateDailyHud() {
            'THIS RUN', '⭐' + dailyStarsShown);
   updateWalletChip();
   updateGalleryDot();   // 비콜렉션 모드 → 레드닷 정리
+  if (!collectionMode && !endlessMode) dailyUpdateNav();   // v0.9.2 별 목표 아이콘
 }
 
 // Fly each completed target's stars from its board cell into the ⭐ HUD counter.
@@ -2475,6 +2595,11 @@ async function lbSyncNow() {
       if (await SG.PG.leaderboard.submit(item.score, item.lbId)) sent = SG.LbSync.markSent(sent, item);
     }
     SG.LbSync.save(SG.Store, sent);
+    // v0.9.2 명예의 전당 — 처음 본 엔딩 값을 성공할 때까지 한 번 보낸다(성공 뒤로는 다시 안 보냄)
+    const hof = SG.HallOfFame ? SG.HallOfFame.load(SG.Store) : null;
+    if (hof && SG.HallOfFame.needsSubmit(hof)) {
+      if (await SG.PG.leaderboard.submit(hof.score, SG.PG.LB_HALL_OF_FAME)) { SG.HallOfFame.markSent(SG.Store); HOF.at = 0; }
+    }
   } catch (e) { console.warn('[lb] sync failed:', e); }
   finally {
     _lbSyncing = false;
@@ -2717,7 +2842,8 @@ async function collectionThemeComplete(themeId) {
   if (nextId) {
     showChapterCompleteModal(themeId);
   } else {
-    // 마지막 챕터 — 엔딩 패널
+    // v0.9.2 마지막 챕터 — 엔딩 영상 + 크레딧(+ 명예의 전당) → 끝나면(건너뛰기 · 실패 포함) 기존 엔딩 패널
+    await playEnding('first');
     const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
     document.getElementById('theme-complete-label').textContent = theme ? theme.label : themeId.toUpperCase();
     document.getElementById('theme-complete-reward').textContent = '⭐' + THEME_COMPLETE_REWARD;
@@ -2737,6 +2863,8 @@ async function collectionThemeComplete(themeId) {
     const dblBtn = document.getElementById('btn-theme-double');
     if (dblBtn) { dblBtn.style.display = ''; dblBtn.disabled = false; dblBtn.style.opacity = ''; }
     syncAdButtons(['btn-theme-double']);
+    const endBtn = document.getElementById('btn-theme-ending');
+    if (endBtn) endBtn.style.display = endingUnlocked() ? '' : 'none';
     document.getElementById('ol-theme-complete').classList.remove('hidden');
     openModalNav('ol-theme-complete');
   }
@@ -2765,6 +2893,211 @@ async function themeCompleteDoubleStars() {
   if (dblBtn) { dblBtn.innerHTML = '⭐ ×2 CLAIMED'; dblBtn.disabled = true; dblBtn.style.opacity = '0.5'; }
   showGameToast('⭐ x2 CLAIMED! +' + THEME_COMPLETE_REWARD, 2000);
 }
+
+// ── v0.9.2 엔딩 영상 + 크레딧 (AD A안 · docs/ending/ending-credits-plan.md 4장) ──────────────────
+// 로컬 mp4(zip 안, 외부 리소스 0)를 엔딩 때만 src 로 붙여 받는다. SKIP 늘 보임 · Esc/Enter/Space 건너뛰기.
+// 소리: 설정 SOUND · 플랫폼 오디오를 따른다. 자동재생 거부 → 음소거로 재생 + "TAP FOR SOUND", 그것도 거부 → "TAP TO PLAY".
+// 광고 중 · 플랫폼 일시정지 · 탭 숨김이면 영상 일시정지. 재생 실패(error · 시작 지연) → 글자 크레딧 끝 화면 → 정산 패널.
+const ENDING_SRC = 'ending/ending-720.mp4';
+const ENDING_START_TIMEOUT_MS = 8000;
+let _endingOn = false, _endingPhase = '', _endingResolve = null, _endingMode = '', _endingStartTimer = null, _endingWantPlay = false, _endingBgm = null;
+function endingUnlocked() {
+  try { return SG.Collection.loadTheme('solar-system', SG.Store, SG.CollectionThemes.find(function (t) { return t.id === 'solar-system'; })).status === 'completed'; }
+  catch (_) { return false; }
+}
+function _endingAudioMuted() { return !_soundEnabled || SG.PG._audioEnabled === false; }
+function _endingBlocked() { return isAdPlaying || isPlatformPaused || document.visibilityState === 'hidden'; }
+function _endingEl(id) { return document.getElementById(id); }
+// 광고 · 일시정지 · 탭 숨김 · 음소거 상태를 영상에 반영 (_applySoundEnabled · 광고 훅 · visibilitychange 가 부른다)
+function _endingSync() {
+  if (!_endingOn) return;
+  const v = _endingEl('ending-video');
+  v.muted = !_endingEl('ending-sound').hidden || _endingAudioMuted();
+  if (_endingPhase !== 'video') return;
+  if (_endingBlocked()) { if (!v.paused) v.pause(); }
+  else if (_endingWantPlay && v.paused && !v.ended && _endingEl('ending-tap').hidden) { v.play().catch(function () {}); }
+}
+function playEnding(mode) {
+  return new Promise(function (resolve) {
+    _endingResolve = resolve; _endingMode = mode; _endingOn = true; _endingPhase = 'video'; _endingWantPlay = true;
+    // 명예의 전당: 처음 본 순간을 한 번만 기록(다시 보기 · 재플레이로 바뀌지 않음) — 전송은 lbSyncNow 가 성공할 때까지
+    if (!DEV && !cheatActive && SG.HallOfFame) {
+      const rec = SG.HallOfFame.record(SG.Store, Date.now());
+      if (rec.isNew) { SG.PG.track('ending_first_view', { mode: mode }); pgSyncStorage(); lbSyncNow(); }
+    }
+    SG.PG.track('ending_start', { mode: mode });
+    try { if (SG.Sound) { if (_endingBgm === null) _endingBgm = SG.Sound.bgmRunning ? SG.Sound.bgmTheme : ''; SG.Sound.stopBgm(); } } catch (_) {}
+    try { SG.CG.gameplayStop(); } catch (_) {}
+    closeModalNav();
+    const ov = _endingEl('ol-ending'), v = _endingEl('ending-video');
+    _endingEl('ending-end').hidden = true; _endingEl('ending-tap').hidden = true; _endingEl('ending-sound').hidden = true;
+    _endingEl('ending-skip').hidden = false;
+    ov.classList.remove('hidden');
+    v.onended = function () { _endingShowEnd(false); };
+    v.onerror = function () { if (_endingOn && v.getAttribute('src')) _endingShowEnd(true); };
+    v.onplaying = function () { clearTimeout(_endingStartTimer); _endingEl('ending-tap').hidden = true; };
+    if (v.getAttribute('src') !== ENDING_SRC) v.src = ENDING_SRC;   // 엔딩 때만 받는다(preload=none)
+    try { v.currentTime = 0; } catch (_) {}
+    v.muted = _endingAudioMuted();
+    clearTimeout(_endingStartTimer);
+    _endingStartTimer = setTimeout(function () {
+      // 탭 대기 · 광고 · 일시정지 중이 아닌데 시작을 못 했으면 실패로 보고 끝 화면(글자 크레딧)으로 — 멈춤 없음
+      if (_endingOn && _endingPhase === 'video' && v.readyState < 3 && _endingEl('ending-tap').hidden && !_endingBlocked()) _endingShowEnd(true);
+    }, ENDING_START_TIMEOUT_MS);
+    if (_endingBlocked()) return;      // 광고 · 일시정지가 끝나면 _endingSync 가 시작
+    _endingTryPlay();
+  });
+}
+function _endingTryPlay() {
+  const v = _endingEl('ending-video');
+  v.play().catch(function (e) {
+    if (!_endingOn || _endingPhase !== 'video') return;
+    if (e && e.name === 'NotAllowedError' && !v.muted) {
+      // 소리 있는 자동재생 거부 → 음소거로 재생 + 소리 켜기 버튼
+      v.muted = true; _endingEl('ending-sound').hidden = false;
+      v.play().catch(function () { _endingEl('ending-sound').hidden = true; _endingEl('ending-tap').hidden = false; });
+    } else if (e && e.name === 'NotAllowedError') {
+      _endingEl('ending-tap').hidden = false;
+    } else if (!(e && e.name === 'AbortError')) {
+      _endingShowEnd(true);
+    }
+  });
+}
+function endingTapPlay() { _endingEl('ending-tap').hidden = true; _endingWantPlay = true; _endingTryPlay(); }
+function endingTapSound() {
+  const v = _endingEl('ending-video');
+  _endingEl('ending-sound').hidden = true;
+  v.muted = _endingAudioMuted();
+  if (v.paused && !_endingBlocked()) v.play().catch(function () {});
+}
+function endingSkip() {
+  if (!_endingOn || _endingPhase !== 'video') return;
+  const v = _endingEl('ending-video');
+  SG.PG.track('ending_skip', { mode: _endingMode, at_sec: Math.round(v.currentTime || 0) });
+  _endingShowEnd(false);
+}
+function _endingCreditsHtml() {
+  return (SG.EndingCredits || []).map(function (c) {
+    if (c.title) return '<div class="ec-title">' + escHtml(c.title) + '</div>';
+    if (c.role) return '<div class="ec-role">' + escHtml(c.role) + '</div>' + [].concat(c.name).map(function (n) { return '<div class="ec-name">' + escHtml(n) + '</div>'; }).join('');
+    return '<div class="ec-line">' + escHtml(c.line) + '</div>';
+  }).join('');
+}
+// 끝 화면: 「N번째 우주정복자」 + 명예의 전당(불러오기 실패 · 리더보드 없음이면 숨김, 기다리지 않음) + CONTINUE
+function _endingShowEnd(failed) {
+  if (!_endingOn || _endingPhase === 'end') return;
+  _endingPhase = 'end'; _endingWantPlay = false;
+  clearTimeout(_endingStartTimer);
+  const v = _endingEl('ending-video');
+  try { v.pause(); } catch (_) {}
+  if (failed) SG.PG.track('ending_failed', { mode: _endingMode });
+  else if (v.ended) SG.PG.track('ending_complete', { mode: _endingMode });
+  _endingEl('ending-skip').hidden = true; _endingEl('ending-tap').hidden = true; _endingEl('ending-sound').hidden = true;
+  const ct = _endingEl('ending-credits-text');
+  ct.hidden = !failed;                       // 영상을 못 봤으면 크레딧을 글자로
+  if (failed) ct.innerHTML = _endingCreditsHtml();
+  _endingEl('ending-conq').hidden = true; _endingEl('ending-hof').hidden = true;
+  _endingEl('ending-end').hidden = false;
+  openModalNav('ol-ending');
+  hofRefreshEnding();
+}
+function _endingClose() {
+  const v = _endingEl('ending-video');
+  try { v.pause(); } catch (_) {}
+  // 영상을 놓아 메모리 반환 — 다시 보기 때 다시 붙인다
+  try { v.removeAttribute('src'); v.load(); } catch (_) {}
+  _endingEl('ol-ending').classList.add('hidden');
+  closeModalNav();
+  _endingOn = false; _endingPhase = '';
+  const r = _endingResolve; _endingResolve = null;
+  // 영상 전에 돌던 게임 BGM 복귀(설정이 켜져 있을 때만)
+  if (r) { const bgm = _endingBgm; _endingBgm = null; try { if (bgm && _bgmEnabled && _soundEnabled && SG.Sound) SG.Sound.playBgm(bgm); } catch (_) {} }
+  if (r) r();
+}
+function endingContinue() { _endingClose(); }
+function endingWatchAgain() {
+  const r = _endingResolve, mode = _endingMode;
+  _endingResolve = null;
+  _endingClose();
+  playEnding(mode).then(function () { if (r) r(); });
+}
+// 다시 보기 입구 — 정산 패널 · 갤러리(III 탭). 한 저장에 한 번 뜨는 엔딩을 다시 본다(명예의 전당 값은 그대로).
+async function replayEndingFromPanel() {
+  const panel = document.getElementById('ol-theme-complete');
+  panel.classList.add('hidden');
+  await playEnding('replay');
+  panel.classList.remove('hidden');
+  openModalNav('ol-theme-complete');
+}
+async function replayEndingFromGallery() {
+  if (!endingUnlocked()) return;
+  const gal = document.getElementById('ol-gallery');
+  gal.classList.add('hidden');
+  await playEnding('replay');
+  gal.classList.remove('hidden');
+  openModalNav('ol-gallery');
+}
+
+// ── v0.9.2 명예의 전당 (hall_of_fame · 오름차순 = 도착 순서 = N번째 우주정복자) ─────────────────
+const HOF = { rows: null, at: 0, busy: null };
+function hofAvailable() { return !!(SG.HallOfFame && rankingAvailable()); }
+// 목록 불러오기 — 60초 캐시, 실패 = null(호출한 곳이 숨김). 네트워크를 기다리게 하는 화면은 없다.
+function hofFetch(force) {
+  if (!hofAvailable()) return Promise.resolve(null);
+  if (!force && HOF.rows && performance.now() - HOF.at < 60000) return Promise.resolve(HOF.rows);
+  if (HOF.busy) return HOF.busy;
+  HOF.busy = Promise.resolve(SG.PG.leaderboard.getEntries(SG.PG.LB_HALL_OF_FAME)).then(function (list) {
+    const rows = SG.HallOfFame.normalize(list);
+    if (rows) { HOF.rows = rows; HOF.at = performance.now(); }
+    return rows;
+  }, function () { return null; }).then(function (r) { HOF.busy = null; return r; });
+  return HOF.busy;
+}
+function _hofMyRank(rows) {
+  const st = SG.HallOfFame.load(SG.Store);
+  if (!st.score) return 0;
+  const rank = SG.HallOfFame.rankOf(rows, SG.PG.playerId(), st.score);
+  if (rank > 0) SG.HallOfFame.saveRank(SG.Store, rank);
+  return rank;
+}
+function _hofRowsHtml(rows, top) {
+  const st = SG.HallOfFame.load(SG.Store);
+  const list = SG.HallOfFame.displayRows(rows, SG.PG.playerId(), st.score, top || 5) || [];
+  const t = (k, fb) => (SG.i18n && SG.i18n.t(k)) || fb;
+  return list.map(function (r) {
+    const who = r.isMe && !r.name ? t('ui.label.you', 'YOU') : escHtml(r.name ? String(r.name).slice(0, 12) : (r.id || 'player').slice(-6));
+    const date = new Date(SG.HallOfFame.EPOCH_MS + r.score * 1000).toISOString().slice(0, 10);
+    return (r.sep ? '<div class="lb-sep">···</div>' : '') +
+      '<div class="lb-row' + (r.isMe ? ' lb-me' : '') + '"><span class="lb-rank">' + r.rank + '</span><span class="lb-id">' + who + (r.isMe ? ' ◀' : '') +
+      '</span><span class="lb-score">' + date + '</span></div>';
+  }).join('') || LB_EMPTY_HTML;
+}
+function hofRefreshEnding() {
+  if (!hofAvailable()) return;
+  const lang = SG.i18n ? SG.i18n.getLang() : 'en';
+  hofFetch(true).then(function (rows) {
+    if (!_endingOn || _endingPhase !== 'end' || !rows) return;    // 실패 → 상자째 숨긴 채
+    const rank = _hofMyRank(rows);
+    const conq = _endingEl('ending-conq');
+    conq.textContent = SG.HallOfFame.conquerorLine(lang, rank);
+    conq.hidden = !rank;
+    _endingEl('ending-hof-rows').innerHTML = _hofRowsHtml(rows, 5);
+    _endingEl('ending-hof').hidden = false;
+  });
+}
+// 로비 띠 — 막지 않음(메뉴 키보드 이동에서 빠짐). 리더보드가 없거나 불러오기 실패면 숨김.
+function hofBannerRefresh() {
+  const el = document.getElementById('hof-banner');
+  if (!el) return;
+  if (!hofAvailable()) { el.hidden = true; return; }
+  hofFetch(false).then(function (rows) {
+    if (!rows) { el.hidden = true; return; }
+    const lang = SG.i18n ? SG.i18n.getLang() : 'en';
+    el.textContent = SG.HallOfFame.bannerLine(lang, rows.length, _hofMyRank(rows));
+    el.hidden = false;
+  });
+}
+function openHallOfFame() { closeModalNav(); openRanking('hof', 'ol-start'); }
 
 // 콜렉션 진행도 연동 graded 스폰:
 // 해금/완성한 테마 수가 늘수록 시작 블록을 점진적으로 키워 체감 난이도를 일정하게 유지.
@@ -2893,7 +3226,9 @@ function startCollection() {
     _firstBoard = false;
     const _ko = SG.i18n && SG.i18n.getLang() === 'ko';
     setTimeout(function () {
-      showGameToast(_ko ? '스와이프 · 방향키 — 같은 숫자를 합쳐 장면을 모으세요' : 'Swipe or use arrow keys — merge matching tiles', 3600);
+      const _touch = _ctrlHintMode() === 'touch';
+      showGameToast(_ko ? (_touch ? '스와이프 — 같은 숫자를 합쳐 장면을 모으세요' : '방향키 · WASD — 같은 숫자를 합쳐 장면을 모으세요')
+                        : (_touch ? 'Swipe — merge matching tiles' : 'Arrow keys or WASD — merge matching tiles'), 3600);
     }, 400);
     SG.PG.track('tutorial', { action: 'first_board', chapter: chapterIndexOf(activeThemeId) });
   } else if (_needsIntro) {
@@ -2971,6 +3306,7 @@ function startEndless(skinTheme) {
 }
 
 function updateEndlessHud() {
+  document.getElementById('chronicles-progress').classList.remove('visible');   // v0.9.2: Endless 는 단계 없음
   let best = 0;
   try { best = parseInt(SG.Store.getItem(ENDLESS_BEST_KEY) || '0', 10) || 0; } catch (_) {}
   document.getElementById('game-title').textContent = 'ENDLESS ∞';
@@ -3129,8 +3465,9 @@ function updateCollectionHud() {
   const acquired = state.acquiredSteps ? state.acquiredSteps.length : 0;
   const total = SG.Collection.getThemeStepCount(theme || null);
   // 제목엔 테마명만. 콜렉션 핵심=단계 → STEP 먼저, 이번 판 ⭐는 보조. (누적 ⭐는 칩)
-  document.getElementById('game-title').textContent = 'COLLECTION · ' + themeLabel;
-  setStats('STEP', acquired + '/' + total,
+  // v0.9.2: 단계(STEP x/11)는 상단 아이콘 내비가 보여 준다 → 제목은 장 이름, 스탯은 이번 판 ⭐ 하나
+  document.getElementById('game-title').textContent = themeLabel;
+  setStats(null, null,
            collectionStarMult > 1 ? 'THIS RUN ×' + collectionStarMult : 'THIS RUN', '+⭐' + dailyStarsShown);
   updateWalletChip();
   updateGalleryDot();   // 헤더 설정 아이콘 NEW 레드닷
@@ -3139,16 +3476,62 @@ function updateCollectionHud() {
 
 // ── Chronicles: 스토리 모드 UI ──────────────────────────────────────
 
-// Progress Bar 업데이트
+// v0.9.2 단계 아이콘 내비 (Chronicles) — 지금 장 11칸 + 다른 장 배지. 남은 칸 수는 숫자 하나로만.
 function chroniclesUpdateProgress(theme, acquired, total) {
   const wrap = document.getElementById('chronicles-progress');
-  if (!wrap) return;
+  const nav = document.getElementById('stage-nav');
+  if (!wrap || !nav) return;
   if (!theme || !theme.chapter) { wrap.classList.remove('visible'); return; }
+  const meta = SG.Collection.loadMeta(SG.Store);
+  const state = SG.Collection.loadTheme(theme.id, SG.Store, theme);
+  const got = state.acquiredSteps || [];
+  let next = 0;
+  for (let i = 1; i <= total; i++) if (got.indexOf(i) === -1) { next = i; break; }
+  let html = '';
+  SG.CollectionThemes.forEach(function (t) {
+    if (!t.chapter) return;
+    const num = _ROMAN[t.chapter.number - 1] || String(t.chapter.number);
+    if (html) html += '<span class="sn-sep"></span>';
+    if (t.id === theme.id) {
+      html += '<span class="sn-ch cur">' + num + '</span><span class="sn-steps">';
+      for (let i = 1; i <= total; i++) {
+        const cls = got.indexOf(i) !== -1 ? 'done' : (i === next ? 'next' : '');
+        html += '<span class="sn-d ' + cls + (i === total ? ' last' : '') + '"></span>';
+      }
+      html += '</span>';
+      const _left = Math.max(0, total - acquired);
+      if (_left > 0) html += '<span class="sn-left" title="left">' + _left + '</span>';   // 남은 칸 수 — 지금 장 바로 뒤
+    } else {
+      const done = meta.completedThemes.indexOf(t.id) !== -1;
+      const open = !t.unlockCondition || meta.unlockedThemes.indexOf(t.id) !== -1;
+      html += '<span class="sn-ch ' + (done ? 'done' : open ? '' : 'lock') + '" style="--chc:' + _eraFx(t.id).ring + '">' + num + (done ? '✓' : '') + '</span>';
+    }
+  });
+  const left = Math.max(0, total - acquired);
+  nav.innerHTML = html;
+  nav.style.setProperty('--era', _eraFx(theme.id).ring);
+  nav.setAttribute('aria-label', 'Chapter ' + theme.chapter.number + ' · ' + acquired + ' / ' + total + ' · ' + left + ' left');
   wrap.classList.add('visible');
-  const pct = total > 0 ? Math.round((acquired / total) * 100) : 0;
-  document.getElementById('chronicles-prog-label').textContent =
-    'CHAPTER ' + theme.chapter.number + ' · ' + acquired + ' / ' + total;
-  document.getElementById('chronicles-prog-bar').style.width = pct + '%';
+}
+
+// v0.9.2 단계 아이콘 내비 (Daily) — 그 판의 별 목표 4개. 판 최고 블록이 닿으면 채움(1024 붕괴 뒤에도 유지).
+let _dailyRunMax = 0;
+function dailyUpdateNav() {
+  const wrap = document.getElementById('chronicles-progress');
+  const nav = document.getElementById('stage-nav');
+  if (!wrap || !nav) return;
+  const targets = (dailyOpts && dailyOpts.targets) || [];
+  if (!targets.length) { wrap.classList.remove('visible'); return; }
+  try { _dailyRunMax = Math.max(_dailyRunMax, ND.maxSize(grid)); } catch (_) {}
+  let html = '', hit = 0, nextSet = false;
+  targets.forEach(function (t) {
+    let cls = '';
+    if (_dailyRunMax >= t.size) { cls = 'done'; hit++; } else if (!nextSet) { cls = 'next'; nextSet = true; }
+    html += '<span class="sn-t ' + cls + '">★' + (t.size | 0) + '</span>';
+  });
+  nav.innerHTML = html;
+  nav.setAttribute('aria-label', 'Daily targets ' + hit + ' / ' + targets.length);
+  wrap.classList.add('visible');
 }
 
 // Chapter Intro 모달 — 첫 진입 1회만
@@ -3480,7 +3863,7 @@ let _runSettled = false;
 // 이번 판 누적 스타를 지갑에 적립(정산). 1회만. END RUN/RETRY/MENU에서 호출.
 // ── v0.9.1 계측: 판 통계 · run_ended (Bridge analytics 가 있을 때만 나간다 — SG.PG.track) ──
 let _runStartedAt = 0, _runMoves = 0, _runMaxSize = 0, _runEndPending = false, _runEndedSent = true;
-function _runBegin() { _runStartedAt = Date.now(); _runMoves = 0; _runMaxSize = 0; _runEndPending = false; _runEndedSent = false; }
+function _runBegin() { _ctrlHintShow(); _runStartedAt = Date.now(); _runMoves = 0; _runMaxSize = 0; _runEndPending = false; _runEndedSent = false; }
 function _runNoteMove() { _runMoves++; try { const m = ND.maxSize(grid); if (m > _runMaxSize) _runMaxSize = m; } catch (_) {} }
 function _runBase(mode) {
   return { mode: mode, moves: _runMoves, duration_sec: Math.round((Date.now() - (_runStartedAt || Date.now())) / 1000), max_size: _runMaxSize };
@@ -3901,6 +4284,8 @@ function unlockThemeWithStars(themeId) {
 function renderGalleryCells(themeId) {
   const theme = SG.CollectionThemes.find(function (t) { return t.id === themeId; });
   if (!theme) return;
+  const _endBtn = document.getElementById('btn-gallery-ending');
+  if (_endBtn) _endBtn.style.display = (themeId === 'solar-system' && _galleryMode !== 'endless' && endingUnlocked()) ? '' : 'none';
 
   // 잠긴 테마: 셀 대신 해금 패널 표시 (별로 즉시 해금)
   const meta = SG.Collection.loadMeta(SG.Store);
@@ -4117,14 +4502,20 @@ function refreshRankingButton() {
   const b = document.getElementById('btn-gallery-ranking');
   if (b) b.style.display = rankingAvailable() ? '' : 'none';
 }
-function openRanking() {
+let _rankingReturn = 'ol-gallery';
+function openRanking(tab, returnTo) {
+  _rankingReturn = returnTo || 'ol-gallery';
+  if (_rankingReturn !== 'ol-gallery') { const r = document.getElementById(_rankingReturn); if (r) r.classList.add('hidden'); }
   document.getElementById('ol-ranking').classList.remove('hidden');
   openModalNav('ol-ranking');
-  rankingShowTab('gallery');
+  rankingShowTab(tab || 'gallery');
 }
 function closeRanking() {
   document.getElementById('ol-ranking').classList.add('hidden');
-  openModalNav('ol-gallery');   // 갤러리 위에서 열렸으므로 갤러리로 복귀
+  if (_rankingReturn === 'ol-gallery') { openModalNav('ol-gallery'); return; }   // 갤러리 위에서 열렸으면 갤러리로
+  if (_rankingReturn === 'ol-start') { showStart(); return; }
+  const r = document.getElementById(_rankingReturn);
+  if (r) { r.classList.remove('hidden'); openModalNav(_rankingReturn); }
 }
 let _rkReq = 0;
 async function rankingShowTab(key) {
@@ -4135,6 +4526,7 @@ async function rankingShowTab(key) {
   const box = document.getElementById('ranking-rows');
   const me = document.getElementById('ranking-me');
   const t = (k, fb) => (SG.i18n && SG.i18n.t(k)) || fb;
+  if (key === 'hof') { rankingShowHof(my, box, me, t); return; }
   const isGallery = key === 'gallery';
   const idx = isGallery ? -1 : parseInt(key, 10) - 1;
   const lbId = isGallery ? SG.PG.LB_GALLERY : SG.PG.LB_CHAPTER_CLEAR[idx];
@@ -4158,6 +4550,23 @@ async function rankingShowTab(key) {
     return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span><span class="lb-id">' + who +
       '</span><span class="lb-score">' + fmt(r.score) + '</span></div>';
   }).join('') || LB_EMPTY_HTML;
+}
+
+// v0.9.2 👑 명예의 전당 탭 — 엔딩 전에는 🔒, 값 = 도착 순서(표시는 도착 날짜)
+async function rankingShowHof(my, box, me, t) {
+  const lang = SG.i18n ? SG.i18n.getLang() : 'en';
+  const st = SG.HallOfFame.load(SG.Store);
+  const meRow = function (rank, text) {
+    return '<span class="lb-rank">' + (rank || '·') + '</span><span class="lb-id">' + t('ui.label.you', 'YOU') + '</span><span class="lb-score">' + escHtml(text) + '</span>';
+  };
+  me.innerHTML = meRow(st.rank, st.score ? (st.rank ? SG.HallOfFame.conquerorLine(lang, st.rank).replace('👑 ', '') : '👑') : SG.HallOfFame.lockedLine(lang));
+  box.innerHTML = '<div class="lb-row lb-empty" style="opacity:.5">Loading…</div>';
+  const rows = await hofFetch(true);
+  if (my !== _rkReq || document.getElementById('ol-ranking').classList.contains('hidden')) return;
+  if (!rows) { box.innerHTML = '<div class="lb-row lb-empty">—</div>'; return; }
+  const rank = _hofMyRank(rows);
+  if (rank) me.innerHTML = meRow(rank, SG.HallOfFame.conquerorLine(lang, rank).replace('👑 ', ''));
+  box.innerHTML = rows.length ? _hofRowsHtml(rows, 10) : '<div class="lb-row lb-empty">' + escHtml(SG.HallOfFame.bannerLine(lang, 0, 0)) + '</div>';
 }
 
 // ── 운영자 집계 (?dev=1) — getEntries 반환 목록 기준. 반환 인원이 고정되면 조회 한도(N)로 잘리는 중.
@@ -4312,14 +4721,18 @@ async function endGame() {
 }
 
 // ── 입력 바인딩 ───────────────────────────────────────────────────
-document.querySelectorAll('.dirbtn').forEach(function (b) {
-  b.addEventListener('click', function () { doMove(b.dataset.dir); });
-});
 // v0.9.1: e.key 가 비거나 다른 배열(한글 IME 등)이어도 e.code 로 — 화살표 · WASD
 const _KEY_DIR  = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 const _CODE_DIR = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
                     KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
 window.addEventListener('keydown', function (e) {
+  // v0.9.2 엔딩 영상 중: Esc · Enter · Space = 건너뛰기, 방향키는 보드로 보내지 않는다
+  if (_endingOn && _endingPhase === 'video') {
+    const k = e.key || '', c = e.code || '';
+    if (k === 'Escape' || k === 'Enter' || k === ' ' || c === 'Escape' || c === 'Enter' || c === 'NumpadEnter' || c === 'Space') endingSkip();
+    e.preventDefault();
+    return;
+  }
   // Modal open → arrows/enter navigate the modal, not the board.
   if (_modal) { if (modalNavKey(e)) e.preventDefault(); return; }
   const dir = _KEY_DIR[e.key] || _CODE_DIR[e.code];
@@ -4329,6 +4742,24 @@ window.addEventListener('keydown', function (e) {
 function focusGame() { try { window.focus(); } catch (_) {} }
 focusGame();
 window.addEventListener('pointerdown', focusGame, true);
+// v0.9.2: 광고(바깥 페이지 오버레이)가 닫히면 포커스가 iframe 밖에 남아 방향키가 안 먹는다 → 광고 뒤 · 탭 복귀 · Bridge 재개 때
+// 여러 번 다시 잡는다(광고가 닫히는 시점이 SDK 응답보다 늦을 수 있어 짧은 간격으로 반복). 모달이 열려 있으면 모달 쪽 포커스를 그대로 둔다.
+function regainFocus() {
+  [0, 120, 400, 1000, 2000].forEach(function (ms) {
+    setTimeout(function () {
+      focusGame();
+      try { if (!_modal && document.activeElement && document.activeElement !== document.body && !document.activeElement.closest('.overlay, [id^="ol-"]')) document.activeElement.blur(); } catch (_) {}
+    }, ms);
+  });
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') regainFocus(); _endingSync(); });
+window.addEventListener('pageshow', regainFocus);
+try {
+  const _br = window.bridge;
+  if (_br && _br.platform && _br.EVENT_NAME && _br.EVENT_NAME.PAUSE_STATE_CHANGED) {
+    _br.platform.on(_br.EVENT_NAME.PAUSE_STATE_CHANGED, function (paused) { if (!paused) regainFocus(); });
+  }
+} catch (_) {}
 
 // ── 햅틱 (모바일) — 옵션 ON/OFF + 첫 사용자 입력 후에만 진동 ──────
 // 첫 탭/클릭/키 전에는 vibrate가 차단(콘솔 경고)되므로 게이트로 막는다.
@@ -4466,8 +4897,9 @@ function _applySoundEnabled() {
   if (!SG.Sound) return;
   // 유저 설정 AND 플랫폼 오디오 허용(platform.isAudioEnabled) AND 일시정지 아님.
   SG.Sound.setMuted(!_soundEnabled || SG.PG._audioEnabled === false || isPlatformPaused || isAdPlaying);
-  // BGM: 켜질 때만 재생, 꺼질 때는 setMuted가 gain=0으로 처리
-  if (_soundEnabled && _bgmEnabled && _bgmActiveTheme) {
+  _endingSync();
+  // BGM: 켜질 때만 재생, 꺼질 때는 setMuted가 gain=0으로 처리 (엔딩 영상 중에는 영상 소리만)
+  if (_soundEnabled && _bgmEnabled && _bgmActiveTheme && !_endingOn) {
     if (!SG.Sound.bgmRunning) SG.Sound.playBgm(_bgmActiveTheme);
   }
 }
@@ -4838,16 +5270,51 @@ function settingsToMenu() {
     showStart();
   }
 }
-let _sx = 0, _sy = 0;
-canvas.addEventListener('touchstart', function (e) {
-  const t = e.touches[0]; _sx = t.clientX; _sy = t.clientY;
-}, { passive: true });
-canvas.addEventListener('touchend', function (e) {
-  const t = e.changedTouches[0]; const dx = t.clientX - _sx, dy = t.clientY - _sy;
-  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
-  if (Math.abs(dx) > Math.abs(dy)) doMove(dx > 0 ? 'right' : 'left');
-  else doMove(dy > 0 ? 'down' : 'up');
-}, { passive: true });
+// v0.9.2 스와이프 — 보드 칸(#canvas-wrap) 전체에서, 손을 떼기 전 일정 거리를 넘는 순간 한 번 민다(손을 뗄 때까지 기다리지 않음).
+// 거리 = 입력 종류별(마우스 14 · 펜 18 · 터치 22px)과 칸 크기 25% 중 작은 값. 대각선은 주 축이 1.3배 이상일 때만. 마우스 끌기도 된다.
+const _SWIPE = { mouse: 14, touch: 22, pen: 18, axisRatio: 1.3 };
+let _sx = null, _sy = null, _swFired = false;
+const _swipeEl = document.getElementById('canvas-wrap');
+function _swipeDist(type) { return Math.min(_SWIPE[type] || _SWIPE.touch, ((renderer && renderer.cell) || 80) * 0.25); }
+_swipeEl.addEventListener('pointerdown', function (e) {
+  if (_modal || e.button > 0) return;
+  _sx = e.clientX; _sy = e.clientY; _swFired = false;
+  try { _swipeEl.setPointerCapture(e.pointerId); } catch (_) {}
+  if (e.pointerType === 'mouse') e.preventDefault();
+});
+_swipeEl.addEventListener('pointermove', function (e) {
+  if (_sx == null || _swFired) return;
+  const dx = e.clientX - _sx, dy = e.clientY - _sy, ax = Math.abs(dx), ay = Math.abs(dy);
+  if (Math.max(ax, ay) < _swipeDist(e.pointerType)) return;
+  if (Math.max(ax, ay) < Math.min(ax, ay) * _SWIPE.axisRatio) return;
+  _swFired = true;
+  doMove(ax > ay ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+});
+function _swipeEnd() { _sx = _sy = null; _swFired = false; }
+_swipeEl.addEventListener('pointerup', _swipeEnd);
+_swipeEl.addEventListener('pointercancel', _swipeEnd);
+
+// v0.9.2 조작 안내 — 세션에서 판을 처음 시작할 때 한 번, 첫 수에(또는 4.5초 뒤) 사라짐. 터치 = 손끝 스와이프 · 키보드 = 키캡.
+let _ctrlHintSeen = false, _ctrlHintTimer = null;
+function _ctrlHintMode() {
+  try { return window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys'; } catch (_) { return 'keys'; }
+}
+function _ctrlHintShow() {
+  if (_ctrlHintSeen) return;
+  const el = document.getElementById('ctrl-hint');
+  if (!el) return;
+  el.innerHTML = _ctrlHintMode() === 'touch'
+    ? '<span class="sw"></span><span>SWIPE</span>'
+    : '<span class="kc">←</span><span class="kc">↑</span><span class="kc">↓</span><span class="kc">→</span><span style="opacity:.6">/</span><span class="kc">W</span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span>';
+  el.classList.add('show');
+  clearTimeout(_ctrlHintTimer);
+  _ctrlHintTimer = setTimeout(function () { _ctrlHintHide(false); }, 4500);
+}
+function _ctrlHintHide(moved) {
+  const el = document.getElementById('ctrl-hint');
+  if (el && el.classList.contains('show')) { el.classList.remove('show'); _ctrlHintSeen = true; }
+  else if (moved) _ctrlHintSeen = true;
+}
 
 // ── Playgama 오디오/일시정지 훅 ──────────────────────────────────
 // 음소거 판정은 _applySoundEnabled 한 곳 (유저 설정 · 플랫폼 오디오 · 일시정지 · 광고 중).
@@ -4968,6 +5435,13 @@ function devUnlockActiveTheme() {
   showGameToast('DEV: ' + id + ' unlocked');
 }
 
+// dev: 엔딩 영상 강제 진입(명예의 전당 기록 · 전송 없음 — playEnding 이 DEV 를 거른다) → 끝나면 시작 화면
+async function devPlayEnding() {
+  document.querySelectorAll('.overlay').forEach(function (o) { o.classList.add('hidden'); });
+  await playEnding('dev');
+  showStart();
+}
+
 function devResetAll() {
   if (!confirm('Reset all data?')) return;
   // Wipe ALL game data: every earthbeyond_* key (best, player, settings, and the
@@ -5053,6 +5527,8 @@ window.addEventListener('pagehide', pgSyncStorage);
   }
   // 스크립트 로드 시점에 읽은 값은 복원 전이라 다시 읽는다.
   bestScore = parseInt(SG.Store.getItem(STORAGE_KEY_BEST) || '0', 10);
+  // v0.9.2: III 장을 끝냈는데 completedThemes 에 빠진 옛 저장 복구(unlockNextTheme 조기 반환 버그)
+  try { SG.Collection.syncCompletedThemes(SG.Store, SG.CollectionThemes); } catch (_) {}
 
   const _isDev = DEV;
   // 버전 표시 (START 화면). DEV 모드면 DEV 태그 부가.
@@ -5067,12 +5543,21 @@ window.addEventListener('pagehide', pgSyncStorage);
     const storyBtn = document.getElementById('btn-story');
     if (storyBtn) storyBtn.style.display = '';
     devPopulateThemeSelect();
+    // 플레이 녹화용(tools/ending-video/capture-gameplay.mjs): ?dev=1&capture=1 — 개발 바 · DEV 표시 · DEV 버튼만 숨긴다(동작은 그대로)
+    if (new URLSearchParams(location.search).has('capture')) {
+      document.getElementById('dev-bar').style.display = 'none';
+      if (startBtn) startBtn.style.display = 'none';
+      if (storyBtn) storyBtn.style.display = 'none';
+      if (_verEl) _verEl.textContent = 'EARTH & BEYOND ' + APP_VERSION;
+    }
   }
   // DEV-END
 
   // 캔버스 크기 설정
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
+  // v0.9.2: 상단 내비 · 설명 바가 나타나고 사라질 때도 보드 칸 높이가 바뀐다 → 창 크기 변화가 없어도 다시 맞춘다
+  try { if (window.ResizeObserver) new ResizeObserver(function () { resizeCanvas(); }).observe(document.getElementById('canvas-wrap')); } catch (_) {}
 
   // 언어 설정 복원 + UI 적용
   _loadLang();
@@ -5094,8 +5579,21 @@ window.addEventListener('pagehide', pgSyncStorage);
 
   // 렌더러 + 루프 (게임 모듈 로드 후)
   renderer = new SG.Renderer(canvas);
+  // v0.9.2 세로: 보드 안쪽 여백(엔진 기본 2%)을 0.6%로 — 장면 그림이 화면 폭을 거의 다 쓴다. 엔진 파일은 그대로, 셸에서만 덮는다.
+  (function (r) {
+    const base = r.resize.bind(r);
+    r.resize = function () {
+      base();
+      if (!_portrait()) return;
+      const size = Math.min(this.canvas.clientWidth, this.canvas.clientHeight) || 360;
+      this.pad = Math.max(2, Math.round(size * 0.006));
+      this.cell = (size - this.pad * 2) / this.n;
+    };
+  })(renderer);
   resizeCanvas();                 // re-fit now that renderer exists
   requestAnimationFrame(loop);
+  // v0.9.2 배경 파티클 — 광고 · 플랫폼 일시정지 · 로비(불투명 화면이 덮음) 동안은 그리지 않는다
+  try { if (SG.BgFx) SG.BgFx.start({ paused: function () { return isAdPlaying || isPlatformPaused || !document.getElementById('ol-start').classList.contains('hidden'); } }); } catch (_) {}
 
   // 첫 접속이면 Daily 튜토리얼, 재접속이면 메뉴 표시
   if (!isFirstVisit()) {
@@ -5112,7 +5610,7 @@ window.addEventListener('pagehide', pgSyncStorage);
   // v0.9.1: Bridge 가 부팅 타임아웃 뒤에 늦게 붙어도 그때 1회 보낸다(SG.PG.markGameShown — 세션당 1회 보장).
   SG.CG.loadingStop();
   SG.PG.markGameShown();
-  SG.PG.onReady(function () { lbSyncNow(); });
+  SG.PG.onReady(function () { lbSyncNow(); hofBannerRefresh(); });
   // 운영 집계(읽기 전용): ?lbstats=1 — 개발 바(DEV)와 분리. 리더보드 분포만 보여 준다.
   if (new URLSearchParams(location.search).get('lbstats') === '1') { try { openLbStats(); } catch (_) {} }
 

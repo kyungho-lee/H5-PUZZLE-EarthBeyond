@@ -41,6 +41,7 @@
     { "id": "gallery_total" },
     { "id": "ch1_clear" },
     { "id": "ch2_clear" },
-    { "id": "ch3_clear" }
+    { "id": "ch3_clear" },
+    { "id": "hall_of_fame" }
   ]
 }

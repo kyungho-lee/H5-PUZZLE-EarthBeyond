@@ -1,12 +1,15 @@
 {
   "name": "h5-puzzle-earthbeyond",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Earth & Beyond — merge puzzle from Primordial Earth to the edge of the Universe",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "test": "node --test test/**/*.test.js",
-    "build:playgama": "node scripts/build-playgama.mjs"
+    "build:playgama": "node scripts/build-playgama.mjs",
+    "ending:render": "node tools/ending-video/render.mjs",
+    "ending:promo": "node tools/ending-video/render.mjs --promo",
+    "ending:gameplay": "node tools/ending-video/capture-gameplay.mjs both && node tools/ending-video/make-gameplay.mjs"
   },
   "devDependencies": {
     "playwright": "^1.61.0"

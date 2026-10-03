@@ -1,0 +1,6 @@
+# 렌더 준비물(게임 원본 복사 · 녹음 결과)과 렌더 결과 — prepare.mjs · record-audio.mjs · render 로 다시 만든다
+assets/
+renders/
+.thumbnails/
+# 플레이 영상 컴포지션 생성물 (make-gameplay.mjs)
+gameplay-*.html

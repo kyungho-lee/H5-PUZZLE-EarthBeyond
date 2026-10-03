@@ -325,6 +325,11 @@
   }
 
   var _LB_GALLERY = 'gallery_total';
+  var _LB_HALL_OF_FAME = 'hall_of_fame';   // v0.9.2 명예의 전당 — 첫 엔딩 도착 시각(초), scoreOrder asc
+  // 플랫폼 플레이어 id (명예의 전당 '내 줄' 찾기). 없으면 ''.
+  function playerId() {
+    try { return (_ready && _bridge && _bridge.player && _bridge.player.id != null) ? String(_bridge.player.id) : ''; } catch (e) { return ''; }
+  }
   var _LB_CHAPTER_CLEAR = ['ch1_clear', 'ch2_clear', 'ch3_clear'];
 
   // 진행 이벤트 — 실패해도 게임에 영향 없음.
@@ -369,6 +374,8 @@
     LB_ENDLESS: _LB_ENDLESS,
     LB_GALLERY: _LB_GALLERY,
     LB_CHAPTER_CLEAR: _LB_CHAPTER_CLEAR,
+    LB_HALL_OF_FAME: _LB_HALL_OF_FAME,
+    playerId,
     leaderboard: {
       getType:    lbGetType,
       submit:     lbSubmit,

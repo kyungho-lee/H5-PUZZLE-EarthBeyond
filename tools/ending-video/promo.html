@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<!-- EARTH & BEYOND — 30초 홍보판 (유튜브 · 쇼츠 공유용, 게임에는 안 넣음). 엔딩 컴포지션(index.html)과 같은 그림 · 폰트 · 크레딧 데이터.
+     스포일러를 줄이게: I 원시 지구 · II 인류 문명 위주, III 태양계는 어두운 실루엣 한 컷만, 엔딩 장면(달에서 본 지구 · THE END · 크레딧 롤) 없음.
+     마지막 카드 = 제목 + "Play free on Playgama"(URL 글자는 넣지 않음 — 설명란) + 짧은 크레딧 한 줄. 글자는 모두 영문.
+     음악: assets/audio/promo-mix.wav ← render.mjs --promo 가 ending-mix.wav(sound.js 녹음)에서 잘라 이어 붙임. -->
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=720, height=720" />
+<script src="vendor/gsap.min.js"></script>
+<script src="assets/credits.js"></script>
+<style>
+  @font-face { font-family: 'Rajdhani'; font-weight: 700; font-display: block; src: url('assets/fonts/rajdhani-700.woff2') format('woff2'); }
+  @font-face { font-family: 'Rajdhani'; font-weight: 600; font-display: block; src: url('assets/fonts/rajdhani-600.woff2') format('woff2'); }
+  @font-face { font-family: 'Share Tech Mono'; font-weight: 400; font-display: block; src: url('assets/fonts/share-tech-mono-400.woff2') format('woff2'); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 720px; height: 720px; overflow: hidden; background: #000; }
+  #root { position: relative; width: 720px; height: 720px; overflow: hidden; background: #000; color: #fff; }
+  .clip { position: absolute; inset: 0; overflow: hidden; }
+  .cut img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 50%; }
+  .cut::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 58%, rgba(0,0,0,.55) 100%); }
+  .tile { position: absolute; left: 50%; top: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 20px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 18px 60px rgba(0,0,0,.65), 0 0 80px rgba(122,172,255,.28); z-index: 2; }
+  .txt { position: absolute; left: 0; right: 0; text-align: center; text-shadow: 0 2px 14px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.9); }
+  .t-hook { top: 286px; font: 700 40px/1.15 'Rajdhani', sans-serif; letter-spacing: 4px; padding: 0 50px; }
+  .card { position: absolute; left: 0; right: 0; top: 270px; text-align: center; }
+  .t-ch { display: block; font: 400 21px/1 'Share Tech Mono', monospace; letter-spacing: 8px; padding-left: 8px; color: #e4eeff; text-shadow: 0 2px 14px rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.9); }
+  .t-chname { display: block; margin-top: 18px; font: 700 54px/1 'Rajdhani', sans-serif; letter-spacing: 5px; text-shadow: 0 2px 14px rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.9); }
+  #p11 img.bg { filter: brightness(.32) saturate(.6); }
+  #mosaic-grid { position: absolute; left: 0; top: 0; width: 720px; display: grid; grid-template-columns: repeat(11, 1fr); }
+  #mosaic-grid img { width: 100%; aspect-ratio: 1; display: block; }
+  #mosaic-dim { position: absolute; inset: 0; background: #000; opacity: .72; }
+  #endcard { top: 238px; }
+  #endcard .a { font: 700 74px/1 'Rajdhani', sans-serif; letter-spacing: 8px; padding-left: 8px; }
+  #endcard .b { margin-top: 26px; display: inline-block; padding: 12px 30px; border: 2px solid #7aacff; border-radius: 40px; background: rgba(10,20,44,.75);
+    font: 700 30px/1 'Rajdhani', sans-serif; letter-spacing: 3px; color: #fff; }
+  #endcard .c { margin-top: 30px; font: 400 15px/1.4 'Share Tech Mono', monospace; letter-spacing: 1px; color: #b9cdf2; }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; z-index: 50; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="promo" data-start="0" data-duration="30" data-width="720" data-height="720" data-fps="30">
+
+  <!-- I PRIMORDIAL EARTH -->
+  <div id="p01" class="clip cut" style="z-index:1" data-start="0" data-duration="3.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-01.webp" alt=""></div>
+  <div id="p02" class="clip cut" style="z-index:2" data-start="3" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/primordial-earth/board-bg.webp" alt=""></div>
+  <div id="p03" class="clip cut" style="z-index:3" data-start="5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-03.webp" alt=""></div>
+  <div id="p04" class="clip cut" style="z-index:4" data-start="7" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/primordial-earth/bg-step-06.webp" alt=""></div>
+  <div id="p05" class="clip cut" style="z-index:5" data-start="9" data-duration="3.4" data-track-index="1"><img class="bg" src="assets/img/primordial-earth/bg-step-09.webp" alt=""><img class="tile" src="assets/img/primordial-earth/step-09.webp" alt=""></div>
+  <!-- II HUMAN CIVILIZATION -->
+  <div id="p06" class="clip cut" style="z-index:6" data-start="12.4" data-duration="2.6" data-track-index="2"><img class="bg" src="assets/img/human-civilization/board-bg.webp" alt=""></div>
+  <div id="p07" class="clip cut" style="z-index:7" data-start="14.5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/human-civilization/bg-step-03.webp" alt=""></div>
+  <div id="p08" class="clip cut" style="z-index:8" data-start="16.5" data-duration="2.5" data-track-index="2"><img class="bg" src="assets/img/human-civilization/bg-step-05.webp" alt=""></div>
+  <div id="p09" class="clip cut" style="z-index:9" data-start="18.5" data-duration="2.5" data-track-index="1"><img class="bg" src="assets/img/human-civilization/bg-step-07.webp" alt=""></div>
+  <div id="p10" class="clip cut" style="z-index:10" data-start="20.5" data-duration="2.4" data-track-index="2"><img class="bg" src="assets/img/human-civilization/bg-step-09.webp" alt=""><img class="tile" src="assets/img/human-civilization/step-09.webp" alt=""></div>
+  <!-- III — 실루엣 한 컷만 -->
+  <div id="p11" class="clip cut" style="z-index:11" data-start="22.9" data-duration="2.6" data-track-index="1"><img class="bg" src="assets/img/solar-system/board-bg.webp" alt=""></div>
+  <!-- 마지막 카드 -->
+  <div id="p12" class="clip" style="z-index:12;background:#000" data-start="25" data-duration="5" data-track-index="2">
+    <div id="mosaic-grid"></div>
+    <div id="mosaic-dim"></div>
+    <div id="endcard" class="txt"><div class="a">EARTH &amp; BEYOND</div><div class="b">PLAY FREE ON PLAYGAMA</div><div class="c" id="credit-line"></div></div>
+  </div>
+
+  <!-- 글자 -->
+  <div id="t-hook" class="clip" style="z-index:30" data-start="0.6" data-duration="2.6" data-track-index="3"><div class="txt t-hook">MERGE YOUR WAY THROUGH 13.8 BILLION YEARS</div></div>
+  <div id="t-ch1" class="clip" style="z-index:30" data-start="3.2" data-duration="1.9" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER I</span><span class="t-chname">PRIMORDIAL EARTH</span></div></div>
+  <div id="t-ch2" class="clip" style="z-index:30" data-start="12.6" data-duration="2.1" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER II</span><span class="t-chname">HUMAN CIVILIZATION</span></div></div>
+  <div id="t-ch3" class="clip" style="z-index:30" data-start="23.1" data-duration="2.1" data-track-index="3"><div class="card"><span class="t-ch">CHAPTER III</span><span class="t-chname">AND BEYOND…</span></div></div>
+
+  <div id="fade" class="clip" data-start="0" data-duration="30" data-track-index="5"></div>
+  <audio id="music" src="assets/audio/promo-mix.wav" data-start="0" data-duration="30" data-volume="1" data-track-index="6"></audio>
+</div>
+
+<script>
+(function () {
+  var CREDITS = (window.SG && SG.EndingCredits) || [];
+  var dir = CREDITS.filter(function (e) { return e.role === 'Game Director'; })[0];
+  document.getElementById('credit-line').textContent = 'Game Director ' + (dir ? dir.name : 'Kevin-H5') + ' · made with an AI agent team';
+  // 마지막 카드 모자이크 — I · II 장 타일만(III 은 보여 주지 않는다)
+  var THEMES = ['primordial-earth', 'human-civilization'];
+  var grid = document.getElementById('mosaic-grid');
+  for (var r = 0; r < 13; r++) for (var c = 0; c < 11; c++) {
+    var im = document.createElement('img');
+    im.src = 'assets/img/' + THEMES[r % 2] + '/step-' + String(c + 1).padStart(2, '0') + '.webp';
+    im.alt = '';
+    grid.appendChild(im);
+  }
+
+  var tl = gsap.timeline({ paused: true });
+  var E = 'none';
+  function bg(id) { return '#' + id + ' img.bg'; }
+  function move(id, t0, dur, from, to) { tl.fromTo(bg(id), from, Object.assign({ duration: dur, ease: E }, to), t0); }
+  function dissolveIn(id, t0) { tl.fromTo('#' + id, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: E }, t0); }
+  function blackIn(id, t0) { tl.fromTo('#' + id, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: E }, t0); }
+  function blackOut(id, t1) { tl.to('#' + id, { opacity: 0, duration: 0.4, ease: E }, t1 - 0.4); }
+  function text(id, t0, dur) {
+    tl.fromTo('#' + id, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, t0);
+    tl.to('#' + id, { opacity: 0, duration: 0.45, ease: E }, t0 + dur - 0.45);
+  }
+  function tileRise(id, t0, dur) { tl.fromTo('#' + id + ' .tile', { y: 260, opacity: 0, scale: 0.92 }, { y: -40, opacity: 1, scale: 1, duration: dur, ease: 'power2.out' }, t0); }
+
+  tl.fromTo('#p01', { opacity: 0 }, { opacity: 1, duration: 1.0, ease: E }, 0);
+  move('p01', 0, 3.5, { scale: 1.04 }, { scale: 1.14 });
+  text('t-hook', 0.6, 2.6);
+  dissolveIn('p02', 3); move('p02', 3, 2.5, { scale: 1.04 }, { scale: 1.08 }); text('t-ch1', 3.2, 1.9);
+  dissolveIn('p03', 5); move('p03', 5, 2.5, { scale: 1.06 }, { scale: 1.16 });
+  dissolveIn('p04', 7); move('p04', 7, 2.5, { scale: 1.12, y: -36 }, { scale: 1.12, y: 36 });
+  dissolveIn('p05', 9); move('p05', 9, 3.4, { scale: 1.10, x: -30 }, { scale: 1.10, x: 30 }); tileRise('p05', 9.2, 2.6);
+  blackOut('p05', 12.4);
+  blackIn('p06', 12.4); move('p06', 12.4, 2.6, { scale: 1.04 }, { scale: 1.08 }); text('t-ch2', 12.6, 2.1);
+  dissolveIn('p07', 14.5); move('p07', 14.5, 2.5, { scale: 1.10, x: 30 }, { scale: 1.10, x: -30 });
+  dissolveIn('p08', 16.5); move('p08', 16.5, 2.5, { scale: 1.06, y: 10 }, { scale: 1.14, y: -14 });
+  dissolveIn('p09', 18.5); move('p09', 18.5, 2.5, { scale: 1.10, x: -30 }, { scale: 1.10, x: 30 });
+  dissolveIn('p10', 20.5); move('p10', 20.5, 2.4, { scale: 1.04 }, { scale: 1.10 }); tileRise('p10', 20.6, 2.2);
+  blackOut('p10', 22.9);
+  // III 실루엣 — 어둡게, 아주 느린 줌만
+  blackIn('p11', 22.9); move('p11', 22.9, 2.6, { scale: 1.04 }, { scale: 1.10 }); text('t-ch3', 23.1, 2.1);
+  blackOut('p11', 25.5);
+  // 마지막 카드
+  tl.fromTo('#p12', { opacity: 0 }, { opacity: 1, duration: 0.6, ease: E }, 25);
+  tl.fromTo('#mosaic-grid', { y: 0 }, { y: -90, duration: 5, ease: E }, 25);
+  tl.fromTo('#endcard .a', { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' }, 25.3);
+  tl.fromTo('#endcard .b', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 26.0);
+  tl.fromTo('#endcard .c', { opacity: 0 }, { opacity: 1, duration: 0.6, ease: E }, 26.6);
+  tl.to('#fade', { opacity: 1, duration: 0.8, ease: E }, 29.2);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines['promo'] = tl;
+  tl.seek(0);
+})();
+</script>
+</body>
+</html>
